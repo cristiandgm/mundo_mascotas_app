@@ -52,7 +52,7 @@ export const LoginScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
-        colors={['#070B14', '#0F1A2E', '#0B1120']}
+        colors={['#050508', '#0F1117', '#050508']}
         style={StyleSheet.absoluteFill}
       />
 

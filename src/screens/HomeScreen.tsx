@@ -37,7 +37,7 @@ export const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
-        colors={['#070B14', '#0F1A2E', '#0B1120']}
+        colors={['#050508', '#0F1117', '#050508']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -74,7 +74,7 @@ export const HomeScreen: React.FC = () => {
         {/* Card VIP Consenticoins */}
         <View style={styles.vipCardOuter}>
           <LinearGradient
-            colors={['#D97706', '#F59E0B', '#B45309']}
+            colors={['#C69214', '#D4AF37', '#996515']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.vipCardGradient}
@@ -170,8 +170,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    padding: 2,
-    backgroundColor: colors.accent.DEFAULT,
+    backgroundColor: '#050508',
+    borderWidth: 1.5,
+    borderColor: colors.primary.DEFAULT,
+    overflow: 'hidden',
   },
   avatarImg: {
     width: '100%',

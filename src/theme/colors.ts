@@ -1,14 +1,14 @@
 export const colors = {
-  // Brand Primary (Azul Cielo & Cian de Mundo Mascotas)
+  // Brand Primary (Oro Metálico & Champagne de Mundo Mascotas Luxury)
   primary: {
-    DEFAULT: '#0284C7', // Sky 600
-    light: '#38BDF8',   // Sky 400
-    lighter: '#E0F2FE', // Sky 100
-    dark: '#0369A1',    // Sky 700
-    glow: 'rgba(2, 132, 199, 0.25)',
+    DEFAULT: '#D4AF37', // Oro Metálico de Lujo
+    light: '#F5D061',   // Champagne Gold brillante
+    lighter: '#FEF3C7', // Oro suave
+    dark: '#AA7C11',    // Bronce dorado profundo
+    glow: 'rgba(212, 175, 55, 0.3)',
   },
 
-  // Brand Secondary (Dorado / Ámbar cálido)
+  // Brand Secondary (Ámbar cálido / Oro solar)
   accent: {
     DEFAULT: '#F59E0B', // Amber 500
     light: '#FBBF24',   // Amber 400
@@ -17,28 +17,28 @@ export const colors = {
     glow: 'rgba(245, 158, 11, 0.25)',
   },
 
-  // Dark Palette (Modo Oscuro Ultra Moderno)
+  // Dark Palette (Black & Gold Obsidian Luxury)
   dark: {
-    bg: '#0B1120',          // Slate casi negro, profundidad OLED
-    card: '#131D31',        // Tarjeta oscura elevada
-    cardElevated: '#1B263F', // Elementos interactivos
-    border: '#1E293B',      // Borde sutil
-    borderFocus: '#0284C7', // Borde activo
-    textPrimary: '#F8FAFC', // Blanco hielo
-    textSecondary: '#94A3B8', // Gris perla
-    textMuted: '#64748B',    // Gris tenue
+    bg: '#050508',          // Negro obsidiana puro, profundidad OLED
+    card: '#0E1017',        // Tarjeta oscura grafito
+    cardElevated: '#161922',// Elementos interactivos elevados
+    border: '#242836',      // Borde sutil de alto contraste
+    borderFocus: '#D4AF37', // Borde activo en oro brillante
+    textPrimary: '#FFFFFF', // Blanco puro
+    textSecondary: '#A1A1AA', // Gris zinc claro
+    textMuted: '#71717A',    // Gris tenue
   },
 
-  // Light Palette (Modo Claro Fresco)
+  // Light Palette (Modo Claro Elegante)
   light: {
-    bg: '#F8FAFC',          // Blanco perla frío
+    bg: '#FAFAFA',          // Blanco marfil
     card: '#FFFFFF',        // Blanco puro
-    cardElevated: '#F1F5F9',// Gris suave
-    border: '#E2E8F0',      // Borde sutil claro
-    borderFocus: '#0284C7',
-    textPrimary: '#0F172A', // Slate 900
-    textSecondary: '#475569',
-    textMuted: '#94A3B8',
+    cardElevated: '#F4F4F5',// Gris platino
+    border: '#E4E4E7',      // Borde claro
+    borderFocus: '#D4AF37',
+    textPrimary: '#09090B', // Negro carbón
+    textSecondary: '#52525B',
+    textMuted: '#A1A1AA',
   },
 
   // Functional / Feedback
@@ -49,11 +49,11 @@ export const colors = {
 
   // Gradients
   gradients: {
-    primary: ['#0284C7', '#06B6D4'] as const,
-    accent: ['#F59E0B', '#EA580C'] as const,
-    darkCard: ['#162035', '#0F172A'] as const,
-    glassBorder: ['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.03)'] as const,
-    heroOverlay: ['rgba(11, 17, 32, 0.2)', '#0B1120'] as const,
+    primary: ['#F5D061', '#D4AF37'] as const,   // Gradiente Oro Metálico brillante
+    accent: ['#F59E0B', '#D97706'] as const,    // Gradiente Ámbar cálido
+    goldCard: ['#281E0B', '#0E1017'] as const,  // Fondo de Tarjeta VIP Black & Gold
+    darkCard: ['#161922', '#0A0C10'] as const,
+    glassBorder: ['rgba(212, 175, 55, 0.35)', 'rgba(255, 255, 255, 0.05)'] as const,
+    heroOverlay: ['rgba(5, 5, 8, 0.2)', '#050508'] as const,
   },
 };
-

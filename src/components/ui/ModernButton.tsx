@@ -87,7 +87,13 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' || variant === 'ghost' ? colors.primary.DEFAULT : '#FFFFFF'}
+          color={
+            variant === 'primary'
+              ? '#050508'
+              : variant === 'outline' || variant === 'ghost'
+              ? colors.primary.DEFAULT
+              : '#FFFFFF'
+          }
         />
       ) : (
         <>
@@ -96,6 +102,7 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
             style={[
               typography.button,
               styles.textBase,
+              variant === 'primary' && styles.textPrimary,
               variant === 'outline' && styles.textOutline,
               variant === 'ghost' && styles.textGhost,
               variant === 'secondary' && styles.textSecondary,
@@ -232,6 +239,10 @@ const styles = StyleSheet.create({
   textBase: {
     color: '#FFFFFF',
     fontWeight: '700',
+  },
+  textPrimary: {
+    color: '#050508',
+    fontWeight: '800',
   },
   textOutline: {
     color: colors.primary.light,

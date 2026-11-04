@@ -14,7 +14,7 @@ export const WelcomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
-        colors={['#070B14', '#0F1A2E', '#0B1120']}
+        colors={['#050508', '#0F1117', '#050508']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -132,14 +132,14 @@ const styles = StyleSheet.create({
     width: 144,
     height: 144,
     borderRadius: 72,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#050508',
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(212, 175, 55, 0.4)',
     shadowColor: colors.primary.DEFAULT,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
     elevation: 8,
   },
   logoImage: {
