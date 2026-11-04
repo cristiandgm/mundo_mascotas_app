@@ -66,8 +66,8 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
-          toValue: 0.85,
-          duration: 200,
+          toValue: 0.9,
+          duration: 220,
           useNativeDriver: true,
         }),
       ]),
@@ -75,16 +75,16 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
   };
 
   useEffect(() => {
-    // 1. Caminata de huellitas secuencial (perrito y gatico avanzando)
+    // 1. Caminata de huellitas desde la parte superior hacia los laterales del logo
     Animated.parallel([
-      animatePaw(paw1Scale, paw1Opacity, 100),   // Paso 1 (Perro 🐶)
-      animatePaw(paw2Scale, paw2Opacity, 300),   // Paso 2 (Gato 🐱)
-      animatePaw(paw3Scale, paw3Opacity, 500),   // Paso 3 (Perro 🐶)
-      animatePaw(paw4Scale, paw4Opacity, 700),   // Paso 4 (Gato 🐱)
-      animatePaw(paw5Scale, paw5Opacity, 900),   // Paso 5 (Perro 🐶)
-      animatePaw(paw6Scale, paw6Opacity, 1100),  // Paso 6 (Gato 🐱)
+      animatePaw(paw1Scale, paw1Opacity, 100),   // Paso 1 (Perro 🐶, arriba izq)
+      animatePaw(paw2Scale, paw2Opacity, 300),   // Paso 2 (Gato 🐱, arriba der)
+      animatePaw(paw3Scale, paw3Opacity, 500),   // Paso 3 (Perro 🐶, descendiendo izq)
+      animatePaw(paw4Scale, paw4Opacity, 700),   // Paso 4 (Gato 🐱, descendiendo der)
+      animatePaw(paw5Scale, paw5Opacity, 900),   // Paso 5 (Perro 🐶, flanco izq logo)
+      animatePaw(paw6Scale, paw6Opacity, 1100),  // Paso 6 (Gato 🐱, flanco der logo)
 
-      // 2. Nacimiento del Logo con efecto shockwave en el segundo 1.3
+      // 2. Nacimiento del Logo con efecto shockwave en el segundo 1.25
       Animated.sequence([
         Animated.delay(1250),
         Animated.parallel([
@@ -122,7 +122,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
         ]),
       ]),
 
-      // 3. Entrada de Marca y Slogan en el segundo 1.8
+      // 3. Entrada de Marca y Slogan en el segundo 1.75
       Animated.sequence([
         Animated.delay(1750),
         Animated.parallel([
@@ -192,22 +192,37 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
       {/* Aura ambiental en el centro */}
       <View style={styles.ambientGlow} />
 
-      {/* HUELLITAS DE PERRO Y GATO CAMINANDO */}
-      {/* Huella 1 - Perro (Dorado, abajo izquierda) */}
+      {/* Insignia decorativa superior para equilibrar la pantalla */}
+      <Animated.View
+        style={[
+          styles.topHeader,
+          {
+            opacity: textOpacity,
+            transform: [{ translateY: textTranslateY }],
+          },
+        ]}
+      >
+        <Ionicons name="sparkles" size={13} color={colors.accent.light} />
+        <Text style={styles.topHeaderText}>BIENVENIDOS AL CLUB DE MASCOTAS</Text>
+        <Ionicons name="sparkles" size={13} color={colors.primary.light} />
+      </Animated.View>
+
+      {/* HUELLITAS DE PERRO Y GATO (Ubicadas en la parte superior y laterales, sin tapar textos) */}
+      {/* Huella 1 - Perro (Dorado, arriba izquierda) */}
       <Animated.View
         style={[
           styles.pawContainer,
           styles.paw1,
           {
             opacity: paw1Opacity,
-            transform: [{ scale: paw1Scale }, { rotate: '-25deg' }],
+            transform: [{ scale: paw1Scale }, { rotate: '-22deg' }],
           },
         ]}
       >
         <Ionicons name="paw" size={26} color={colors.accent.light} />
       </Animated.View>
 
-      {/* Huella 2 - Gato (Cian, abajo derecha) */}
+      {/* Huella 2 - Gato (Cian, arriba derecha) */}
       <Animated.View
         style={[
           styles.pawContainer,
@@ -221,7 +236,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
         <Ionicons name="paw" size={20} color={colors.primary.light} />
       </Animated.View>
 
-      {/* Huella 3 - Perro (Dorado, medio izquierda) */}
+      {/* Huella 3 - Perro (Dorado, bajando hacia el logo, izquierda) */}
       <Animated.View
         style={[
           styles.pawContainer,
@@ -235,35 +250,35 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
         <Ionicons name="paw" size={28} color={colors.accent.DEFAULT} />
       </Animated.View>
 
-      {/* Huella 4 - Gato (Cian, medio derecha) */}
+      {/* Huella 4 - Gato (Cian, bajando hacia el logo, derecha) */}
       <Animated.View
         style={[
           styles.pawContainer,
           styles.paw4,
           {
             opacity: paw4Opacity,
-            transform: [{ scale: paw4Scale }, { rotate: '15deg' }],
+            transform: [{ scale: paw4Scale }, { rotate: '16deg' }],
           },
         ]}
       >
         <Ionicons name="paw" size={22} color={colors.primary.DEFAULT} />
       </Animated.View>
 
-      {/* Huella 5 - Perro (Cerca del centro, izquierda) */}
+      {/* Huella 5 - Perro (Flanco izquierdo libre del logo) */}
       <Animated.View
         style={[
           styles.pawContainer,
           styles.paw5,
           {
             opacity: paw5Opacity,
-            transform: [{ scale: paw5Scale }, { rotate: '-5deg' }],
+            transform: [{ scale: paw5Scale }, { rotate: '-8deg' }],
           },
         ]}
       >
         <Ionicons name="paw" size={30} color={colors.accent.light} />
       </Animated.View>
 
-      {/* Huella 6 - Gato (Cerca del centro, derecha) */}
+      {/* Huella 6 - Gato (Flanco derecho libre del logo) */}
       <Animated.View
         style={[
           styles.pawContainer,
@@ -307,7 +322,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
         </View>
       </Animated.View>
 
-      {/* Textos y Marca */}
+      {/* Textos y Marca (Zona inferior sin ninguna huella encima) */}
       <Animated.View
         style={[
           styles.textContainer,
@@ -357,6 +372,26 @@ const styles = StyleSheet.create({
     borderRadius: (width * 0.75) / 2,
     backgroundColor: 'rgba(2, 132, 199, 0.12)',
   },
+  topHeader: {
+    position: 'absolute',
+    top: 55,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 7,
+    zIndex: 20,
+  },
+  topHeaderText: {
+    color: colors.primary.light,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
   pulseRing: {
     position: 'absolute',
     width: 170,
@@ -369,30 +404,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     zIndex: 10,
   },
-  // Coordenadas de los pasos
+  // Coordenadas superiores y laterales (Libres de texto)
   paw1: {
-    bottom: height * 0.22,
-    left: width * 0.26,
+    top: height * 0.12,
+    left: width * 0.14,
   },
   paw2: {
-    bottom: height * 0.28,
-    right: width * 0.28,
+    top: height * 0.15,
+    right: width * 0.15,
   },
   paw3: {
-    bottom: height * 0.36,
-    left: width * 0.29,
+    top: height * 0.22,
+    left: width * 0.26,
   },
   paw4: {
-    bottom: height * 0.44,
-    right: width * 0.31,
+    top: height * 0.24,
+    right: width * 0.24,
   },
   paw5: {
-    top: height * 0.34,
-    left: width * 0.22,
+    top: height * 0.38,
+    left: width * 0.08,
   },
   paw6: {
-    top: height * 0.34,
-    right: width * 0.22,
+    top: height * 0.38,
+    right: width * 0.08,
   },
   logoContainer: {
     alignItems: 'center',
