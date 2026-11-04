@@ -20,70 +20,37 @@ interface AnimatedSplashScreenProps {
 }
 
 export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFinish }) => {
-  // Huellitas animadas (caminata de perro y gato)
-  const paw1Scale = useRef(new Animated.Value(0)).current;
-  const paw1Opacity = useRef(new Animated.Value(0)).current;
-
-  const paw2Scale = useRef(new Animated.Value(0)).current;
-  const paw2Opacity = useRef(new Animated.Value(0)).current;
-
-  const paw3Scale = useRef(new Animated.Value(0)).current;
-  const paw3Opacity = useRef(new Animated.Value(0)).current;
-
-  const paw4Scale = useRef(new Animated.Value(0)).current;
-  const paw4Opacity = useRef(new Animated.Value(0)).current;
-
-  const paw5Scale = useRef(new Animated.Value(0)).current;
-  const paw5Opacity = useRef(new Animated.Value(0)).current;
-
-  const paw6Scale = useRef(new Animated.Value(0)).current;
-  const paw6Opacity = useRef(new Animated.Value(0)).current;
-
-  // Animaciones del logo
-  const logoScale = useRef(new Animated.Value(0.3)).current;
+  // Animación del logo principal (visible de inmediato con pop elástico)
+  const logoScale = useRef(new Animated.Value(0.6)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
 
-  // Animaciones de los aros de energía expansiva
-  const ringScale = useRef(new Animated.Value(0.6)).current;
+  // Onda expansiva dorada concéntrica
+  const ringScale = useRef(new Animated.Value(0.8)).current;
   const ringOpacity = useRef(new Animated.Value(0)).current;
+
+  // Huellitas animadas (6 huellitas en cascada alrededor del logo)
+  const paw1 = useRef(new Animated.Value(0)).current;
+  const paw2 = useRef(new Animated.Value(0)).current;
+  const paw3 = useRef(new Animated.Value(0)).current;
+  const paw4 = useRef(new Animated.Value(0)).current;
+  const paw5 = useRef(new Animated.Value(0)).current;
+  const paw6 = useRef(new Animated.Value(0)).current;
 
   // Destellos estelares superiores
   const starsOpacity = useRef(new Animated.Value(0)).current;
-  const starsScale = useRef(new Animated.Value(0.8)).current;
 
-  // Animaciones de texto y slogan
-  const textTranslateY = useRef(new Animated.Value(20)).current;
+  // Texto y slogan
+  const textTranslateY = useRef(new Animated.Value(15)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
 
-  // Animación de salida (fade-out y zoom sutil)
+  // Salida suave (Fade-out)
   const screenOpacity = useRef(new Animated.Value(1)).current;
   const screenScale = useRef(new Animated.Value(1)).current;
 
   const isFinishing = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Helper para animar cada paso de huellita
-  const animatePaw = (scale: Animated.Value, opacity: Animated.Value, delay: number) => {
-    return Animated.sequence([
-      Animated.delay(delay),
-      Animated.parallel([
-        Animated.spring(scale, {
-          toValue: 1,
-          friction: 4,
-          tension: 60,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.95,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]);
-  };
-
-  // Función para cerrar la animación con suavidad (ya sea por tiempo o por toque)
-  const finishAnimation = (duration = 450) => {
+  const finishAnimation = (duration = 400) => {
     if (isFinishing.current) return;
     isFinishing.current = true;
 
@@ -108,85 +75,82 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
   };
 
   useEffect(() => {
-    // 1. Caminata de huellitas desde la parte superior hacia los laterales
+    // 1. EL LOGO ENTRA DE INMEDIATO (Cero retraso, 100% visible)
     Animated.parallel([
-      animatePaw(paw1Scale, paw1Opacity, 100),   // Paso 1 (Perro 🐶, arriba izq)
-      animatePaw(paw2Scale, paw2Opacity, 300),   // Paso 2 (Gato 🐱, arriba der)
-      animatePaw(paw3Scale, paw3Opacity, 500),   // Paso 3 (Perro 🐶, medio izq)
-      animatePaw(paw4Scale, paw4Opacity, 700),   // Paso 4 (Gato 🐱, medio der)
-      animatePaw(paw5Scale, paw5Opacity, 900),   // Paso 5 (Perro 🐶, flanco izq)
-      animatePaw(paw6Scale, paw6Opacity, 1100),  // Paso 6 (Gato 🐱, flanco der)
+      Animated.spring(logoScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
 
-      // Destellos mágicos en la parte superior
+      // Destellos superiores
+      Animated.timing(starsOpacity, {
+        toValue: 0.8,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+
+      // Onda expansiva de luz que nace del logo
       Animated.sequence([
-        Animated.delay(400),
+        Animated.delay(200),
         Animated.parallel([
-          Animated.timing(starsOpacity, {
-            toValue: 0.7,
-            duration: 800,
+          Animated.timing(ringOpacity, {
+            toValue: 0.8,
+            duration: 300,
             useNativeDriver: true,
           }),
-          Animated.spring(starsScale, {
-            toValue: 1,
-            friction: 5,
+          Animated.timing(ringScale, {
+            toValue: 1.6,
+            duration: 1000,
             useNativeDriver: true,
           }),
         ]),
+        Animated.timing(ringOpacity, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
       ]),
 
-      // 2. Nacimiento del Logo con efecto shockwave en t = 1.25s
+      // 2. Caminata de huellitas secuencial apareciendo alrededor del logo
       Animated.sequence([
-        Animated.delay(1250),
-        Animated.parallel([
-          Animated.spring(logoScale, {
-            toValue: 1,
-            friction: 5,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-          Animated.timing(logoOpacity, {
-            toValue: 1,
-            duration: 450,
-            useNativeDriver: true,
-          }),
-          // Onda expansiva de luz
-          Animated.sequence([
-            Animated.timing(ringOpacity, {
-              toValue: 0.8,
-              duration: 250,
-              useNativeDriver: true,
-            }),
-            Animated.parallel([
-              Animated.timing(ringScale, {
-                toValue: 1.7,
-                duration: 1100,
-                useNativeDriver: true,
-              }),
-              Animated.timing(ringOpacity, {
-                toValue: 0,
-                duration: 1100,
-                useNativeDriver: true,
-              }),
-            ]),
-          ]),
-          // ATENUADO DE HUELLITAS: bajan a un 28% de opacidad para ceder el foco al logo
-          Animated.timing(paw1Opacity, { toValue: 0.28, duration: 600, useNativeDriver: true }),
-          Animated.timing(paw2Opacity, { toValue: 0.28, duration: 600, useNativeDriver: true }),
-          Animated.timing(paw3Opacity, { toValue: 0.28, duration: 600, useNativeDriver: true }),
-          Animated.timing(paw4Opacity, { toValue: 0.28, duration: 600, useNativeDriver: true }),
-          Animated.timing(paw5Opacity, { toValue: 0.32, duration: 600, useNativeDriver: true }),
-          Animated.timing(paw6Opacity, { toValue: 0.32, duration: 600, useNativeDriver: true }),
-        ]),
+        Animated.delay(150),
+        Animated.spring(paw1, { toValue: 1, friction: 4, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.delay(300),
+        Animated.spring(paw2, { toValue: 1, friction: 4, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.delay(450),
+        Animated.spring(paw3, { toValue: 1, friction: 4, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.delay(600),
+        Animated.spring(paw4, { toValue: 1, friction: 4, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.delay(750),
+        Animated.spring(paw5, { toValue: 1, friction: 4, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.delay(900),
+        Animated.spring(paw6, { toValue: 1, friction: 4, useNativeDriver: true }),
       ]),
 
-      // 3. Entrada de Marca y Slogan en t = 1.7s
+      // 3. Aparición elegante de la marca y slogan
       Animated.sequence([
-        Animated.delay(1700),
+        Animated.delay(500),
         Animated.parallel([
           Animated.spring(textTranslateY, {
             toValue: 0,
             friction: 7,
-            tension: 45,
             useNativeDriver: true,
           }),
           Animated.timing(textOpacity, {
@@ -198,20 +162,17 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
       ]),
     ]).start();
 
-    // Haptics sutiles
+    // Vibración háptica premium al inicio
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setTimeout(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }, 1250);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {
       // Ignorar en plataformas sin soporte
     }
 
-    // 4. Salida cinematográfica automática después de 3.5 segundos
+    // 4. Salida automática tras 3.3 segundos
     timerRef.current = setTimeout(() => {
       finishAnimation(450);
-    }, 3500);
+    }, 3300);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -228,9 +189,9 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
         },
       ]}
     >
-      {/* Área interactiva: Tocar la pantalla salta la animación suavemente */}
+      {/* Área táctil: Tap to skip */}
       <Pressable
-        onPress={() => finishAnimation(250)}
+        onPress={() => finishAnimation(200)}
         style={styles.pressableContent}
       >
         <LinearGradient
@@ -240,19 +201,11 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
           style={StyleSheet.absoluteFill}
         />
 
-        {/* Aura ambiental en el centro */}
+        {/* Aura central de color cian */}
         <View style={styles.ambientGlow} />
 
-        {/* Destellos estelares sutiles en la parte superior (Decoración limpia sin texto) */}
-        <Animated.View
-          style={[
-            styles.starsContainer,
-            {
-              opacity: starsOpacity,
-              transform: [{ scale: starsScale }],
-            },
-          ]}
-        >
+        {/* Destellos estelares superiores */}
+        <Animated.View style={[styles.starsContainer, { opacity: starsOpacity }]}>
           <Ionicons name="sparkles" size={14} color={colors.accent.light} />
           <View style={styles.starDot} />
           <Ionicons name="sparkles" size={18} color={colors.primary.light} />
@@ -260,92 +213,91 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
           <Ionicons name="sparkles" size={14} color={colors.accent.light} />
         </Animated.View>
 
-        {/* HUELLITAS DE PERRO Y GATO (Libres de texto, con atenuación de foco) */}
-        {/* Huella 1 - Perro (Dorado, arriba izquierda) */}
+        {/* Huellita 1 - Perro (Arriba izquierda, dorada) */}
         <Animated.View
           style={[
             styles.pawContainer,
             styles.paw1,
             {
-              opacity: paw1Opacity,
-              transform: [{ scale: paw1Scale }, { rotate: '-22deg' }],
+              opacity: paw1.interpolate({ inputRange: [0, 1], outputRange: [0, 0.4] }),
+              transform: [{ scale: paw1 }, { rotate: '-22deg' }],
             },
           ]}
         >
           <Ionicons name="paw" size={26} color={colors.accent.light} />
         </Animated.View>
 
-        {/* Huella 2 - Gato (Cian, arriba derecha) */}
+        {/* Huellita 2 - Gato (Arriba derecha, cian) */}
         <Animated.View
           style={[
             styles.pawContainer,
             styles.paw2,
             {
-              opacity: paw2Opacity,
-              transform: [{ scale: paw2Scale }, { rotate: '20deg' }],
+              opacity: paw2.interpolate({ inputRange: [0, 1], outputRange: [0, 0.4] }),
+              transform: [{ scale: paw2 }, { rotate: '20deg' }],
             },
           ]}
         >
           <Ionicons name="paw" size={20} color={colors.primary.light} />
         </Animated.View>
 
-        {/* Huella 3 - Perro (Dorado, bajando hacia el logo, izquierda) */}
+        {/* Huellita 3 - Perro (Medio izquierda) */}
         <Animated.View
           style={[
             styles.pawContainer,
             styles.paw3,
             {
-              opacity: paw3Opacity,
-              transform: [{ scale: paw3Scale }, { rotate: '-12deg' }],
+              opacity: paw3.interpolate({ inputRange: [0, 1], outputRange: [0, 0.45] }),
+              transform: [{ scale: paw3 }, { rotate: '-12deg' }],
             },
           ]}
         >
           <Ionicons name="paw" size={28} color={colors.accent.DEFAULT} />
         </Animated.View>
 
-        {/* Huella 4 - Gato (Cian, bajando hacia el logo, derecha) */}
+        {/* Huellita 4 - Gato (Medio derecha) */}
         <Animated.View
           style={[
             styles.pawContainer,
             styles.paw4,
             {
-              opacity: paw4Opacity,
-              transform: [{ scale: paw4Scale }, { rotate: '16deg' }],
+              opacity: paw4.interpolate({ inputRange: [0, 1], outputRange: [0, 0.45] }),
+              transform: [{ scale: paw4 }, { rotate: '16deg' }],
             },
           ]}
         >
           <Ionicons name="paw" size={22} color={colors.primary.DEFAULT} />
         </Animated.View>
 
-        {/* Huella 5 - Perro (Flanco izquierdo libre del logo) */}
+        {/* Huellita 5 - Perro (Flanco izquierdo libre del logo) */}
         <Animated.View
           style={[
             styles.pawContainer,
             styles.paw5,
             {
-              opacity: paw5Opacity,
-              transform: [{ scale: paw5Scale }, { rotate: '-8deg' }],
+              opacity: paw5.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] }),
+              transform: [{ scale: paw5 }, { rotate: '-8deg' }],
             },
           ]}
         >
           <Ionicons name="paw" size={30} color={colors.accent.light} />
         </Animated.View>
 
-        {/* Huella 6 - Gato (Flanco derecho libre del logo) */}
+        {/* Huellita 6 - Gato (Flanco derecho libre del logo) */}
         <Animated.View
           style={[
             styles.pawContainer,
             styles.paw6,
             {
-              opacity: paw6Opacity,
-              transform: [{ scale: paw6Scale }, { rotate: '8deg' }],
+              opacity: paw6.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] }),
+              transform: [{ scale: paw6 }, { rotate: '8deg' }],
             },
           ]}
         >
           <Ionicons name="paw" size={24} color={colors.primary.light} />
         </Animated.View>
 
-        {/* Contenedor del Logo (Protagonista) */}
+        {/* CONTENEDOR DEL LOGO PRINCIPAL (Centrado y visible de inmediato) */}
         <Animated.View
           style={[
             styles.logoContainer,
@@ -355,7 +307,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
             },
           ]}
         >
-          {/* Onda expansiva animada perfectamente concéntrica */}
+          {/* Onda de choque luminosa concéntrica */}
           <Animated.View
             style={[
               styles.pulseRing,
@@ -366,6 +318,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
             ]}
           />
 
+          {/* Marco circular del Logo oficial */}
           <View style={styles.logoBorder}>
             <Image
               source={require('../../assets/logo.jpg')}
@@ -375,7 +328,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onFi
           </View>
         </Animated.View>
 
-        {/* Identidad y Slogan Oficial */}
+        {/* Textos de Marca y Slogan */}
         <Animated.View
           style={[
             styles.textContainer,
@@ -450,7 +403,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     zIndex: 10,
   },
-  // Coordenadas superiores y laterales libres
   paw1: {
     top: height * 0.12,
     left: width * 0.14,
@@ -468,11 +420,11 @@ const styles = StyleSheet.create({
     right: width * 0.24,
   },
   paw5: {
-    top: height * 0.38,
+    top: height * 0.40,
     left: width * 0.08,
   },
   paw6: {
-    top: height * 0.38,
+    top: height * 0.40,
     right: width * 0.08,
   },
   logoContainer: {
