@@ -27,6 +27,7 @@ export const FloatingAuthModal: React.FC = () => {
     closeAuthModal,
     login,
     loginWithSocial,
+    loginAsDemoCustomer,
     register,
     isLoading,
   } = useAuth();
@@ -291,6 +292,20 @@ export const FloatingAuthModal: React.FC = () => {
                       <Text style={styles.switchModeAction}>Regístrate aquí</Text>
                     </Pressable>
                   </View>
+
+                  {/* Botón discreto de prueba rápida para cargar perfil real de Alejandra */}
+                  <Pressable
+                    onPress={() => {
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      loginAsDemoCustomer();
+                    }}
+                    style={styles.quickDemoPill}
+                  >
+                    <Ionicons name="flash" size={13} color={colors.primary.DEFAULT} />
+                    <Text style={styles.quickDemoText}>
+                      Acceso rápido de prueba: Alejandra Pinto
+                    </Text>
+                  </Pressable>
                 </View>
               )}
 
@@ -623,6 +638,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     textDecorationLine: 'underline',
+  },
+  quickDemoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(212, 175, 55, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
+  },
+  quickDemoText: {
+    color: colors.primary.light,
+    fontSize: 11,
+    fontWeight: '600',
   },
   forgotDescription: {
     color: colors.dark.textSecondary,

@@ -12,25 +12,18 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { ModernButton } from '../components/ui/ModernButton';
-import { GlassCard } from '../components/ui/GlassCard';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { useAuth } from '../context/AuthContext';
 
 export const HomeScreen: React.FC = () => {
-  const { user, logout, openAuthModal } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const [profileVisible, setProfileVisible] = useState(false);
 
-  const handleOpenProfile = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setProfileVisible(true);
-  };
-
-  const handleAuthAction = () => {
+  const handleHeaderProfilePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (user) {
-      logout();
+      setProfileVisible(true);
     } else {
       openAuthModal('login');
     }
@@ -61,7 +54,7 @@ export const HomeScreen: React.FC = () => {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <Pressable
-          onPress={handleOpenProfile}
+          onPress={handleHeaderProfilePress}
           style={({ pressed }) => [
             styles.userInfoRow,
             pressed && { opacity: 0.78 },
@@ -78,7 +71,9 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
           <View>
-            <Text style={styles.welcomeGreeting}>Bienvenido de vuelta,</Text>
+            <Text style={styles.welcomeGreeting}>
+              {user ? 'Bienvenido de vuelta,' : 'Explora como invitado,'}
+            </Text>
             <View style={styles.nameChevronRow}>
               <Text style={[typography.h3, styles.userNameText]}>
                 {user ? user.name : 'Invitado'} 👋
@@ -91,21 +86,21 @@ export const HomeScreen: React.FC = () => {
               />
             </View>
             <Text style={styles.tapProfileHint}>
-              Ver ficha de cliente y pedidos ›
+              {user ? 'Ver mi cuenta y pedidos ›' : 'Inicia sesión o regístrate ›'}
             </Text>
           </View>
         </Pressable>
 
+        {/* Botón de Bolsa de Compras en el Header */}
         <Pressable
-          onPress={handleAuthAction}
-          style={styles.logoutIconButton}
+          onPress={() => Haptics.selectionAsync()}
+          style={styles.cartHeaderButton}
           hitSlop={8}
         >
-          <Ionicons
-            name={user ? 'log-out-outline' : 'log-in-outline'}
-            size={20}
-            color={user ? colors.dark.textSecondary : colors.primary.light}
-          />
+          <Ionicons name="bag-handle-outline" size={20} color={colors.primary.light} />
+          <View style={styles.cartBadge}>
+            <Text style={styles.cartBadgeText}>0</Text>
+          </View>
         </Pressable>
       </View>
 
@@ -128,15 +123,17 @@ export const HomeScreen: React.FC = () => {
                   {user?.points ?? 250} <Text style={styles.ptsText}>COINS</Text>
                 </Text>
               </View>
-              <Pressable onPress={handleOpenProfile} style={styles.petBadgeHeader}>
+              <View style={styles.petBadgeHeader}>
                 <Text style={styles.petEmojiIcon}>{getPetEmoji(user?.petType)}</Text>
                 <Text style={styles.petBadgeName}>{user?.petName || 'Peludo'}</Text>
-              </Pressable>
+              </View>
             </View>
 
             <View style={styles.vipCardFooter}>
               <Text style={styles.vipCardBenefit}>
-                🎉 Tienes {user?.points ?? 250} Consenticoins acumuladas para redimir
+                {user
+                  ? `🎉 Tienes ${user.points} Consenticoins acumuladas para redimir`
+                  : '✨ Inicia sesión para reclamar tus 250 Consenticoins de regalo'}
               </Text>
             </View>
           </LinearGradient>
@@ -157,44 +154,24 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.categoriesGrid}>
           {categories.map((cat) => (
-            <View key={cat.id} style={styles.categoryCard}>
+            <Pressable
+              key={cat.id}
+              onPress={() => Haptics.selectionAsync()}
+              style={({ pressed }) => [
+                styles.categoryCard,
+                pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+              ]}
+            >
               <View style={[styles.categoryIconCircle, { backgroundColor: `${cat.color}20` }]}>
                 <Ionicons name={cat.icon} size={24} color={cat.color} />
               </View>
               <Text style={styles.categoryTitle}>{cat.title}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
-
-        {/* Status card */}
-        <GlassCard style={styles.readyCard}>
-          <View style={styles.checkRow}>
-            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-            <Text style={styles.readyTitle}>¡Mi Cuenta VIP Lista!</Text>
-          </View>
-          <Text style={styles.readyDesc}>
-            Toca tu avatar arriba a la izquierda (o el botón de abajo) para abrir tu ficha de cliente con historial de pedidos, dirección de entrega y datos de facturación.
-          </Text>
-
-          <ModernButton
-            title="Abrir Mi Perfil y Pedidos"
-            variant="primary"
-            size="md"
-            onPress={handleOpenProfile}
-            style={{ width: '100%', marginBottom: 10 }}
-          />
-
-          <ModernButton
-            title={user ? 'Probar Cerrar Sesión' : 'Iniciar Sesión o Registrarse'}
-            variant="outline"
-            size="md"
-            onPress={handleAuthAction}
-            style={styles.logoutBtn}
-          />
-        </GlassCard>
       </ScrollView>
 
-      {/* Panel Deslizable de Cuenta del Cliente */}
+      {/* Panel Deslizable de Cuenta del Cliente (solo para usuarios autenticados) */}
       <CustomerProfileSheet
         visible={profileVisible}
         onClose={() => setProfileVisible(false)}
@@ -256,15 +233,33 @@ const styles = StyleSheet.create({
   userNameText: {
     color: colors.dark.textPrimary,
   },
-  logoutIconButton: {
-    width: 40,
-    height: 40,
+  cartHeaderButton: {
+    width: 42,
+    height: 42,
     borderRadius: 12,
     backgroundColor: colors.dark.cardElevated,
     borderWidth: 1,
     borderColor: colors.dark.border,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.primary.DEFAULT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  cartBadgeText: {
+    color: '#050508',
+    fontSize: 9,
+    fontWeight: '800',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -338,9 +333,9 @@ const styles = StyleSheet.create({
   promoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    backgroundColor: 'rgba(212, 175, 55, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(2, 132, 199, 0.25)',
+    borderColor: 'rgba(212, 175, 55, 0.25)',
     borderRadius: 14,
     padding: 14,
     marginBottom: 24,
@@ -386,28 +381,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
-  },
-  readyCard: {
-    marginTop: 8,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
-  },
-  readyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.dark.textPrimary,
-  },
-  readyDesc: {
-    fontSize: 13,
-    color: colors.dark.textSecondary,
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  logoutBtn: {
-    width: '100%',
   },
 });

@@ -30,16 +30,12 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 }) => {
   const {
     user,
-    loginAsDemoCustomer,
     updateBillingInfo,
     updatePetInfo,
     logout,
-    setScreen,
   } = useAuth();
 
-  // Si es invitado, mostramos los datos de cliente VIP como vista previa
   const profileData = user || DEFAULT_VIP_CUSTOMER;
-  const isGuest = !user;
 
   const [showAllOrders, setShowAllOrders] = useState(false);
   const [reorderedId, setReorderedId] = useState<string | null>(null);
@@ -74,11 +70,6 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
       updatePetInfo(petNameInput.trim(), profileData.petType || 'dog');
     }
     setEditingPet(false);
-  };
-
-  const handleActivateDemoCustomer = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    loginAsDemoCustomer();
   };
 
   const orders = profileData.orders || DEFAULT_VIP_CUSTOMER.orders || [];
@@ -120,40 +111,6 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Banner si está en modo Invitado */}
-            {isGuest && (
-              <View style={styles.guestNoticeCard}>
-                <View style={styles.guestNoticeTop}>
-                  <Ionicons name="sparkles" size={18} color={colors.primary.light} />
-                  <Text style={styles.guestNoticeTitle}>
-                    Estás en Modo Invitado (Vista de demostración)
-                  </Text>
-                </View>
-                <Text style={styles.guestNoticeSub}>
-                  Activa el perfil de cliente con 1 toque para probar tus pedidos y beneficios en toda la app:
-                </Text>
-                <View style={styles.guestActionsRow}>
-                  <Pressable
-                    onPress={handleActivateDemoCustomer}
-                    style={styles.activateDemoBtn}
-                  >
-                    <Text style={styles.activateDemoBtnText}>
-                      Activar Perfil de Alejandra
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => {
-                      onClose();
-                      setScreen('login');
-                    }}
-                    style={styles.goToLoginBtn}
-                  >
-                    <Text style={styles.goToLoginBtnText}>Iniciar Sesión</Text>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
             {/* Cabecera del Cliente */}
             <View style={styles.customerHeaderCard}>
               <View style={styles.customerIdentityRow}>
@@ -587,9 +544,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
               style={styles.logoutRowBtn}
             >
               <Ionicons name="log-out-outline" size={18} color="#F87171" />
-              <Text style={styles.logoutRowText}>
-                {isGuest ? 'Salir a Pantalla de Bienvenida' : 'Cerrar Sesión de mi Cuenta'}
-              </Text>
+              <Text style={styles.logoutRowText}>Cerrar Sesión de mi Cuenta</Text>
             </Pressable>
           </ScrollView>
         </View>
