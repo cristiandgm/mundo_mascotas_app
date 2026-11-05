@@ -21,7 +21,7 @@ import { GlassCard } from '../components/ui/GlassCard';
 import { useAuth } from '../context/AuthContext';
 
 export const LoginScreen: React.FC = () => {
-  const { login, setScreen, isLoading } = useAuth();
+  const { login, loginWithSocial, setScreen, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -44,9 +44,8 @@ export const LoginScreen: React.FC = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: string) => {
-    // Simular autenticación social instantánea
-    await login(`usuario_${provider}@mundomascotas.co`, 'social_pass');
+  const handleSocialLogin = async (provider: 'google' | 'apple' | 'whatsapp') => {
+    await loginWithSocial(provider);
   };
 
   return (

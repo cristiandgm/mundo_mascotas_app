@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,6 +13,7 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { ModernButton } from '../components/ui/ModernButton';
 import { GlassCard } from '../components/ui/GlassCard';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import { useAuth } from '../context/AuthContext';
 
 export const HomeScreen: React.FC = () => {
@@ -44,12 +44,11 @@ export const HomeScreen: React.FC = () => {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={styles.userInfoRow}>
-          <View style={styles.avatarBorder}>
-            <Image
-              source={require('../../assets/logo.jpg')}
-              style={styles.avatarImg}
-            />
-          </View>
+          <UserAvatar
+            name={user ? user.name : 'Invitado'}
+            avatarUrl={user?.avatarUrl}
+            size={44}
+          />
           <View>
             <Text style={styles.welcomeGreeting}>Bienvenido de vuelta,</Text>
             <Text style={[typography.h3, styles.userNameText]}>
@@ -165,20 +164,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  avatarBorder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#050508',
-    borderWidth: 1.5,
-    borderColor: colors.primary.DEFAULT,
-    overflow: 'hidden',
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
   },
   welcomeGreeting: {
     color: colors.dark.textSecondary,

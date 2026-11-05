@@ -4,6 +4,8 @@ export type ScreenType = 'welcome' | 'login' | 'register' | 'forgot-password' | 
 
 export type PetCategory = 'dog' | 'cat' | 'both';
 
+export type AuthProviderType = 'email' | 'google' | 'apple' | 'whatsapp';
+
 export interface User {
   id: string;
   name: string;
@@ -11,6 +13,8 @@ export interface User {
   petType?: PetCategory;
   petName?: string;
   points: number;
+  avatarUrl?: string;
+  authProvider?: AuthProviderType;
 }
 
 interface AuthContextType {
@@ -20,6 +24,7 @@ interface AuthContextType {
   currentScreen: ScreenType;
   setScreen: (screen: ScreenType) => void;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithSocial: (provider: 'google' | 'apple' | 'whatsapp') => Promise<void>;
   register: (
     name: string,
     email: string,
@@ -39,7 +44,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, _pass: string) => {
     setIsLoading(true);
-    // Simular latencia de red moderna (700ms)
     await new Promise((res) => setTimeout(res, 750));
     setIsLoading(false);
 
@@ -47,18 +51,73 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, error: 'Por favor ingresa un correo electrónico válido' };
     }
 
+    const cleanName = email.split('@')[0];
+    const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
     const mockUser: User = {
       id: 'usr_' + Date.now(),
-      name: email.split('@')[0],
+      name: formattedName,
       email: email,
       petType: 'dog',
       petName: 'Rocky',
       points: 120,
+      authProvider: 'email',
+      // Sin avatarUrl para que se genere la letra inicial
     };
 
     setUser(mockUser);
     setCurrentScreen('home');
     return { success: true };
+  };
+
+  const loginWithSocial = async (provider: 'google' | 'apple' | 'whatsapp') => {
+    setIsLoading(true);
+    await new Promise((res) => setTimeout(res, 600));
+    setIsLoading(false);
+
+    let socialUser: User;
+
+    switch (provider) {
+      case 'google':
+        socialUser = {
+          id: 'usr_google_' + Date.now(),
+          name: 'Carlos Mendoza',
+          email: 'carlos.mendoza@gmail.com',
+          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          authProvider: 'google',
+          petType: 'dog',
+          petName: 'Bruno',
+          points: 250,
+        };
+        break;
+      case 'apple':
+        socialUser = {
+          id: 'usr_apple_' + Date.now(),
+          name: 'David Gómez',
+          email: 'david.gomez@icloud.com',
+          avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150',
+          authProvider: 'apple',
+          petType: 'both',
+          petName: 'Bruno & Luna',
+          points: 250,
+        };
+        break;
+      case 'whatsapp':
+        socialUser = {
+          id: 'usr_wa_' + Date.now(),
+          name: 'David Gómez',
+          email: '+57 312 456 7890',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          authProvider: 'whatsapp',
+          petType: 'cat',
+          petName: 'Mía',
+          points: 250,
+        };
+        break;
+    }
+
+    setUser(socialUser);
+    setCurrentScreen('home');
   };
 
   const register = async (
@@ -86,6 +145,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       petType: petType || 'dog',
       petName: petName?.trim() || 'Tu Consentido',
       points: 250, // Bono de bienvenida por registro
+      authProvider: 'email',
+      // Sin avatarUrl para que se genere la letra inicial automáticamente
     };
 
     setUser(newUser);
@@ -107,6 +168,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         currentScreen,
         setScreen: setCurrentScreen,
         login,
+        loginWithSocial,
         register,
         logout,
       }}
@@ -123,4 +185,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
