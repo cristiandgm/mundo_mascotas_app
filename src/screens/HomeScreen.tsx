@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { ModernButton } from '../components/ui/ModernButton';
 import { GlassCard } from '../components/ui/GlassCard';
 import { UserAvatar } from '../components/ui/UserAvatar';
+import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { useAuth } from '../context/AuthContext';
 
 export const HomeScreen: React.FC = () => {
   const { user, logout } = useAuth();
+  const [profileVisible, setProfileVisible] = useState(false);
+
+  const handleOpenProfile = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setProfileVisible(true);
+  };
 
   const getPetEmoji = (type?: string) => {
     if (type === 'both') return '🐶🐱';
@@ -43,19 +51,41 @@ export const HomeScreen: React.FC = () => {
 
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <View style={styles.userInfoRow}>
-          <UserAvatar
-            name={user ? user.name : 'Invitado'}
-            avatarUrl={user?.avatarUrl}
-            size={44}
-          />
+        <Pressable
+          onPress={handleOpenProfile}
+          style={({ pressed }) => [
+            styles.userInfoRow,
+            pressed && { opacity: 0.78 },
+          ]}
+        >
+          <View style={styles.avatarTapWrapper}>
+            <UserAvatar
+              name={user ? user.name : 'Invitado'}
+              avatarUrl={user?.avatarUrl}
+              size={46}
+            />
+            <View style={styles.avatarMiniBadge}>
+              <Ionicons name="person" size={9} color="#050508" />
+            </View>
+          </View>
           <View>
             <Text style={styles.welcomeGreeting}>Bienvenido de vuelta,</Text>
-            <Text style={[typography.h3, styles.userNameText]}>
-              {user ? user.name : 'Invitado'} 👋
+            <View style={styles.nameChevronRow}>
+              <Text style={[typography.h3, styles.userNameText]}>
+                {user ? user.name : 'Invitado'} 👋
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={15}
+                color={colors.primary.light}
+                style={{ marginLeft: 4 }}
+              />
+            </View>
+            <Text style={styles.tapProfileHint}>
+              Ver ficha de cliente y pedidos ›
             </Text>
           </View>
-        </View>
+        </Pressable>
 
         <Pressable
           onPress={logout}
@@ -85,15 +115,15 @@ export const HomeScreen: React.FC = () => {
                   {user?.points ?? 250} <Text style={styles.ptsText}>COINS</Text>
                 </Text>
               </View>
-              <View style={styles.petBadgeHeader}>
+              <Pressable onPress={handleOpenProfile} style={styles.petBadgeHeader}>
                 <Text style={styles.petEmojiIcon}>{getPetEmoji(user?.petType)}</Text>
                 <Text style={styles.petBadgeName}>{user?.petName || 'Peludo'}</Text>
-              </View>
+              </Pressable>
             </View>
 
             <View style={styles.vipCardFooter}>
               <Text style={styles.vipCardBenefit}>
-                🎉 Tienes 250 Consenticoins acumuladas para redimir
+                🎉 Tienes {user?.points ?? 250} Consenticoins acumuladas para redimir
               </Text>
             </View>
           </LinearGradient>
@@ -127,11 +157,19 @@ export const HomeScreen: React.FC = () => {
         <GlassCard style={styles.readyCard}>
           <View style={styles.checkRow}>
             <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-            <Text style={styles.readyTitle}>¡Módulo de Autenticación Listo!</Text>
+            <Text style={styles.readyTitle}>¡Ficha de Cliente Shopify Lista!</Text>
           </View>
           <Text style={styles.readyDesc}>
-            Has probado el flujo de inicio de sesión, registro personalizado y recuperación de clave.
+            Toca tu avatar arriba a la izquierda (o el botón de abajo) para abrir el panel deslizable con el historial de pedidos, dirección y metacampos de Shopify.
           </Text>
+
+          <ModernButton
+            title="Abrir Mi Ficha de Cliente"
+            variant="primary"
+            size="md"
+            onPress={handleOpenProfile}
+            style={{ width: '100%', marginBottom: 10 }}
+          />
 
           <ModernButton
             title="Probar Cerrar Sesión"
@@ -142,6 +180,12 @@ export const HomeScreen: React.FC = () => {
           />
         </GlassCard>
       </ScrollView>
+
+      {/* Panel Deslizable con la Info del Cliente de Shopify */}
+      <CustomerProfileSheet
+        visible={profileVisible}
+        onClose={() => setProfileVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -164,6 +208,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+  },
+  avatarTapWrapper: {
+    position: 'relative',
+  },
+  avatarMiniBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.primary.DEFAULT,
+    borderWidth: 1.5,
+    borderColor: '#050508',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameChevronRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tapProfileHint: {
+    color: colors.primary.light,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
   },
   welcomeGreeting: {
     color: colors.dark.textSecondary,
