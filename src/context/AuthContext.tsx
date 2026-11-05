@@ -37,7 +37,7 @@ export interface CustomerAddress {
   deliveryZone?: string;
 }
 
-export interface CustomerMetafields {
+export interface CustomerBillingInfo {
   requiresInvoice: boolean;
   documentType: string;
   documentNumber: string;
@@ -54,16 +54,14 @@ export interface User {
   points: number;
   avatarUrl?: string;
   authProvider?: AuthProviderType;
-  // Datos sincronizados de Shopify
   totalSpent?: number;
   ordersCount?: number;
   customerSince?: string;
   customerGroup?: string;
   marketingSubscriptions?: string[];
   storeCredit?: number;
-  taxInfo?: string;
   defaultAddress?: CustomerAddress;
-  metafields?: CustomerMetafields;
+  billingInfo?: CustomerBillingInfo;
   orders?: CustomerOrder[];
 }
 
@@ -75,8 +73,8 @@ interface AuthContextType {
   setScreen: (screen: ScreenType) => void;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   loginWithSocial: (provider: 'google' | 'apple' | 'whatsapp') => Promise<void>;
-  loginAsDemoShopifyCustomer: () => void;
-  updateMetafields: (updates: Partial<CustomerMetafields>) => void;
+  loginAsDemoCustomer: () => void;
+  updateBillingInfo: (updates: Partial<CustomerBillingInfo>) => void;
   updatePetInfo: (petName: string, petType: PetCategory) => void;
   register: (
     name: string,
@@ -88,9 +86,9 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// Datos reales de Shopify (Alejandra Pinto - CSV exportado)
-export const ALEJANDRA_SHOPIFY_USER: User = {
-  id: 'shopify_8324',
+// Datos de cliente VIP Mundo Mascotas Colombia
+export const DEFAULT_VIP_CUSTOMER: User = {
+  id: 'mmc_8324',
   name: 'Alejandra Pinto',
   email: 'aleja-18-93@hotmail.com',
   phone: '+57 300 3918279',
@@ -101,10 +99,9 @@ export const ALEJANDRA_SHOPIFY_USER: User = {
   totalSpent: 8721100,
   ordersCount: 23,
   customerSince: 'Más de 1 año',
-  customerGroup: 'Champions',
+  customerGroup: 'Champions VIP',
   marketingSubscriptions: ['Correo electrónico', 'SMS'],
   storeCredit: 0,
-  taxInfo: 'Recaudar impuestos (IVA 5%)',
   defaultAddress: {
     recipient: 'Alejandra P.',
     address1: 'Carrera 72 j # 38-36 sur',
@@ -117,21 +114,21 @@ export const ALEJANDRA_SHOPIFY_USER: User = {
     verifiedCoverage: true,
     deliveryZone: 'Capellanía (Fontibón)',
   },
-  metafields: {
+  billingInfo: {
     requiresInvoice: false,
-    documentType: '(CC) Cédula de Ciudadanía',
+    documentType: 'Cédula de Ciudadanía (CC)',
     documentNumber: '1030631037',
-    petNotes: 'Consume línea Diamond Naturals & Taste of the Wild',
+    petNotes: 'Línea Diamond Naturals & Taste of the Wild',
   },
   orders: [
     {
       orderNumber: '59547',
-      createdAt: '4 de noviembre de 2026 a las 6:47 p. m.',
+      createdAt: '4 de noviembre de 2026 · 6:47 p. m.',
       financialStatus: 'pending',
       fulfillmentStatus: 'unfulfilled',
       total: 289000,
       shippingMethod: 'Domicilio - Bogotá',
-      paymentMethod: 'Contraentrega (COD)',
+      paymentMethod: 'Pago Contraentrega',
       items: [
         {
           name: 'DIAMOND NATURALS LAMB AND RICE 40 LB',
@@ -143,12 +140,12 @@ export const ALEJANDRA_SHOPIFY_USER: User = {
     },
     {
       orderNumber: '58756',
-      createdAt: '5 de octubre de 2026 a las 8:35 a. m.',
+      createdAt: '5 de octubre de 2026 · 8:35 a. m.',
       financialStatus: 'pending',
       fulfillmentStatus: 'unfulfilled',
       total: 611900,
       shippingMethod: 'Domicilio - Bogotá',
-      paymentMethod: 'Contraentrega (COD)',
+      paymentMethod: 'Pago Contraentrega',
       items: [
         {
           name: 'TASTE OF THE WILD HIGH PRAIRIE BISONTE Y VENADO 28 LB.',
@@ -166,12 +163,12 @@ export const ALEJANDRA_SHOPIFY_USER: User = {
     },
     {
       orderNumber: '57886',
-      createdAt: '4 de septiembre de 2026 a las 8:49 p. m.',
+      createdAt: '4 de septiembre de 2026 · 8:49 p. m.',
       financialStatus: 'paid',
       fulfillmentStatus: 'fulfilled',
       total: 289000,
       shippingMethod: 'Domicilio - Bogotá',
-      paymentMethod: 'Pago Manual Verificado',
+      paymentMethod: 'Pago Verificado',
       items: [
         {
           name: 'DIAMOND NATURALS LAMB AND RICE 40 LB.',
@@ -183,12 +180,12 @@ export const ALEJANDRA_SHOPIFY_USER: User = {
     },
     {
       orderNumber: '57173',
-      createdAt: '11 de agosto de 2026 a las 8:07 p. m.',
+      createdAt: '11 de agosto de 2026 · 8:07 p. m.',
       financialStatus: 'pending',
       fulfillmentStatus: 'fulfilled',
       total: 289600,
       shippingMethod: 'Domicilio - Bogotá',
-      paymentMethod: 'Contraentrega (COD)',
+      paymentMethod: 'Pago Contraentrega',
       items: [
         {
           name: 'DIAMOND NATURALS SKIN & COAT 30 LB.',
@@ -200,12 +197,12 @@ export const ALEJANDRA_SHOPIFY_USER: User = {
     },
     {
       orderNumber: '56352',
-      createdAt: '15 de julio de 2026 a las 9:14 p. m.',
+      createdAt: '15 de julio de 2026 · 9:14 p. m.',
       financialStatus: 'pending',
       fulfillmentStatus: 'fulfilled',
       total: 270600,
       shippingMethod: 'Domicilio - Bogotá',
-      paymentMethod: 'Contraentrega (COD)',
+      paymentMethod: 'Pago Contraentrega',
       items: [
         {
           name: 'DIAMOND NATURALS LIGHT LAMB AND RICE 30 LB.',
@@ -236,9 +233,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Si ingresa con el correo de Alejandra o cualquier correo, cargamos estructura Shopify completa
     if (normalizedEmail.includes('aleja')) {
-      setUser(ALEJANDRA_SHOPIFY_USER);
+      setUser(DEFAULT_VIP_CUSTOMER);
       setCurrentScreen('home');
       return { success: true };
     }
@@ -247,7 +243,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
     const mockUser: User = {
-      ...ALEJANDRA_SHOPIFY_USER,
+      ...DEFAULT_VIP_CUSTOMER,
       id: 'usr_' + Date.now(),
       name: formattedName,
       email: email.trim(),
@@ -259,8 +255,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { success: true };
   };
 
-  const loginAsDemoShopifyCustomer = () => {
-    setUser(ALEJANDRA_SHOPIFY_USER);
+  const loginAsDemoCustomer = () => {
+    setUser(DEFAULT_VIP_CUSTOMER);
     setCurrentScreen('home');
   };
 
@@ -274,7 +270,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     switch (provider) {
       case 'google':
         socialUser = {
-          ...ALEJANDRA_SHOPIFY_USER,
+          ...DEFAULT_VIP_CUSTOMER,
           id: 'usr_google_' + Date.now(),
           name: 'Carlos Mendoza',
           email: 'carlos.mendoza@gmail.com',
@@ -287,7 +283,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         break;
       case 'apple':
         socialUser = {
-          ...ALEJANDRA_SHOPIFY_USER,
+          ...DEFAULT_VIP_CUSTOMER,
           id: 'usr_apple_' + Date.now(),
           name: 'David Gómez',
           email: 'david.gomez@icloud.com',
@@ -300,7 +296,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         break;
       case 'whatsapp':
         socialUser = {
-          ...ALEJANDRA_SHOPIFY_USER,
+          ...DEFAULT_VIP_CUSTOMER,
           id: 'usr_wa_' + Date.now(),
           name: 'Alejandra Pinto',
           email: 'aleja-18-93@hotmail.com',
@@ -318,15 +314,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentScreen('home');
   };
 
-  const updateMetafields = (updates: Partial<CustomerMetafields>) => {
+  const updateBillingInfo = (updates: Partial<CustomerBillingInfo>) => {
     setUser((prev) => {
-      const baseUser = prev || ALEJANDRA_SHOPIFY_USER;
+      const baseUser = prev || DEFAULT_VIP_CUSTOMER;
       return {
         ...baseUser,
-        metafields: {
-          requiresInvoice: baseUser.metafields?.requiresInvoice ?? false,
-          documentType: baseUser.metafields?.documentType ?? '(CC) Cédula de Ciudadanía',
-          documentNumber: baseUser.metafields?.documentNumber ?? '1030631037',
+        billingInfo: {
+          requiresInvoice: baseUser.billingInfo?.requiresInvoice ?? false,
+          documentType: baseUser.billingInfo?.documentType ?? 'Cédula de Ciudadanía (CC)',
+          documentNumber: baseUser.billingInfo?.documentNumber ?? '1030631037',
           ...updates,
         },
       };
@@ -335,7 +331,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updatePetInfo = (petName: string, petType: PetCategory) => {
     setUser((prev) => {
-      const baseUser = prev || ALEJANDRA_SHOPIFY_USER;
+      const baseUser = prev || DEFAULT_VIP_CUSTOMER;
       return {
         ...baseUser,
         petName,
@@ -363,7 +359,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     const newUser: User = {
-      ...ALEJANDRA_SHOPIFY_USER,
+      ...DEFAULT_VIP_CUSTOMER,
       id: 'usr_' + Date.now(),
       name: name.trim(),
       email: email.trim(),
@@ -397,8 +393,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setScreen: setCurrentScreen,
         login,
         loginWithSocial,
-        loginAsDemoShopifyCustomer,
-        updateMetafields,
+        loginAsDemoCustomer,
+        updateBillingInfo,
         updatePetInfo,
         register,
         logout,

@@ -15,7 +15,7 @@ import { colors } from '../theme/colors';
 import { UserAvatar } from './ui/UserAvatar';
 import {
   useAuth,
-  ALEJANDRA_SHOPIFY_USER,
+  DEFAULT_VIP_CUSTOMER,
   CustomerOrder,
 } from '../context/AuthContext';
 
@@ -30,15 +30,15 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 }) => {
   const {
     user,
-    loginAsDemoShopifyCustomer,
-    updateMetafields,
+    loginAsDemoCustomer,
+    updateBillingInfo,
     updatePetInfo,
     logout,
     setScreen,
   } = useAuth();
 
-  // Si es invitado, mostramos los datos de Alejandra Pinto como vista previa o perfil activo
-  const profileData = user || ALEJANDRA_SHOPIFY_USER;
+  // Si es invitado, mostramos los datos de cliente VIP como vista previa
+  const profileData = user || DEFAULT_VIP_CUSTOMER;
   const isGuest = !user;
 
   const [showAllOrders, setShowAllOrders] = useState(false);
@@ -50,15 +50,14 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
     return (
       '$ ' +
       amount
-        .toFixed(2)
-        .replace('.', ',')
+        .toFixed(0)
         .replace(/\B(?=(\d{3})+(?!\d))/g, '.')
     );
   };
 
   const handleToggleInvoice = (val: boolean) => {
     Haptics.selectionAsync();
-    updateMetafields({ requiresInvoice: val });
+    updateBillingInfo({ requiresInvoice: val });
   };
 
   const handleReorder = (orderNumber: string) => {
@@ -79,12 +78,12 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 
   const handleActivateDemoCustomer = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    loginAsDemoShopifyCustomer();
+    loginAsDemoCustomer();
   };
 
-  const orders = profileData.orders || ALEJANDRA_SHOPIFY_USER.orders || [];
+  const orders = profileData.orders || DEFAULT_VIP_CUSTOMER.orders || [];
   const latestOrder: CustomerOrder | undefined = orders[0];
-  const requiresInvoice = profileData.metafields?.requiresInvoice ?? false;
+  const requiresInvoice = profileData.billingInfo?.requiresInvoice ?? false;
 
   return (
     <Modal
@@ -106,9 +105,9 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
           <View style={styles.sheetHeaderBar}>
             <View style={styles.dragIndicator} />
             <View style={styles.sheetTitleRow}>
-              <View style={styles.shopifyBadge}>
-                <Ionicons name="shield-checkmark" size={13} color={colors.primary.DEFAULT} />
-                <Text style={styles.shopifyBadgeText}>PERFIL CLIENTE SHOPIFY</Text>
+              <View style={styles.brandBadge}>
+                <Ionicons name="paw" size={13} color={colors.primary.DEFAULT} />
+                <Text style={styles.brandBadgeText}>MI CUENTA MUNDO MASCOTAS</Text>
               </View>
               <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={10}>
                 <Ionicons name="close" size={20} color={colors.dark.textSecondary} />
@@ -127,11 +126,11 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 <View style={styles.guestNoticeTop}>
                   <Ionicons name="sparkles" size={18} color={colors.primary.light} />
                   <Text style={styles.guestNoticeTitle}>
-                    Estás en Modo Invitado (Vista previa de Alejandra Pinto)
+                    Estás en Modo Invitado (Vista de demostración)
                   </Text>
                 </View>
                 <Text style={styles.guestNoticeSub}>
-                  Activa la sesión de Alejandra con 1 toque para sincronizar su perfil en toda la app:
+                  Activa el perfil de cliente con 1 toque para probar tus pedidos y beneficios en toda la app:
                 </Text>
                 <View style={styles.guestActionsRow}>
                   <Pressable
@@ -168,7 +167,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                     <Text style={styles.customerName}>{profileData.name}</Text>
                     <View style={styles.groupPill}>
                       <Text style={styles.groupPillText}>
-                        🏆 {profileData.customerGroup || 'Champions'}
+                        🏆 {profileData.customerGroup || 'Champions VIP'}
                       </Text>
                     </View>
                   </View>
@@ -176,16 +175,16 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                   <View style={styles.sessionStatusRow}>
                     <View style={styles.onlineDot} />
                     <Text style={styles.sessionStatusText}>
-                      Ha iniciado sesión · Recibe notificaciones en Español
+                      Cuenta activa · Notificaciones en Español
                     </Text>
                   </View>
                 </View>
               </View>
 
-              {/* 4 KPIs Superiores idénticos a Shopify */}
+              {/* Resumen de Fidelidad */}
               <View style={styles.statsGrid}>
                 <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>Importe gastado</Text>
+                  <Text style={styles.statLabel}>Total en compras</Text>
                   <Text style={styles.statValueGold}>
                     {formatCOP(profileData.totalSpent ?? 8721100)}
                   </Text>
@@ -197,7 +196,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>Cliente desde</Text>
+                  <Text style={styles.statLabel}>Miembro desde</Text>
                   <Text style={styles.statValue}>
                     {profileData.customerSince || 'Más de 1 año'}
                   </Text>
@@ -219,16 +218,16 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                     <Text style={styles.linkGoldText}>
                       {showAllOrders
                         ? 'Ocultar historial'
-                        : `Ver todos los pedidos (${profileData.ordersCount ?? 23})`}
+                        : `Ver mis pedidos (${profileData.ordersCount ?? 23})`}
                     </Text>
                   </Pressable>
                 </View>
 
-                {/* Pedido #59547 */}
+                {/* Tarjeta del Último Pedido */}
                 <View style={styles.orderBox}>
                   <View style={styles.orderTopBar}>
                     <View style={styles.orderBadgesWrap}>
-                      <Text style={styles.orderIdText}>#{latestOrder.orderNumber}</Text>
+                      <Text style={styles.orderIdText}>Pedido #{latestOrder.orderNumber}</Text>
 
                       <View
                         style={[
@@ -286,8 +285,8 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                           ]}
                         >
                           {latestOrder.fulfillmentStatus === 'unfulfilled'
-                            ? 'No preparado'
-                            : 'Preparado'}
+                            ? 'En alistamiento'
+                            : 'Entregado'}
                         </Text>
                       </View>
                     </View>
@@ -298,7 +297,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                   </View>
 
                   <Text style={styles.orderDateText}>
-                    {latestOrder.createdAt} de Online Store · {latestOrder.shippingMethod}
+                    {latestOrder.createdAt} · {latestOrder.shippingMethod}
                   </Text>
 
                   <View style={styles.orderItemsDivider} />
@@ -310,7 +309,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                       </View>
                       <View style={styles.lineItemInfo}>
                         <Text style={styles.lineItemName}>{item.name}</Text>
-                        <Text style={styles.lineItemSku}>SKU: {item.sku}</Text>
+                        <Text style={styles.lineItemSku}>Ref: {item.sku}</Text>
                       </View>
                       <Text style={styles.lineItemQty}>x {item.quantity}</Text>
                       <Text style={styles.lineItemPrice}>{formatCOP(item.price)}</Text>
@@ -343,27 +342,27 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                       ]}
                     >
                       {reorderedId === latestOrder.orderNumber
-                        ? '¡Pedido agregado para recompra rápida!'
+                        ? '¡Agregado a tu carrito de recompra!'
                         : 'Volver a pedir en 1 toque'}
                     </Text>
                   </Pressable>
                 </View>
 
-                {/* Historial desplegable de pedidos anteriores del CSV */}
+                {/* Historial desplegable de pedidos anteriores */}
                 {showAllOrders && orders.length > 1 && (
                   <View style={styles.previousOrdersContainer}>
                     <Text style={styles.previousOrdersHeading}>
-                      HISTORIAL RECIENTE EN SHOPIFY
+                      HISTORIAL DE MIS PEDIDOS RECIENTES
                     </Text>
                     {orders.slice(1).map((ord) => (
                       <View key={ord.orderNumber} style={styles.prevOrderRow}>
                         <View style={styles.prevOrderLeft}>
                           <View style={styles.prevOrderHeader}>
-                            <Text style={styles.prevOrderId}>#{ord.orderNumber}</Text>
+                            <Text style={styles.prevOrderId}>Pedido #{ord.orderNumber}</Text>
                             <Text style={styles.prevOrderStatus}>
                               {ord.fulfillmentStatus === 'fulfilled'
                                 ? '✓ Entregado'
-                                : '⏳ Pendiente'}
+                                : '⏳ En proceso'}
                             </Text>
                           </View>
                           <Text style={styles.prevOrderDate}>{ord.createdAt}</Text>
@@ -391,16 +390,16 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
               </View>
             )}
 
-            {/* SECCIÓN: METACAMPOS (Facturación, Documento y Mascota) */}
+            {/* SECCIÓN: DATOS DE FACTURACIÓN Y MASCOTA */}
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Metacampos</Text>
-                <Text style={styles.sectionSubtitleBadge}>Sincronizado con Shopify</Text>
+                <Text style={styles.sectionTitle}>Datos de Facturación y Mascota</Text>
+                <Text style={styles.sectionSubtitleBadge}>Perfil Verificado</Text>
               </View>
 
               {/* Requiere Factura */}
-              <View style={styles.metafieldRow}>
-                <Text style={styles.metafieldLabel}>Requiere Factura</Text>
+              <View style={styles.billingFieldRow}>
+                <Text style={styles.billingFieldLabel}>Requiere Factura Electrónica</Text>
                 <View style={styles.booleanToggleGroup}>
                   <Pressable
                     onPress={() => handleToggleInvoice(false)}
@@ -415,7 +414,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                         !requiresInvoice && styles.booleanPillTextActive,
                       ]}
                     >
-                      Falso
+                      No
                     </Text>
                   </Pressable>
                   <Pressable
@@ -431,37 +430,37 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                         requiresInvoice && styles.booleanPillTextActive,
                       ]}
                     >
-                      Verdadero
+                      Sí
                     </Text>
                   </Pressable>
                 </View>
               </View>
 
               {/* Tipo de Documento */}
-              <View style={styles.metafieldRow}>
-                <Text style={styles.metafieldLabel}>Tipo de Documento</Text>
-                <View style={styles.metafieldValuePill}>
-                  <Text style={styles.metafieldPrefix}>A</Text>
-                  <Text style={styles.metafieldValueText}>
-                    {profileData.metafields?.documentType || '(CC) Cédula de Ciudadanía'}
+              <View style={styles.billingFieldRow}>
+                <Text style={styles.billingFieldLabel}>Tipo de Documento</Text>
+                <View style={styles.billingValuePill}>
+                  <Ionicons name="card-outline" size={14} color={colors.primary.DEFAULT} />
+                  <Text style={styles.billingValueText}>
+                    {profileData.billingInfo?.documentType || 'Cédula de Ciudadanía (CC)'}
                   </Text>
                 </View>
               </View>
 
               {/* Número de Identificación */}
-              <View style={styles.metafieldRow}>
-                <Text style={styles.metafieldLabel}>Número de Identificación</Text>
-                <View style={styles.metafieldValuePill}>
-                  <Text style={styles.metafieldPrefix}>A</Text>
-                  <Text style={styles.metafieldValueText}>
-                    {profileData.metafields?.documentNumber || '1030631037'}
+              <View style={styles.billingFieldRow}>
+                <Text style={styles.billingFieldLabel}>Número de Identificación</Text>
+                <View style={styles.billingValuePill}>
+                  <Ionicons name="id-card-outline" size={14} color={colors.primary.DEFAULT} />
+                  <Text style={styles.billingValueText}>
+                    {profileData.billingInfo?.documentNumber || '1030631037'}
                   </Text>
                 </View>
               </View>
 
               {/* Mascota */}
-              <View style={[styles.metafieldRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.metafieldLabel}>Mascota</Text>
+              <View style={[styles.billingFieldRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.billingFieldLabel}>Mi Mascota</Text>
                 {editingPet ? (
                   <View style={styles.petEditRow}>
                     <TextInput
@@ -482,22 +481,22 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                       setPetNameInput(profileData.petName || '');
                       setEditingPet(true);
                     }}
-                    style={styles.metafieldActionPill}
+                    style={styles.billingActionPill}
                   >
-                    <Text style={styles.metafieldActionText}>
+                    <Text style={styles.billingActionText}>
                       {profileData.petName && profileData.petName !== 'Consentido'
                         ? `🐾 ${profileData.petName} (Editar)`
-                        : '+ Agregar'}
+                        : '+ Agregar nombre'}
                     </Text>
                   </Pressable>
                 )}
               </View>
             </View>
 
-            {/* SECCIÓN: INFORMACIÓN DE CONTACTO Y DIRECCIÓN PREDETERMINADA */}
+            {/* SECCIÓN: INFORMACIÓN DE CONTACTO Y DIRECCIÓN DE ENTREGA */}
             <View style={styles.sectionCard}>
               <Text style={[styles.sectionTitle, { marginBottom: 14 }]}>
-                Información de contacto y entrega
+                Contacto y Dirección de Entrega
               </Text>
 
               {/* Contacto */}
@@ -506,7 +505,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                   <Ionicons name="call-outline" size={18} color={colors.primary.DEFAULT} />
                 </View>
                 <View style={styles.infoTextCol}>
-                  <Text style={styles.infoBlockLabel}>Contacto directo</Text>
+                  <Text style={styles.infoBlockLabel}>Datos de contacto</Text>
                   <Text style={styles.infoBlockPrimary}>{profileData.email}</Text>
                   <Text style={styles.infoBlockSecondary}>
                     {profileData.phone || '+57 300 3918279'}
@@ -551,7 +550,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                   </Text>
                   {profileData.defaultAddress?.deliveryZone && (
                     <Text style={styles.zoneHighlightText}>
-                      🚚 Ruta logística: {profileData.defaultAddress.deliveryZone}
+                      🚚 Zona de cobertura: {profileData.defaultAddress.deliveryZone}
                     </Text>
                   )}
                 </View>
@@ -559,10 +558,10 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 
               <View style={styles.blockSeparator} />
 
-              {/* Marketing, Fiscal & Crédito */}
+              {/* Beneficios y Notificaciones */}
               <View style={styles.footerMetaGrid}>
                 <View style={styles.footerMetaItem}>
-                  <Text style={styles.footerMetaLabel}>Suscripciones de marketing</Text>
+                  <Text style={styles.footerMetaLabel}>Alertas de mis pedidos</Text>
                   <Text style={styles.footerMetaValue}>
                     {(profileData.marketingSubscriptions || ['Correo electrónico', 'SMS']).join(
                       ', '
@@ -570,18 +569,9 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                   </Text>
                 </View>
                 <View style={styles.footerMetaItem}>
-                  <Text style={styles.footerMetaLabel}>Información fiscal</Text>
-                  <Text style={styles.footerMetaValue}>
-                    {profileData.taxInfo || 'Recaudar impuestos'}
-                  </Text>
-                </View>
-                <View style={styles.footerMetaItem}>
-                  <Text style={styles.footerMetaLabel}>Crédito en tienda</Text>
-                  <Text style={styles.footerMetaValue}>
-                    {profileData.storeCredit
-                      ? formatCOP(profileData.storeCredit)
-                      : 'Ninguno'}{' '}
-                    · <Text style={{ color: colors.primary.light }}>{profileData.points} Coins</Text>
+                  <Text style={styles.footerMetaLabel}>Saldo Consenticoins</Text>
+                  <Text style={[styles.footerMetaValue, { color: colors.primary.light }]}>
+                    {profileData.points} Coins disponibles
                   </Text>
                 </View>
               </View>
@@ -598,7 +588,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
             >
               <Ionicons name="log-out-outline" size={18} color="#F87171" />
               <Text style={styles.logoutRowText}>
-                {isGuest ? 'Salir a Pantalla de Bienvenida' : 'Cerrar Sesión de Cuenta'}
+                {isGuest ? 'Salir a Pantalla de Bienvenida' : 'Cerrar Sesión de mi Cuenta'}
               </Text>
             </Pressable>
           </ScrollView>
@@ -646,7 +636,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  shopifyBadge: {
+  brandBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -657,7 +647,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(212, 175, 55, 0.3)',
   },
-  shopifyBadgeText: {
+  brandBadgeText: {
     color: colors.primary.light,
     fontSize: 10,
     fontWeight: '800',
@@ -885,7 +875,7 @@ const styles = StyleSheet.create({
   },
   orderIdText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     marginRight: 2,
   },
@@ -1075,7 +1065,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  metafieldRow: {
+  billingFieldRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1084,7 +1074,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.06)',
     gap: 10,
   },
-  metafieldLabel: {
+  billingFieldLabel: {
     color: colors.dark.textSecondary,
     fontSize: 13,
     flex: 1,
@@ -1098,7 +1088,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   booleanPill: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 5,
     borderRadius: 8,
   },
@@ -1114,7 +1104,7 @@ const styles = StyleSheet.create({
     color: '#050508',
     fontWeight: '800',
   },
-  metafieldValuePill: {
+  billingValuePill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -1125,17 +1115,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.09)',
     gap: 6,
   },
-  metafieldPrefix: {
-    color: colors.primary.DEFAULT,
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  metafieldValueText: {
+  billingValueText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
-  metafieldActionPill: {
+  billingActionPill: {
     backgroundColor: 'rgba(212, 175, 55, 0.12)',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1143,7 +1128,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(212, 175, 55, 0.3)',
   },
-  metafieldActionText: {
+  billingActionText: {
     color: colors.primary.light,
     fontSize: 12,
     fontWeight: '700',

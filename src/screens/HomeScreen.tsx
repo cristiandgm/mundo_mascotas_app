@@ -157,14 +157,14 @@ export const HomeScreen: React.FC = () => {
         <GlassCard style={styles.readyCard}>
           <View style={styles.checkRow}>
             <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-            <Text style={styles.readyTitle}>¡Ficha de Cliente Shopify Lista!</Text>
+            <Text style={styles.readyTitle}>¡Mi Cuenta VIP Lista!</Text>
           </View>
           <Text style={styles.readyDesc}>
-            Toca tu avatar arriba a la izquierda (o el botón de abajo) para abrir el panel deslizable con el historial de pedidos, dirección y metacampos de Shopify.
+            Toca tu avatar arriba a la izquierda (o el botón de abajo) para abrir tu ficha de cliente con historial de pedidos, dirección de entrega y datos de facturación.
           </Text>
 
           <ModernButton
-            title="Abrir Mi Ficha de Cliente"
+            title="Abrir Mi Perfil y Pedidos"
             variant="primary"
             size="md"
             onPress={handleOpenProfile}
@@ -181,7 +181,7 @@ export const HomeScreen: React.FC = () => {
         </GlassCard>
       </ScrollView>
 
-      {/* Panel Deslizable con la Info del Cliente de Shopify */}
+      {/* Panel Deslizable de Cuenta del Cliente */}
       <CustomerProfileSheet
         visible={profileVisible}
         onClose={() => setProfileVisible(false)}
