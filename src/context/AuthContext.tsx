@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type ScreenType = 'welcome' | 'login' | 'register' | 'forgot-password' | 'home';
 
+export type AuthModalView = 'login' | 'register' | 'forgot-password';
+
 export type PetCategory = 'dog' | 'cat' | 'both';
 
 export type AuthProviderType = 'email' | 'google' | 'apple' | 'whatsapp';
@@ -71,6 +73,10 @@ interface AuthContextType {
   isLoading: boolean;
   currentScreen: ScreenType;
   setScreen: (screen: ScreenType) => void;
+  isAuthModalOpen: boolean;
+  authModalView: AuthModalView;
+  openAuthModal: (view?: AuthModalView) => void;
+  closeAuthModal: () => void;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   loginWithSocial: (provider: 'google' | 'apple' | 'whatsapp') => Promise<void>;
   loginAsDemoCustomer: () => void;
@@ -220,7 +226,32 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>('welcome');
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>('home');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(true);
+  const [authModalView, setAuthModalView] = useState<AuthModalView>('login');
+
+  const openAuthModal = (view: AuthModalView = 'login') => {
+    setAuthModalView(view);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+    setCurrentScreen('home');
+  };
+
+  const handleSetScreen = (screen: ScreenType) => {
+    if (screen === 'login' || screen === 'register' || screen === 'forgot-password') {
+      setAuthModalView(screen);
+      setIsAuthModalOpen(true);
+    } else if (screen === 'home') {
+      setIsAuthModalOpen(false);
+      setCurrentScreen('home');
+    } else {
+      setAuthModalView('login');
+      setIsAuthModalOpen(true);
+    }
+  };
 
   const login = async (email: string, _pass: string) => {
     setIsLoading(true);
@@ -235,6 +266,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (normalizedEmail.includes('aleja')) {
       setUser(DEFAULT_VIP_CUSTOMER);
+      setIsAuthModalOpen(false);
       setCurrentScreen('home');
       return { success: true };
     }
@@ -251,12 +283,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     setUser(mockUser);
+    setIsAuthModalOpen(false);
     setCurrentScreen('home');
     return { success: true };
   };
 
   const loginAsDemoCustomer = () => {
     setUser(DEFAULT_VIP_CUSTOMER);
+    setIsAuthModalOpen(false);
     setCurrentScreen('home');
   };
 
@@ -311,6 +345,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     setUser(socialUser);
+    setIsAuthModalOpen(false);
     setCurrentScreen('home');
   };
 
@@ -374,13 +409,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     setUser(newUser);
+    setIsAuthModalOpen(false);
     setCurrentScreen('home');
     return { success: true };
   };
 
   const logout = () => {
     setUser(null);
-    setCurrentScreen('welcome');
+    setAuthModalView('login');
+    setIsAuthModalOpen(true);
   };
 
   return (
@@ -390,7 +427,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user,
         isLoading,
         currentScreen,
-        setScreen: setCurrentScreen,
+        setScreen: handleSetScreen,
+        isAuthModalOpen,
+        authModalView,
+        openAuthModal,
+        closeAuthModal,
         login,
         loginWithSocial,
         loginAsDemoCustomer,

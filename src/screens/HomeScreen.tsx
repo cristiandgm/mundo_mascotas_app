@@ -19,12 +19,21 @@ import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { useAuth } from '../context/AuthContext';
 
 export const HomeScreen: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, openAuthModal } = useAuth();
   const [profileVisible, setProfileVisible] = useState(false);
 
   const handleOpenProfile = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setProfileVisible(true);
+  };
+
+  const handleAuthAction = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (user) {
+      logout();
+    } else {
+      openAuthModal('login');
+    }
   };
 
   const getPetEmoji = (type?: string) => {
@@ -88,11 +97,15 @@ export const HomeScreen: React.FC = () => {
         </Pressable>
 
         <Pressable
-          onPress={logout}
+          onPress={handleAuthAction}
           style={styles.logoutIconButton}
           hitSlop={8}
         >
-          <Ionicons name="log-out-outline" size={20} color={colors.dark.textSecondary} />
+          <Ionicons
+            name={user ? 'log-out-outline' : 'log-in-outline'}
+            size={20}
+            color={user ? colors.dark.textSecondary : colors.primary.light}
+          />
         </Pressable>
       </View>
 
@@ -172,10 +185,10 @@ export const HomeScreen: React.FC = () => {
           />
 
           <ModernButton
-            title="Probar Cerrar Sesión"
+            title={user ? 'Probar Cerrar Sesión' : 'Iniciar Sesión o Registrarse'}
             variant="outline"
             size="md"
-            onPress={logout}
+            onPress={handleAuthAction}
             style={styles.logoutBtn}
           />
         </GlassCard>
