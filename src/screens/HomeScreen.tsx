@@ -7,6 +7,7 @@ import {
   Pressable,
   TextInput,
   Modal,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +18,7 @@ import { typography } from '../theme/typography';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { useAuth } from '../context/AuthContext';
+import { useDraggableSheet } from '../utils/useDraggableSheet';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
 type PetFilterType = 'all' | 'dog' | 'cat';
@@ -178,6 +180,18 @@ export const HomeScreen: React.FC = () => {
   const { user, openAuthModal } = useAuth();
   const [profileVisible, setProfileVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
+
+  const {
+    translateY: cartTranslateY,
+    isExpanded: isCartExpanded,
+    isDragging: isCartDragging,
+    headerPanHandlers: cartHeaderPanHandlers,
+    grabberPanHandlers: cartGrabberPanHandlers,
+    animateClose: animateCloseCart,
+  } = useDraggableSheet({
+    visible: cartModalVisible,
+    onClose: () => setCartModalVisible(false),
+  });
 
   // Estado de cobertura de envío: Bogotá (Gratis) vs Otras Ciudades/Municipios (Recargo transportadora)
   const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneType>('bogota');
@@ -873,28 +887,41 @@ export const HomeScreen: React.FC = () => {
       <Modal
         visible={cartModalVisible}
         transparent
-        animationType="slide"
-        onRequestClose={() => setCartModalVisible(false)}
+        animationType="fade"
+        onRequestClose={animateCloseCart}
       >
         <View style={styles.modalBackdrop}>
           <Pressable
             style={{ flex: 1 }}
-            onPress={() => setCartModalVisible(false)}
+            onPress={animateCloseCart}
           />
-          <View style={styles.cartSheetContainer}>
+          <Animated.View
+            style={[
+              styles.cartSheetContainer,
+              isCartExpanded && styles.cartSheetContainerExpanded,
+              { transform: [{ translateY: cartTranslateY }] },
+            ]}
+          >
             <LinearGradient
               colors={['#0F121C', '#07080D', '#050508']}
               style={StyleSheet.absoluteFill}
             />
 
-            <View style={styles.cartSheetHeader}>
-              <View style={styles.dragHandle} />
+            <View style={styles.cartSheetHeader} {...cartHeaderPanHandlers}>
+              <View style={styles.dragHandleHitZone} {...cartGrabberPanHandlers}>
+                <View
+                  style={[
+                    styles.dragHandle,
+                    isCartDragging && styles.dragHandleActive,
+                  ]}
+                />
+              </View>
               <View style={styles.cartSheetTitleRow}>
                 <Text style={styles.cartSheetTitle}>
                   Tu Bolsa de Concentrados ({cartSummary.totalItems})
                 </Text>
                 <Pressable
-                  onPress={() => setCartModalVisible(false)}
+                  onPress={animateCloseCart}
                   style={styles.closeModalBtn}
                 >
                   <Ionicons name="close" size={20} color={colors.dark.textSecondary} />
@@ -1069,7 +1096,7 @@ export const HomeScreen: React.FC = () => {
                 </>
               )}
             </ScrollView>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
 
@@ -1795,20 +1822,31 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212, 175, 55, 0.35)',
     overflow: 'hidden',
   },
+  cartSheetContainerExpanded: {
+    maxHeight: '95%',
+    height: '95%',
+  },
   cartSheetHeader: {
-    paddingTop: 10,
+    paddingTop: 6,
     paddingHorizontal: 20,
     paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
+  dragHandleHitZone: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dragHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
+    width: 44,
+    height: 5,
+    borderRadius: 3,
     backgroundColor: 'rgba(212, 175, 55, 0.45)',
-    alignSelf: 'center',
-    marginBottom: 10,
+  },
+  dragHandleActive: {
+    width: 56,
+    backgroundColor: colors.primary.light,
   },
   cartSheetTitleRow: {
     flexDirection: 'row',

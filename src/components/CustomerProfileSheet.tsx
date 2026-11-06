@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   TextInput,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import {
   DEFAULT_VIP_CUSTOMER,
   CustomerOrder,
 } from '../context/AuthContext';
+import { useDraggableSheet } from '../utils/useDraggableSheet';
 
 interface CustomerProfileSheetProps {
   visible: boolean;
@@ -34,6 +36,18 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
     updatePetInfo,
     logout,
   } = useAuth();
+
+  const {
+    translateY,
+    isExpanded,
+    isDragging,
+    headerPanHandlers,
+    grabberPanHandlers,
+    animateClose,
+  } = useDraggableSheet({
+    visible,
+    onClose,
+  });
 
   const profileData = user || DEFAULT_VIP_CUSTOMER;
 
@@ -80,27 +94,40 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      animationType="fade"
+      onRequestClose={animateClose}
     >
       <View style={styles.backdrop}>
-        <Pressable style={styles.backdropTouch} onPress={onClose} />
+        <Pressable style={styles.backdropTouch} onPress={animateClose} />
 
-        <View style={styles.sheetContainer}>
+        <Animated.View
+          style={[
+            styles.sheetContainer,
+            isExpanded && styles.sheetContainerExpanded,
+            { transform: [{ translateY }] },
+          ]}
+        >
           <LinearGradient
             colors={['#0F121C', '#07080C', '#050508']}
             style={StyleSheet.absoluteFill}
           />
 
           {/* Top Drag Handle & Close Bar */}
-          <View style={styles.sheetHeaderBar}>
-            <View style={styles.dragIndicator} />
+          <View style={styles.sheetHeaderBar} {...headerPanHandlers}>
+            <View style={styles.dragIndicatorHitZone} {...grabberPanHandlers}>
+              <View
+                style={[
+                  styles.dragIndicator,
+                  isDragging && styles.dragIndicatorActive,
+                ]}
+              />
+            </View>
             <View style={styles.sheetTitleRow}>
               <View style={styles.brandBadge}>
                 <Ionicons name="paw" size={13} color={colors.primary.DEFAULT} />
                 <Text style={styles.brandBadgeText}>MI CUENTA MUNDO MASCOTAS</Text>
               </View>
-              <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={10}>
+              <Pressable onPress={animateClose} style={styles.closeBtn} hitSlop={10}>
                 <Ionicons name="close" size={20} color={colors.dark.textSecondary} />
               </Pressable>
             </View>
@@ -547,7 +574,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
               <Text style={styles.logoutRowText}>Cerrar Sesión de mi Cuenta</Text>
             </Pressable>
           </ScrollView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -563,7 +590,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheetContainer: {
-    height: '88%',
+    height: '86%',
     backgroundColor: '#07080C',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -571,20 +598,30 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212, 175, 55, 0.35)',
     overflow: 'hidden',
   },
+  sheetContainerExpanded: {
+    height: '95%',
+  },
   sheetHeaderBar: {
-    paddingTop: 10,
+    paddingTop: 6,
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.07)',
   },
+  dragIndicatorHitZone: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dragIndicator: {
-    width: 42,
-    height: 4,
-    borderRadius: 2,
+    width: 44,
+    height: 5,
+    borderRadius: 3,
     backgroundColor: 'rgba(212, 175, 55, 0.45)',
-    alignSelf: 'center',
-    marginBottom: 10,
+  },
+  dragIndicatorActive: {
+    width: 56,
+    backgroundColor: colors.primary.light,
   },
   sheetTitleRow: {
     flexDirection: 'row',

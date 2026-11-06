@@ -9,6 +9,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import { ModernInput } from './ui/ModernInput';
 import { ModernButton } from './ui/ModernButton';
 import { PetSelector } from './ui/PetSelector';
 import { useAuth, PetCategory } from '../context/AuthContext';
+import { useDraggableSheet } from '../utils/useDraggableSheet';
 
 export const FloatingAuthModal: React.FC = () => {
   const {
@@ -42,10 +44,21 @@ export const FloatingAuthModal: React.FC = () => {
   const [resetSent, setResetSent] = useState(false);
 
   const handleCloseAsGuest = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setErrorMessage('');
     closeAuthModal();
   };
+
+  const {
+    translateY,
+    isExpanded,
+    isDragging,
+    headerPanHandlers,
+    grabberPanHandlers,
+    animateClose,
+  } = useDraggableSheet({
+    visible: isAuthModalOpen,
+    onClose: handleCloseAsGuest,
+  });
 
   const switchView = (view: 'login' | 'register' | 'forgot-password') => {
     Haptics.selectionAsync();
@@ -115,25 +128,36 @@ export const FloatingAuthModal: React.FC = () => {
     <Modal
       visible={isAuthModalOpen}
       transparent
-      animationType="slide"
-      onRequestClose={handleCloseAsGuest}
+      animationType="fade"
+      onRequestClose={animateClose}
     >
       <View style={styles.backdrop}>
         {/* Tocar el fondo superior también permite explorar como invitado */}
-        <Pressable style={styles.backdropDismissArea} onPress={handleCloseAsGuest} />
+        <Pressable style={styles.backdropDismissArea} onPress={animateClose} />
 
         {/* Pestaña trasera apilada estilo Airbnb */}
-        <View style={styles.stackedBackCard} />
+        <Animated.View
+          style={[
+            styles.stackedBackCard,
+            { transform: [{ translateY }] },
+          ]}
+        />
 
-        {/* Hoja flotante principal */}
-        <View style={styles.sheetContainer}>
+        {/* Hoja flotante principal deslizable */}
+        <Animated.View
+          style={[
+            styles.sheetContainer,
+            isExpanded && styles.sheetContainerExpanded,
+            { transform: [{ translateY }] },
+          ]}
+        >
           <LinearGradient
             colors={['#0E1018', '#07080D', '#050508']}
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Barra superior con botón Atrás (opcional) y botón X (Explorar como invitado) */}
-          <View style={styles.topNavigationRow}>
+          {/* Barra superior deslizable con botón Atrás, Grabber central y botón X */}
+          <View style={styles.topNavigationRow} {...headerPanHandlers}>
             {authModalView !== 'login' ? (
               <Pressable
                 onPress={() => switchView('login')}
@@ -146,10 +170,18 @@ export const FloatingAuthModal: React.FC = () => {
               <View style={styles.iconPlaceholder} />
             )}
 
-            <View style={styles.topDragPill} />
+            {/* Zona táctil de la línea superior para arrastrar arriba y abajo */}
+            <View style={styles.dragHandleHitZone} {...grabberPanHandlers}>
+              <View
+                style={[
+                  styles.topDragPill,
+                  isDragging && styles.topDragPillActive,
+                ]}
+              />
+            </View>
 
             <Pressable
-              onPress={handleCloseAsGuest}
+              onPress={animateClose}
               style={styles.closeXButton}
               hitSlop={12}
             >
@@ -166,8 +198,8 @@ export const FloatingAuthModal: React.FC = () => {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              {/* Logo central estilo Airbnb */}
-              <View style={styles.brandCenterSection}>
+              {/* Logo central estilo Airbnb (también permite arrastrar la ventana) */}
+              <View style={styles.brandCenterSection} {...headerPanHandlers}>
                 <View style={styles.logoCircleFrame}>
                   <Image
                     source={require('../../assets/logo.jpg')}
@@ -445,7 +477,7 @@ export const FloatingAuthModal: React.FC = () => {
               )}
             </ScrollView>
           </KeyboardAvoidingView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -469,7 +501,7 @@ const styles = StyleSheet.create({
     marginBottom: -4,
   },
   sheetContainer: {
-    height: '90%',
+    height: '88%',
     backgroundColor: '#07080D',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
@@ -477,13 +509,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212, 175, 55, 0.35)',
     overflow: 'hidden',
   },
+  sheetContainerExpanded: {
+    height: '96%',
+  },
   topNavigationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 6,
   },
   iconPlaceholder: {
     width: 38,
@@ -497,11 +532,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  dragHandleHitZone: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
   topDragPill: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  topDragPillActive: {
+    width: 56,
+    backgroundColor: colors.primary.light,
   },
   closeXButton: {
     width: 38,
