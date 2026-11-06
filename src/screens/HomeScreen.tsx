@@ -353,15 +353,38 @@ export const HomeScreen: React.FC = () => {
               },
             ]}
           />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {selectedAddress.label}: {selectedAddress.address1},{' '}
-            {selectedAddress.city}
-          </Text>
-          <Ionicons
-            name="chevron-down"
-            size={15}
-            color={colors.dark.textSecondary}
-          />
+          <View style={styles.locationTextCol}>
+            <View style={styles.locationTopLineRow}>
+              <Text style={styles.locationLabelEyebrow} numberOfLines={1}>
+                Entregar en {selectedAddress.label}
+              </Text>
+              <Text
+                style={[
+                  styles.locationZoneTagText,
+                  {
+                    color: deliveryZone === 'bogota' ? '#34D399' : '#FBBF24',
+                  },
+                ]}
+              >
+                ·{' '}
+                {deliveryZone === 'bogota'
+                  ? 'Domicilio Gratis'
+                  : '+ Flete transportadora'}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={14}
+                color={colors.primary.light}
+              />
+            </View>
+
+            <Text style={styles.locationText} numberOfLines={1}>
+              {selectedAddress.address1}
+              {selectedAddress.locality
+                ? ` · ${selectedAddress.locality}`
+                : ''}, {selectedAddress.city}
+            </Text>
+          </View>
         </Pressable>
 
         <Pressable
@@ -1184,19 +1207,39 @@ const styles = StyleSheet.create({
   locationSelectorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flex: 1,
     paddingRight: 12,
   },
   locationDot: {
-    width: 9,
-    height: 9,
+    width: 10,
+    height: 10,
     borderRadius: 5,
   },
+  locationTextCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  locationTopLineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  locationLabelEyebrow: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  locationZoneTagText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
   locationText: {
-    color: '#E5E7EB',
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '800',
     flexShrink: 1,
   },
   inboxBagPill: {
