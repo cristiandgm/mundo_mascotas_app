@@ -14,14 +14,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
-import { UserAvatar } from '../components/ui/UserAvatar';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { useAuth } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
-type PetFilterType = 'all' | 'dog' | 'cat';
+type TopTabType = 'dog' | 'cat';
+type BottomNavTab = 'home' | 'catalog' | 'activity' | 'account';
 
 interface ProductBag {
   id: string;
@@ -35,6 +34,7 @@ interface ProductBag {
   petType: 'dog' | 'cat';
   stage: string;
   tag?: string;
+  accentColor: string;
 }
 
 const CATALOG_BAGS: ProductBag[] = [
@@ -49,7 +49,8 @@ const CATALOG_BAGS: ProductBag[] = [
     coins: 289,
     petType: 'dog',
     stage: 'Adulto',
-    tag: '🔥 Más Vendido',
+    tag: 'Más pedido',
+    accentColor: '#D4AF37',
   },
   {
     id: 'prod_1773',
@@ -62,7 +63,8 @@ const CATALOG_BAGS: ProductBag[] = [
     coins: 270,
     petType: 'dog',
     stage: 'Adulto Light',
-    tag: '⭐ Favorito Clientes',
+    tag: 'Control Peso',
+    accentColor: '#38BDF8',
   },
   {
     id: 'prod_9423',
@@ -75,7 +77,8 @@ const CATALOG_BAGS: ProductBag[] = [
     coins: 290,
     petType: 'dog',
     stage: 'Todas las etapas',
-    tag: '✨ Piel Sensible',
+    tag: 'Piel y Pelaje',
+    accentColor: '#EC4899',
   },
   {
     id: 'prod_9567',
@@ -88,7 +91,8 @@ const CATALOG_BAGS: ProductBag[] = [
     coins: 341,
     petType: 'dog',
     stage: 'Adulto',
-    tag: '🥩 Super Premium',
+    tag: 'Super Premium',
+    accentColor: '#F59E0B',
   },
   {
     id: 'prod_9571',
@@ -101,7 +105,8 @@ const CATALOG_BAGS: ProductBag[] = [
     coins: 355,
     petType: 'dog',
     stage: 'Cachorro',
-    tag: '🐶 Cachorros',
+    tag: 'Cachorros',
+    accentColor: '#10B981',
   },
   {
     id: 'prod_9573',
@@ -113,20 +118,8 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 354500,
     coins: 355,
     petType: 'dog',
-    stage: 'Adulto / Cachorro',
-  },
-  {
-    id: 'prod_9580',
-    sku: '9580',
-    brand: 'Taste of the Wild',
-    name: 'Taste of the Wild Rocky Mountain Feline',
-    protein: 'Venado Asado y Salmón Ahumado',
-    weightLb: 15,
-    price: 218000,
-    coins: 218,
-    petType: 'cat',
-    stage: 'Gatos Adultos y Gatitos',
-    tag: '🐱 Top Gatos',
+    stage: 'Adulto',
+    accentColor: '#06B6D4',
   },
   {
     id: 'prod_8812',
@@ -139,7 +132,36 @@ const CATALOG_BAGS: ProductBag[] = [
     coins: 389,
     petType: 'dog',
     stage: 'Todas las etapas',
-    tag: '🏆 70% Proteína Animal',
+    tag: '70% Proteína',
+    accentColor: '#8B5CF6',
+  },
+  {
+    id: 'prod_7710',
+    sku: '7710',
+    brand: 'Orijen',
+    name: 'Orijen Original Biológico',
+    protein: 'Pollo y Pavo de Corral + Pescado Salvaje',
+    weightLb: 25,
+    price: 435000,
+    coins: 435,
+    petType: 'dog',
+    stage: 'Adulto',
+    tag: 'Ultra Luxury',
+    accentColor: '#EF4444',
+  },
+  {
+    id: 'prod_9580',
+    sku: '9580',
+    brand: 'Taste of the Wild',
+    name: 'Taste of the Wild Rocky Mountain Cat',
+    protein: 'Venado Asado y Salmón Ahumado',
+    weightLb: 15,
+    price: 218000,
+    coins: 218,
+    petType: 'cat',
+    stage: 'Gatos y Gatitos',
+    tag: 'Top Gatos',
+    accentColor: '#F59E0B',
   },
   {
     id: 'prod_8845',
@@ -152,34 +174,37 @@ const CATALOG_BAGS: ProductBag[] = [
     coins: 245,
     petType: 'cat',
     stage: 'Gatos Adultos',
-  },
-  {
-    id: 'prod_7710',
-    sku: '7710',
-    brand: 'Orijen',
-    name: 'Orijen Original Biológicamente Apropiado',
-    protein: 'Pollo y Pavo de Corral + Pescado Salvaje',
-    weightLb: 25,
-    price: 435000,
-    coins: 435,
-    petType: 'dog',
-    stage: 'Adulto',
-    tag: '👑 Ultra Luxury',
+    tag: 'Salmón & Arenque',
+    accentColor: '#06B6D4',
   },
 ];
 
-const BRANDS = [
-  'Todas',
-  'Diamond Naturals',
-  'Taste of the Wild',
-  'Acana',
-  'Orijen',
-] as const;
+// Los 4 círculos estilo "For you" de Uber
+const FOR_YOU_CIRCLES = [
+  { id: 'Todas', label: 'Todos', emoji: '🐾', sub: 'Ver todo' },
+  { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: '30 - 40 LB' },
+  { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: '28 LB' },
+  { id: 'Acana', label: 'Acana & +', emoji: '🥩', sub: '25 LB' },
+];
 
 export const HomeScreen: React.FC = () => {
   const { user, openAuthModal } = useAuth();
   const [profileVisible, setProfileVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
+
+  // Estado estilo Uber
+  const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneType>('bogota');
+  const [topTab, setTopTab] = useState<TopTabType>('dog');
+  const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>('home');
+  const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedWeightFilter, setSelectedWeightFilter] = useState<number | null>(null);
+
+  // Carrito: { [productId]: quantity }
+  const [cart, setCart] = useState<Record<string, number>>({});
+  const [orderSuccessToast, setOrderSuccessToast] = useState(false);
+
+  const searchInputRef = useRef<any>(null);
 
   const {
     translateY: cartTranslateY,
@@ -193,25 +218,16 @@ export const HomeScreen: React.FC = () => {
     onClose: () => setCartModalVisible(false),
   });
 
-  // Estado de cobertura de envío: Bogotá (Gratis) vs Otras Ciudades/Municipios (Recargo transportadora)
-  const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneType>('bogota');
-
-  // Filtros de catálogo
-  const [searchQuery, setSearchQuery] = useState('');
-  const [petFilter, setPetFilter] = useState<PetFilterType>('all');
-  const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
-
-  // Estado del carrito: { [productId]: quantity }
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [orderSuccessToast, setOrderSuccessToast] = useState(false);
-
-  const searchInputRef = useRef<any>(null);
-
   const formatCOP = (amount: number) => {
     return '$ ' + amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
 
-  const handleHeaderProfilePress = () => {
+  const handleToggleZone = () => {
+    Haptics.selectionAsync();
+    setDeliveryZone((prev) => (prev === 'bogota' ? 'nacional' : 'bogota'));
+  };
+
+  const handleAccountAccess = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (user) {
       setProfileVisible(true);
@@ -244,31 +260,39 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
-  const handleQuickRepeatLastOrder = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // Agrega el bulto Diamond Naturals Lamb & Rice 40 LB (#123)
-    setCart((prev) => ({
-      ...prev,
-      prod_123: (prev.prod_123 || 0) + 1,
-    }));
+  const handleCycleWeightFilter = () => {
+    Haptics.selectionAsync();
+    const weights = [null, 40, 30, 28, 25];
+    const nextIdx = (weights.indexOf(selectedWeightFilter) + 1) % weights.length;
+    setSelectedWeightFilter(weights[nextIdx]);
   };
 
-  // Filtrado en tiempo real de los bultos
+  // Filtrado de productos
   const filteredProducts = useMemo(() => {
     return CATALOG_BAGS.filter((item) => {
-      if (petFilter !== 'all' && item.petType !== petFilter) return false;
-      if (selectedBrand !== 'Todas' && item.brand !== selectedBrand) return false;
+      if (item.petType !== topTab && !searchQuery.trim()) return false;
+      if (selectedBrand !== 'Todas') {
+        if (selectedBrand === 'Acana') {
+          if (item.brand !== 'Acana' && item.brand !== 'Orijen') return false;
+        } else if (item.brand !== selectedBrand) {
+          return false;
+        }
+      }
+      if (selectedWeightFilter && item.weightLb !== selectedWeightFilter) {
+        return false;
+      }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchName = item.name.toLowerCase().includes(q);
-        const matchProtein = item.protein.toLowerCase().includes(q);
-        const matchBrand = item.brand.toLowerCase().includes(q);
-        const matchWeight = `${item.weightLb} lb`.includes(q);
-        return matchName || matchProtein || matchBrand || matchWeight;
+        return (
+          item.name.toLowerCase().includes(q) ||
+          item.protein.toLowerCase().includes(q) ||
+          item.brand.toLowerCase().includes(q) ||
+          `${item.weightLb}`.includes(q)
+        );
       }
       return true;
     });
-  }, [petFilter, selectedBrand, searchQuery]);
+  }, [topTab, selectedBrand, selectedWeightFilter, searchQuery]);
 
   // Totales del carrito
   const cartSummary = useMemo(() => {
@@ -289,7 +313,6 @@ export const HomeScreen: React.FC = () => {
       }
     });
 
-    // Estimación de recargo de transportadora fuera de Bogotá según libras de peso
     const estimatedCarrierFee =
       deliveryZone === 'bogota' ? 0 : Math.max(18000, Math.round(totalWeightLb * 850));
 
@@ -304,584 +327,561 @@ export const HomeScreen: React.FC = () => {
     };
   }, [cart, deliveryZone]);
 
-  const getPetEmoji = (type?: string) => {
-    if (type === 'both') return '🐶🐱';
-    if (type === 'cat') return '🐱';
-    return '🐶';
-  };
-
-  const complementaryCategories = [
-    { id: 'c1', title: 'Snacks & Premios', icon: 'gift-outline' as const, color: '#8B5CF6' },
-    { id: 'c2', title: 'Salud & Antipulgas', icon: 'medkit-outline' as const, color: '#10B981' },
-    { id: 'c3', title: 'Arenas & Higiene', icon: 'water-outline' as const, color: '#06B6D4' },
-    { id: 'c4', title: 'Juguetes & Camas', icon: 'tennisball-outline' as const, color: '#F59E0B' },
-  ];
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <LinearGradient
-        colors={['#050508', '#0F1117', '#050508']}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* ==================== TOP BAR ==================== */}
-      <View style={styles.topBar}>
+      {/* ==================== 1. UBER HEADER: LOCATION + INBOX/BOLSA ==================== */}
+      <View style={styles.uberTopHeader}>
         <Pressable
-          onPress={handleHeaderProfilePress}
-          style={({ pressed }) => [
-            styles.userInfoRow,
-            pressed && { opacity: 0.78 },
-          ]}
+          onPress={handleToggleZone}
+          style={styles.locationSelectorRow}
+          hitSlop={8}
         >
-          <View style={styles.avatarTapWrapper}>
-            <UserAvatar
-              name={user ? user.name : 'Invitado'}
-              avatarUrl={user?.avatarUrl}
-              size={46}
-            />
-            <View style={styles.avatarMiniBadge}>
-              <Ionicons name="person" size={9} color="#050508" />
-            </View>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.welcomeGreeting}>
-              {user ? 'Bienvenido de vuelta,' : 'Explora como invitado,'}
-            </Text>
-            <View style={styles.nameChevronRow}>
-              <Text style={[typography.h3, styles.userNameText]} numberOfLines={1}>
-                {user ? user.name : 'Invitado'} 👋
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={15}
-                color={colors.primary.light}
-                style={{ marginLeft: 4 }}
-              />
-            </View>
-            <Text style={styles.tapProfileHint}>
-              {user ? 'Ver mi cuenta y pedidos ›' : 'Inicia sesión o regístrate ›'}
-            </Text>
-          </View>
+          <View
+            style={[
+              styles.locationDot,
+              {
+                backgroundColor:
+                  deliveryZone === 'bogota' ? '#3B82F6' : '#F59E0B',
+              },
+            ]}
+          />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {deliveryZone === 'bogota'
+              ? user?.defaultAddress?.address1
+                ? `${user.defaultAddress.address1}, Bogotá`
+                : 'Bogotá · Domicilio Gratis'
+              : 'Otra ciudad · + Flete transportadora'}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={15}
+            color={colors.dark.textSecondary}
+          />
         </Pressable>
 
-        {/* Botón de Bolsa de Compras en el Header */}
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
             setCartModalVisible(true);
           }}
-          style={styles.cartHeaderButton}
+          style={styles.inboxBagPill}
           hitSlop={8}
         >
-          <Ionicons name="bag-handle-outline" size={21} color={colors.primary.light} />
-          <View
+          <Ionicons name="bag-handle-outline" size={16} color="#FFFFFF" />
+          <Text style={styles.inboxBagText}>
+            Bolsa{cartSummary.totalItems > 0 ? ` (${cartSummary.totalItems})` : ''}
+          </Text>
+          {cartSummary.totalItems > 0 && <View style={styles.activeGoldDot} />}
+        </Pressable>
+      </View>
+
+      {/* ==================== 2. UBER TOP TABS: PERROS | GATOS ==================== */}
+      <View style={styles.uberTabsContainer}>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setTopTab('dog');
+          }}
+          style={styles.uberTabItem}
+        >
+          <Text style={styles.uberTabEmoji}>🐶</Text>
+          <Text
             style={[
-              styles.cartBadge,
-              cartSummary.totalItems > 0 && styles.cartBadgeActive,
+              styles.uberTabText,
+              topTab === 'dog' && styles.uberTabTextActive,
             ]}
           >
-            <Text style={styles.cartBadgeText}>{cartSummary.totalItems}</Text>
-          </View>
+            Perros
+          </Text>
+          {topTab === 'dog' && <View style={styles.uberTabActiveIndicator} />}
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setTopTab('cat');
+          }}
+          style={styles.uberTabItem}
+        >
+          <Text style={styles.uberTabEmoji}>🐱</Text>
+          <Text
+            style={[
+              styles.uberTabText,
+              topTab === 'cat' && styles.uberTabTextActive,
+            ]}
+          >
+            Gatos
+          </Text>
+          {topTab === 'cat' && <View style={styles.uberTabActiveIndicator} />}
         </Pressable>
       </View>
 
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          cartSummary.totalItems > 0 && { paddingBottom: 110 },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ==================== 1. SELECTOR / BANNER DE COBERTURA LOGÍSTICA ==================== */}
-        <View style={styles.logisticsCard}>
-          <View style={styles.logisticsSwitchRow}>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setDeliveryZone('bogota');
-              }}
-              style={[
-                styles.zonePill,
-                deliveryZone === 'bogota' && styles.zonePillBogotaActive,
-              ]}
-            >
-              <Ionicons
-                name="location"
-                size={14}
-                color={deliveryZone === 'bogota' ? '#050508' : colors.dark.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.zonePillText,
-                  deliveryZone === 'bogota' && styles.zonePillTextActive,
-                ]}
-              >
-                Bogotá D.C.
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setDeliveryZone('nacional');
-              }}
-              style={[
-                styles.zonePill,
-                deliveryZone === 'nacional' && styles.zonePillNacionalActive,
-              ]}
-            >
-              <Ionicons
-                name="bus-outline"
-                size={14}
-                color={deliveryZone === 'nacional' ? '#050508' : colors.dark.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.zonePillText,
-                  deliveryZone === 'nacional' && styles.zonePillTextActive,
-                ]}
-              >
-                Otra Ciudad / Municipio
-              </Text>
-            </Pressable>
-          </View>
-
-          {deliveryZone === 'bogota' ? (
-            <View style={styles.logisticsInfoRow}>
-              <View style={styles.freeDeliveryBadgeIcon}>
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.logisticsHeadlineGreen}>
-                  🚚 Domicilio GRATIS en todo Bogotá D.C.
-                </Text>
-                <Text style={styles.logisticsSubtext}>
-                  Entregas con flota propia · Pago Contraentrega disponible
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.logisticsInfoRow}>
-              <View style={styles.nationalDeliveryBadgeIcon}>
-                <Ionicons name="cube-outline" size={18} color="#F59E0B" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.logisticsHeadlineAmber}>
-                  📦 Envío Nacional con Recargo por Transportadora
-                </Text>
-                <Text style={styles.logisticsSubtext}>
-                  Para municipios y otras ciudades el flete se calcula según el peso del bulto (LB)
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* ==================== 2. BUSCADOR + FILTRO RÁPIDO PERRO / GATO ==================== */}
+        {/* ==================== 3. UBER SEARCH PILL ("Where to?" + Later button) ==================== */}
         <Pressable
           onPress={() => searchInputRef.current?.focus()}
-          style={styles.searchBarContainer}
+          style={styles.uberSearchPill}
         >
-          <Ionicons name="search-outline" size={19} color={colors.primary.DEFAULT} />
+          <Ionicons
+            name="search"
+            size={20}
+            color={colors.dark.textSecondary}
+            style={{ marginRight: 10 }}
+          />
           <TextInput
             ref={searchInputRef}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Buscar Taste of the Wild, Diamond, Acana, 40 LB..."
-            placeholderTextColor={colors.dark.textMuted}
-            style={styles.searchInput}
+            placeholder="¿Qué bulto busca tu mascota?"
+            placeholderTextColor="#9CA3AF"
+            style={styles.uberSearchInput}
             underlineColorAndroid="transparent"
-            returnKeyType="search"
           />
-          {searchQuery.length > 0 && (
+
+          {searchQuery.length > 0 ? (
             <Pressable
               onPress={() => setSearchQuery('')}
-              hitSlop={10}
-              style={styles.clearSearchBtn}
+              style={{ marginRight: 8 }}
+              hitSlop={8}
             >
-              <Ionicons name="close-circle" size={18} color={colors.dark.textSecondary} />
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
             </Pressable>
-          )}
+          ) : null}
+
+          {/* Botón interno estilo "Later" de Uber para filtrar por Libras */}
+          <Pressable
+            onPress={handleCycleWeightFilter}
+            style={[
+              styles.uberLaterButton,
+              selectedWeightFilter !== null && styles.uberLaterButtonActive,
+            ]}
+          >
+            <Ionicons
+              name="barbell-outline"
+              size={14}
+              color={selectedWeightFilter ? '#050508' : '#FFFFFF'}
+            />
+            <Text
+              style={[
+                styles.uberLaterText,
+                selectedWeightFilter !== null && { color: '#050508' },
+              ]}
+            >
+              {selectedWeightFilter ? `${selectedWeightFilter} LB` : 'Peso LB'}
+            </Text>
+          </Pressable>
         </Pressable>
 
-        {/* Píldoras de Especie: Todos | Perros | Gatos */}
-        <View style={styles.speciesFilterRow}>
+        {/* ==================== 4. UBER RECENT / QUICK REORDER STACKED CARD ==================== */}
+        <View style={styles.uberRecentCard}>
+          {/* Fila 1: Diamond Naturals 40 LB */}
           <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setPetFilter('all');
-            }}
-            style={[
-              styles.speciesChip,
-              petFilter === 'all' && styles.speciesChipActive,
+            onPress={() => handleAddToCart('prod_123')}
+            style={({ pressed }) => [
+              styles.uberRecentRow,
+              pressed && { backgroundColor: 'rgba(255, 255, 255, 0.04)' },
             ]}
           >
-            <Text
-              style={[
-                styles.speciesChipText,
-                petFilter === 'all' && styles.speciesChipTextActive,
-              ]}
-            >
-              🐾 Todos los Bultos
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setPetFilter('dog');
-            }}
-            style={[
-              styles.speciesChip,
-              petFilter === 'dog' && styles.speciesChipActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.speciesChipText,
-                petFilter === 'dog' && styles.speciesChipTextActive,
-              ]}
-            >
-              🐶 Perros
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setPetFilter('cat');
-            }}
-            style={[
-              styles.speciesChip,
-              petFilter === 'cat' && styles.speciesChipActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.speciesChipText,
-                petFilter === 'cat' && styles.speciesChipTextActive,
-              ]}
-            >
-              🐱 Gatos
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* ==================== 3. RECOMPRA EN 1 TOQUE (SI TIENE SESIÓN) ==================== */}
-        {user && (
-          <View style={styles.quickReorderBanner}>
-            <View style={styles.quickReorderLeft}>
-              <View style={styles.quickReorderTagRow}>
-                <Ionicons name="repeat" size={13} color={colors.primary.DEFAULT} />
-                <Text style={styles.quickReorderTag}>RECOMPRA MENSUAL RÁPIDA</Text>
-              </View>
-              <Text style={styles.quickReorderProduct} numberOfLines={1}>
+            <View style={styles.uberClockIconBox}>
+              <Ionicons name="time-outline" size={20} color="#D1D5DB" />
+            </View>
+            <View style={styles.uberRecentTextCol}>
+              <Text style={styles.uberRecentTitle} numberOfLines={1}>
                 Diamond Naturals Lamb & Rice 40 LB
               </Text>
-              <Text style={styles.quickReorderPrice}>
-                $ 289.000 · {deliveryZone === 'bogota' ? 'Domicilio Gratis Bogotá' : '+ Flete nacional'}
+              <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
+                $ 289.000 ·{' '}
+                {deliveryZone === 'bogota'
+                  ? 'Domicilio Gratis en Bogotá'
+                  : 'Envío nacional (+ recargo transportadora)'}
               </Text>
             </View>
-            <Pressable
-              onPress={handleQuickRepeatLastOrder}
-              style={({ pressed }) => [
-                styles.quickReorderBtn,
-                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-              ]}
-            >
-              <Ionicons name="add-circle" size={16} color="#050508" />
-              <Text style={styles.quickReorderBtnText}>Pedir de nuevo</Text>
-            </Pressable>
-          </View>
-        )}
+            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+          </Pressable>
 
-        {/* ==================== 4. TARJETA VIP CONSENTICOINS ==================== */}
-        <View style={styles.vipCardOuter}>
-          <LinearGradient
-            colors={['#C69214', '#D4AF37', '#996515']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.vipCardGradient}
+          <View style={styles.uberRecentDivider} />
+
+          {/* Fila 2: Taste of the Wild High Prairie 28 LB */}
+          <Pressable
+            onPress={() => handleAddToCart('prod_9567')}
+            style={({ pressed }) => [
+              styles.uberRecentRow,
+              pressed && { backgroundColor: 'rgba(255, 255, 255, 0.04)' },
+            ]}
           >
-            <View style={styles.vipCardHeader}>
-              <View>
-                <Text style={styles.vipCardBadge}>BILLETERA CONSENTICOINS</Text>
-                <Text style={styles.vipCardPoints}>
-                  {user?.points ?? 250} <Text style={styles.ptsText}>COINS</Text>
-                </Text>
-              </View>
-              <View style={styles.petBadgeHeader}>
-                <Text style={styles.petEmojiIcon}>{getPetEmoji(user?.petType)}</Text>
-                <Text style={styles.petBadgeName}>{user?.petName || 'Peludo'}</Text>
-              </View>
+            <View style={styles.uberClockIconBox}>
+              <Ionicons name="time-outline" size={20} color="#D1D5DB" />
             </View>
-
-            <View style={styles.vipCardFooter}>
-              <Text style={styles.vipCardBenefit}>
-                {user
-                  ? `🎉 Acumulas Coins por cada bulto de concentrado que compres`
-                  : '✨ Inicia sesión para reclamar tus 250 Consenticoins de bienvenida'}
+            <View style={styles.uberRecentTextCol}>
+              <Text style={styles.uberRecentTitle} numberOfLines={1}>
+                Taste of the Wild High Prairie 28 LB
+              </Text>
+              <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
+                $ 341.300 · Bisonte y Venado · +341 Consenticoins
               </Text>
             </View>
-          </LinearGradient>
+            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+          </Pressable>
         </View>
 
-        {/* ==================== 5. VITRINA DE MARCAS SUPER PREMIUM ==================== */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={[typography.h3, styles.sectionTitle]}>Marcas Super Premium</Text>
-          <Text style={styles.sectionCounterText}>100% Originales</Text>
+        {/* ==================== 5. UBER "FOR YOU" 4 CIRCULAR ICONS ==================== */}
+        <View style={styles.uberSectionHeader}>
+          <Text style={styles.uberSectionTitle}>Para tu mascota</Text>
+          <View style={styles.uberSmallArrowCircle}>
+            <Ionicons name="chevron-forward" size={13} color="#D1D5DB" />
+          </View>
+        </View>
+
+        <View style={styles.uberCirclesRow}>
+          {FOR_YOU_CIRCLES.map((item) => {
+            const isSelected = selectedBrand === item.id;
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setSelectedBrand(item.id);
+                }}
+                style={styles.uberCircleItem}
+              >
+                <View
+                  style={[
+                    styles.uberCircleGraphic,
+                    isSelected && styles.uberCircleGraphicActive,
+                  ]}
+                >
+                  <Text style={styles.uberCircleEmoji}>{item.emoji}</Text>
+                </View>
+                <Text
+                  style={[
+                    styles.uberCircleLabel,
+                    isSelected && { color: colors.primary.light, fontWeight: '800' },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* ==================== 6. UBER HORIZONTAL CARDS ("Bultos Super Premium") ==================== */}
+        <View style={styles.uberSectionHeader}>
+          <Text style={styles.uberSectionTitle}>
+            {selectedBrand === 'Todas'
+              ? 'Bultos Super Premium'
+              : `Línea ${selectedBrand}`}
+          </Text>
+          {selectedBrand !== 'Todas' || selectedWeightFilter !== null ? (
+            <Pressable
+              onPress={() => {
+                setSelectedBrand('Todas');
+                setSelectedWeightFilter(null);
+              }}
+            >
+              <Text style={styles.clearFilterLink}>Ver todos</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.brandsScrollContainer}
+          contentContainerStyle={styles.uberHorizontalCardsScroll}
         >
-          {BRANDS.map((brand) => {
-            const isSelected = selectedBrand === brand;
+          {filteredProducts.map((product) => {
+            const qty = cart[product.id] || 0;
             return (
-              <Pressable
-                key={brand}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setSelectedBrand(brand);
-                }}
-                style={[
-                  styles.brandPill,
-                  isSelected && styles.brandPillActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.brandPillText,
-                    isSelected && styles.brandPillTextActive,
-                  ]}
+              <View key={product.id} style={styles.uberFeatureCard}>
+                {/* Banner gráfico superior estilo ilustración de Uber */}
+                <LinearGradient
+                  colors={['#1A1E2E', '#10131C']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.uberCardGraphicArea}
                 >
-                  {brand}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* ==================== 6. CATÁLOGO DE BULTOS DESTACADOS ==================== */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={[typography.h3, styles.sectionTitle]}>
-            Bultos Disponibles ({filteredProducts.length})
-          </Text>
-          <Text style={styles.sectionSubtitleGold}>
-            {deliveryZone === 'bogota' ? '📍 Precios Bogotá' : '📦 Envíos Nacionales'}
-          </Text>
-        </View>
-
-        {filteredProducts.length === 0 ? (
-          <View style={styles.emptySearchBox}>
-            <Ionicons name="search-outline" size={32} color={colors.dark.textMuted} />
-            <Text style={styles.emptySearchTitle}>No encontramos ese concentrado</Text>
-            <Text style={styles.emptySearchDesc}>
-              Intenta buscar por otra marca (Diamond, Taste of the Wild, Acana) o limpia el filtro.
-            </Text>
-            <Pressable
-              onPress={() => {
-                setSearchQuery('');
-                setSelectedBrand('Todas');
-                setPetFilter('all');
-              }}
-              style={styles.resetFiltersBtn}
-            >
-              <Text style={styles.resetFiltersText}>Ver todos los bultos</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.productsList}>
-            {filteredProducts.map((product) => {
-              const qtyInCart = cart[product.id] || 0;
-              return (
-                <View key={product.id} style={styles.productCard}>
-                  {/* Top Row: Brand + Weight Badge */}
-                  <View style={styles.productTopRow}>
-                    <View style={styles.productBrandRow}>
-                      <Text style={styles.productBrandText}>
-                        {product.brand.toUpperCase()}
+                  <View style={styles.uberCardTopBadges}>
+                    <View style={styles.uberBrandBadge}>
+                      <Text style={styles.uberBrandBadgeText}>
+                        {product.brand}
                       </Text>
-                      {product.tag && (
-                        <View style={styles.productHotTag}>
-                          <Text style={styles.productHotTagText}>{product.tag}</Text>
-                        </View>
-                      )}
                     </View>
-
-                    <View style={styles.weightBadge}>
-                      <Ionicons name="barbell-outline" size={12} color="#050508" />
-                      <Text style={styles.weightBadgeText}>{product.weightLb} LB</Text>
+                    <View style={styles.uberWeightPill}>
+                      <Text style={styles.uberWeightPillText}>
+                        {product.weightLb} LB
+                      </Text>
                     </View>
                   </View>
 
-                  {/* Middle Row: Bag Icon + Title + Protein + Shipping Badge */}
-                  <View style={styles.productMainRow}>
-                    <View style={styles.bagVisualBox}>
-                      <Text style={styles.bagEmoji}>
-                        {product.petType === 'cat' ? '🐱' : '🐶'}
-                      </Text>
-                      <Text style={styles.bagWeightMini}>{product.weightLb}lb</Text>
-                    </View>
-
-                    <View style={styles.productInfoCol}>
-                      <Text style={styles.productNameText}>{product.name}</Text>
-                      <Text style={styles.productProteinText}>{product.protein}</Text>
-
-                      <View style={styles.productMetaPillsRow}>
-                        <View style={styles.stagePill}>
-                          <Text style={styles.stagePillText}>{product.stage}</Text>
-                        </View>
-                        <View style={styles.coinsEarnPill}>
-                          <Text style={styles.coinsEarnText}>+{product.coins} Coins</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Indicador de envío según ciudad seleccionada */}
-                  <View
-                    style={[
-                      styles.shippingNoticeStrip,
-                      deliveryZone === 'bogota'
-                        ? styles.shippingStripBogota
-                        : styles.shippingStripNacional,
-                    ]}
-                  >
-                    <Ionicons
-                      name={
-                        deliveryZone === 'bogota'
-                          ? 'checkmark-circle'
-                          : 'information-circle'
-                      }
-                      size={14}
-                      color={deliveryZone === 'bogota' ? '#10B981' : '#F59E0B'}
-                    />
-                    <Text
+                  <View style={styles.uberCardVisualCenter}>
+                    <View
                       style={[
-                        styles.shippingStripText,
-                        {
-                          color: deliveryZone === 'bogota' ? '#6EE7B7' : '#FDE68A',
-                        },
+                        styles.bagIllustrationCircle,
+                        { borderColor: `${product.accentColor}55` },
                       ]}
                     >
-                      {deliveryZone === 'bogota'
-                        ? 'Domicilio GRATIS en Bogotá · Pago Contraentrega'
-                        : `Envío fuera de Bogotá: + recargo transportadora (${product.weightLb} LB)`}
-                    </Text>
-                  </View>
-
-                  {/* Bottom Row: Price + Add to Cart / Quantity Stepper */}
-                  <View style={styles.productBottomRow}>
-                    <View>
-                      <Text style={styles.priceLabel}>Precio por bulto</Text>
-                      <Text style={styles.productPriceText}>
-                        {formatCOP(product.price)}
+                      <Text style={{ fontSize: 34 }}>
+                        {product.petType === 'cat' ? '🐱' : '🐶'}
                       </Text>
                     </View>
+                  </View>
 
-                    {qtyInCart === 0 ? (
+                  {/* Etiqueta flotante inferior estilo logo Uber en la tarjeta */}
+                  <View style={styles.uberCardBottomTag}>
+                    <Text style={styles.uberCardBottomTagText}>
+                      {deliveryZone === 'bogota'
+                        ? '🚚 Domicilio Gratis Bogotá'
+                        : '📦 + Recargo transportadora'}
+                    </Text>
+                  </View>
+                </LinearGradient>
+
+                {/* Texto inferior y botón de compra */}
+                <View style={styles.uberCardBody}>
+                  <Text style={styles.uberCardTitle} numberOfLines={1}>
+                    {product.name}
+                  </Text>
+                  <Text style={styles.uberCardSubtitle} numberOfLines={1}>
+                    {product.protein} · +{product.coins} Coins
+                  </Text>
+
+                  <View style={styles.uberCardPriceRow}>
+                    <Text style={styles.uberCardPrice}>
+                      {formatCOP(product.price)}
+                    </Text>
+
+                    {qty === 0 ? (
                       <Pressable
                         onPress={() => handleAddToCart(product.id)}
                         style={({ pressed }) => [
-                          styles.addBagButton,
-                          pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                          styles.uberAddBtn,
+                          pressed && { opacity: 0.85 },
                         ]}
                       >
-                        <Ionicons name="add" size={18} color="#050508" />
-                        <Text style={styles.addBagButtonText}>Agregar</Text>
+                        <Ionicons name="add" size={16} color="#050508" />
+                        <Text style={styles.uberAddBtnText}>Pedir</Text>
                       </Pressable>
                     ) : (
                       <View style={styles.qtyStepper}>
                         <Pressable
                           onPress={() => handleDecrementCart(product.id)}
                           style={styles.qtyStepBtn}
-                          hitSlop={6}
                         >
-                          <Ionicons name="remove" size={16} color="#FFFFFF" />
+                          <Ionicons name="remove" size={14} color="#FFFFFF" />
                         </Pressable>
-                        <Text style={styles.qtyCountText}>{qtyInCart}</Text>
+                        <Text style={styles.qtyCountText}>{qty}</Text>
                         <Pressable
                           onPress={() => handleAddToCart(product.id)}
                           style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                          hitSlop={6}
                         >
-                          <Ionicons name="add" size={16} color="#050508" />
+                          <Ionicons name="add" size={14} color="#050508" />
                         </Pressable>
                       </View>
                     )}
                   </View>
                 </View>
-              );
-            })}
-          </View>
-        )}
+              </View>
+            );
+          })}
+        </ScrollView>
 
-        {/* ==================== 7. CATEGORÍAS COMPLEMENTARIAS ==================== */}
-        <View style={[styles.sectionHeaderRow, { marginTop: 10 }]}>
-          <Text style={[typography.h3, styles.sectionTitle]}>
-            Complementa su Pedido
+        {/* ==================== 7. SEGUNDA SECCIÓN ESTILO UBER ("Más beneficios Mundo Mascotas") ==================== */}
+        <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
+          <Text style={styles.uberSectionTitle}>
+            Más beneficios en Mundo Mascotas
           </Text>
         </View>
 
-        <View style={styles.complementaryGrid}>
-          {complementaryCategories.map((cat) => (
-            <Pressable
-              key={cat.id}
-              onPress={() => Haptics.selectionAsync()}
-              style={({ pressed }) => [
-                styles.compCard,
-                pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
-              ]}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.uberHorizontalCardsScroll}
+        >
+          {/* Tarjeta 1: Billetera Consenticoins */}
+          <Pressable
+            onPress={handleAccountAccess}
+            style={styles.uberPromoWideCard}
+          >
+            <LinearGradient
+              colors={['#C69214', '#D4AF37', '#8A5A10']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.uberPromoVisual}
             >
-              <View style={[styles.compIconCircle, { backgroundColor: `${cat.color}20` }]}>
-                <Ionicons name={cat.icon} size={20} color={cat.color} />
+              <View style={styles.uberPromoBadge}>
+                <Text style={styles.uberPromoBadgeText}>CLUB VIP</Text>
               </View>
-              <Text style={styles.compCardTitle}>{cat.title}</Text>
-            </Pressable>
-          ))}
-        </View>
+              <Text style={styles.uberPromoBigCoins}>
+                {user?.points ?? 250} COINS 🪙
+              </Text>
+            </LinearGradient>
+            <Text style={styles.uberCardTitle}>Billetera Consenticoins</Text>
+            <Text style={styles.uberCardSubtitle}>
+              {user
+                ? `Hola ${user.name}, redime tus monedas en tu próximo bulto`
+                : 'Inicia sesión y recibe 250 Consenticoins de regalo'}
+            </Text>
+          </Pressable>
+
+          {/* Tarjeta 2: Cobertura Bogotá vs Nacional */}
+          <Pressable
+            onPress={handleToggleZone}
+            style={styles.uberPromoWideCard}
+          >
+            <LinearGradient
+              colors={['#112233', '#0B1520']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.uberPromoVisual}
+            >
+              <View style={styles.uberPromoBadge}>
+                <Text style={styles.uberPromoBadgeText}>LOGÍSTICA</Text>
+              </View>
+              <Text style={[styles.uberPromoBigCoins, { fontSize: 18 }]}>
+                {deliveryZone === 'bogota'
+                  ? '🚚 Gratis en Bogotá'
+                  : '📦 Envíos Nacionales'}
+              </Text>
+            </LinearGradient>
+            <Text style={styles.uberCardTitle}>
+              {deliveryZone === 'bogota'
+                ? 'Domicilio sin costo en Bogotá'
+                : 'Despachos a toda Colombia'}
+            </Text>
+            <Text style={styles.uberCardSubtitle}>
+              {deliveryZone === 'bogota'
+                ? 'Pago contraentrega con nuestra flota propia'
+                : 'Recargo por transportadora según el peso en libras'}
+            </Text>
+          </Pressable>
+        </ScrollView>
       </ScrollView>
 
-      {/* ==================== BARRA FLOTANTE INFERIOR DE CARRITO ==================== */}
-      {cartSummary.totalItems > 0 && (
-        <View style={styles.floatingCartWrapper}>
+      {/* ==================== 8. UBER FLOATING PILL BOTTOM NAVIGATION BAR ==================== */}
+      <View style={styles.uberFloatingDockWrapper}>
+        <View style={styles.uberFloatingDock}>
+          {/* Tab 1: Home / Inicio */}
           <Pressable
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Haptics.selectionAsync();
+              setActiveBottomTab('home');
+              setSelectedBrand('Todas');
+            }}
+            style={[
+              styles.uberDockTab,
+              activeBottomTab === 'home' && styles.uberDockTabActivePill,
+            ]}
+          >
+            <Ionicons
+              name={activeBottomTab === 'home' ? 'home' : 'home-outline'}
+              size={20}
+              color={activeBottomTab === 'home' ? '#FFFFFF' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.uberDockLabel,
+                activeBottomTab === 'home' && styles.uberDockLabelActive,
+              ]}
+            >
+              Inicio
+            </Text>
+          </Pressable>
+
+          {/* Tab 2: Services / Marcas */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setActiveBottomTab('catalog');
               setCartModalVisible(true);
             }}
-            style={styles.floatingCartBar}
+            style={[
+              styles.uberDockTab,
+              activeBottomTab === 'catalog' && styles.uberDockTabActivePill,
+            ]}
           >
-            <View style={styles.floatingCartLeft}>
-              <View style={styles.floatingCartCountCircle}>
-                <Text style={styles.floatingCartCountText}>
-                  {cartSummary.totalItems}
-                </Text>
-              </View>
-              <View>
-                <Text style={styles.floatingCartTotalText}>
-                  {formatCOP(cartSummary.subtotal)}
-                </Text>
-                <Text style={styles.floatingCartSubText}>
-                  {cartSummary.totalWeightLb} LB en total ·{' '}
-                  {deliveryZone === 'bogota'
-                    ? 'Envío Gratis Bogotá'
-                    : '+ Flete transportadora'}
-                </Text>
-              </View>
-            </View>
+            <Ionicons
+              name="grid-outline"
+              size={20}
+              color={activeBottomTab === 'catalog' ? '#FFFFFF' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.uberDockLabel,
+                activeBottomTab === 'catalog' && styles.uberDockLabelActive,
+              ]}
+            >
+              Bolsa ({cartSummary.totalItems})
+            </Text>
+          </Pressable>
 
-            <View style={styles.floatingCartRight}>
-              <Text style={styles.floatingCartActionText}>Ver Bolsa</Text>
-              <Ionicons name="arrow-forward" size={16} color="#050508" />
-            </View>
+          {/* Tab 3: Activity / Pedidos */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setActiveBottomTab('activity');
+              handleAccountAccess();
+            }}
+            style={[
+              styles.uberDockTab,
+              activeBottomTab === 'activity' && styles.uberDockTabActivePill,
+            ]}
+          >
+            <Ionicons
+              name="receipt-outline"
+              size={20}
+              color={activeBottomTab === 'activity' ? '#FFFFFF' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.uberDockLabel,
+                activeBottomTab === 'activity' && styles.uberDockLabelActive,
+              ]}
+            >
+              Pedidos
+            </Text>
+          </Pressable>
+
+          {/* Tab 4: Account / Cuenta */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setActiveBottomTab('account');
+              handleAccountAccess();
+            }}
+            style={[
+              styles.uberDockTab,
+              activeBottomTab === 'account' && styles.uberDockTabActivePill,
+            ]}
+          >
+            <Ionicons
+              name={user ? 'person' : 'person-outline'}
+              size={20}
+              color={
+                activeBottomTab === 'account'
+                  ? '#FFFFFF'
+                  : user
+                  ? colors.primary.light
+                  : '#9CA3AF'
+              }
+            />
+            <Text
+              style={[
+                styles.uberDockLabel,
+                activeBottomTab === 'account' && styles.uberDockLabelActive,
+                user && { color: colors.primary.light },
+              ]}
+              numberOfLines={1}
+            >
+              {user ? user.name.split(' ')[0] : 'Cuenta'}
+            </Text>
           </Pressable>
         </View>
-      )}
+      </View>
 
       {/* ==================== MODAL RESUMEN DE BOLSA / LIQUIDACIÓN DE ENVÍO ==================== */}
       <Modal
@@ -891,10 +891,7 @@ export const HomeScreen: React.FC = () => {
         onRequestClose={animateCloseCart}
       >
         <View style={styles.modalBackdrop}>
-          <Pressable
-            style={{ flex: 1 }}
-            onPress={animateCloseCart}
-          />
+          <Pressable style={{ flex: 1 }} onPress={animateCloseCart} />
           <Animated.View
             style={[
               styles.cartSheetContainer,
@@ -950,7 +947,7 @@ export const HomeScreen: React.FC = () => {
                   {/* Selector de destino dentro del carrito */}
                   <View style={styles.cartZoneBox}>
                     <Text style={styles.cartZoneLabel}>
-                      Selecciona ciudad de entrega para calcular flete:
+                      Ciudad de entrega:
                     </Text>
                     <View style={styles.logisticsSwitchRow}>
                       <Pressable
@@ -1070,7 +1067,10 @@ export const HomeScreen: React.FC = () => {
                     <View style={styles.orderConfirmedBanner}>
                       <Ionicons name="checkmark-circle" size={22} color="#10B981" />
                       <Text style={styles.orderConfirmedText}>
-                        ¡Pedido listo! {deliveryZone === 'bogota' ? 'Domicilio Gratis en Bogotá confirmado.' : 'Incluye guía de transportadora nacional.'}
+                        ¡Pedido listo!{' '}
+                        {deliveryZone === 'bogota'
+                          ? 'Domicilio Gratis en Bogotá confirmado.'
+                          : 'Incluye guía de transportadora nacional.'}
                       </Text>
                     </View>
                   ) : (
@@ -1112,561 +1112,438 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: '#0A0B0E',
   },
-  topBar: {
+  /* ==================== 1. UBER HEADER ==================== */
+  uberTopHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
-  },
-  userInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    paddingRight: 10,
-  },
-  avatarTapWrapper: {
-    position: 'relative',
-  },
-  avatarMiniBadge: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.primary.DEFAULT,
-    borderWidth: 1.5,
-    borderColor: '#050508',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nameChevronRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tapProfileHint: {
-    color: colors.primary.light,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 1,
-  },
-  welcomeGreeting: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-  },
-  userNameText: {
-    color: colors.dark.textPrimary,
-  },
-  cartHeaderButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.dark.cardElevated,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  cartBadgeActive: {
-    backgroundColor: colors.primary.DEFAULT,
-  },
-  cartBadgeText: {
-    color: '#050508',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 40,
+    paddingTop: 8,
+    paddingBottom: 10,
   },
-  logisticsCard: {
-    backgroundColor: '#0E1017',
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
-    marginBottom: 14,
-  },
-  logisticsSwitchRow: {
-    flexDirection: 'row',
-    backgroundColor: '#050508',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-  },
-  zonePill: {
-    flex: 1,
+  locationSelectorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 7,
-    borderRadius: 9,
-  },
-  zonePillBogotaActive: {
-    backgroundColor: colors.primary.DEFAULT,
-  },
-  zonePillNacionalActive: {
-    backgroundColor: '#F59E0B',
-  },
-  zonePillText: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  zonePillTextActive: {
-    color: '#050508',
-    fontWeight: '800',
-  },
-  logisticsInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 4,
-  },
-  freeDeliveryBadgeIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(16, 185, 129, 0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nationalDeliveryBadgeIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(245, 158, 11, 0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logisticsHeadlineGreen: {
-    color: '#6EE7B7',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  logisticsHeadlineAmber: {
-    color: '#FDE68A',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  logisticsSubtext: {
-    color: colors.dark.textSecondary,
-    fontSize: 11,
-    marginTop: 1,
-  },
-  searchBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0E1017',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 48,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 12,
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#FFFFFF',
-    fontSize: 13,
-    height: '100%',
-  },
-  clearSearchBtn: {
-    padding: 2,
-  },
-  speciesFilterRow: {
-    flexDirection: 'row',
     gap: 8,
-    marginBottom: 16,
-  },
-  speciesChip: {
     flex: 1,
-    paddingVertical: 9,
-    borderRadius: 12,
-    backgroundColor: '#0E1017',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
+    paddingRight: 12,
   },
-  speciesChipActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.16)',
-    borderColor: colors.primary.DEFAULT,
+  locationDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
   },
-  speciesChipText: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  speciesChipTextActive: {
-    color: colors.primary.light,
-  },
-  quickReorderBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#11141E',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
-    marginBottom: 16,
-    gap: 10,
-  },
-  quickReorderLeft: {
-    flex: 1,
-  },
-  quickReorderTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 3,
-  },
-  quickReorderTag: {
-    color: colors.primary.light,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  quickReorderProduct: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  quickReorderPrice: {
-    color: colors.dark.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  quickReorderBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  quickReorderBtnText: {
-    color: '#050508',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  vipCardOuter: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  vipCardGradient: {
-    padding: 18,
-    borderRadius: 20,
-  },
-  vipCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  vipCardBadge: {
-    color: '#FEF3C7',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  vipCardPoints: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  ptsText: {
+  locationText: {
+    color: '#E5E7EB',
     fontSize: 14,
     fontWeight: '600',
-    color: '#FEF3C7',
+    flexShrink: 1,
   },
-  petBadgeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    paddingVertical: 5,
-    paddingHorizontal: 11,
-    borderRadius: 14,
-    gap: 5,
-  },
-  petEmojiIcon: {
-    fontSize: 16,
-  },
-  petBadgeName: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  vipCardFooter: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.2)',
-    paddingTop: 10,
-  },
-  vipCardBenefit: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: colors.dark.textPrimary,
-  },
-  sectionCounterText: {
-    color: colors.dark.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  sectionSubtitleGold: {
-    color: colors.primary.light,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  brandsScrollContainer: {
-    gap: 8,
-    paddingBottom: 18,
-  },
-  brandPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: '#0E1017',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.09)',
-  },
-  brandPillActive: {
-    backgroundColor: colors.primary.DEFAULT,
-    borderColor: colors.primary.light,
-  },
-  brandPillText: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  brandPillTextActive: {
-    color: '#050508',
-    fontWeight: '800',
-  },
-  productsList: {
-    gap: 14,
-    marginBottom: 18,
-  },
-  productCard: {
-    backgroundColor: '#0E1017',
-    borderRadius: 20,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  productTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  productBrandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  productBrandText: {
-    color: colors.primary.light,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  productHotTag: {
-    backgroundColor: 'rgba(212, 175, 55, 0.14)',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  productHotTagText: {
-    color: '#FDE68A',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  weightBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  weightBadgeText: {
-    color: '#050508',
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  productMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  bagVisualBox: {
-    width: 62,
-    height: 70,
-    borderRadius: 14,
-    backgroundColor: '#151926',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bagEmoji: {
-    fontSize: 24,
-  },
-  bagWeightMini: {
-    color: colors.primary.light,
-    fontSize: 10,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  productInfoCol: {
-    flex: 1,
-  },
-  productNameText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 3,
-  },
-  productProteinText: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  productMetaPillsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stagePill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  stagePillText: {
-    color: colors.dark.textSecondary,
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  coinsEarnPill: {
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  coinsEarnText: {
-    color: colors.primary.light,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  shippingNoticeStrip: {
+  inboxBagPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    marginBottom: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
   },
-  shippingStripBogota: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
-  },
-  shippingStripNacional: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.25)',
-  },
-  shippingStripText: {
-    fontSize: 11,
+  inboxBagText: {
+    color: '#E5E7EB',
+    fontSize: 14,
     fontWeight: '600',
+  },
+  activeGoldDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.primary.DEFAULT,
+  },
+
+  /* ==================== 2. UBER TOP TABS ==================== */
+  uberTabsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 36,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 20,
+  },
+  uberTabItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    position: 'relative',
+  },
+  uberTabEmoji: {
+    fontSize: 22,
+  },
+  uberTabText: {
+    color: '#9CA3AF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  uberTabTextActive: {
+    color: '#FFFFFF',
+  },
+  uberTabActiveIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+
+  /* ==================== 3. UBER SEARCH PILL ==================== */
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 115,
+  },
+  uberSearchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#181A20',
+    borderRadius: 32,
+    paddingLeft: 18,
+    paddingRight: 8,
+    height: 56,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    marginBottom: 14,
+  },
+  uberSearchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    height: '100%',
+  },
+  uberLaterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#0A0B0E',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  uberLaterButtonActive: {
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.light,
+  },
+  uberLaterText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  /* ==================== 4. UBER RECENT STACKED CARD ==================== */
+  uberRecentCard: {
+    backgroundColor: '#12141A',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    overflow: 'hidden',
+    marginBottom: 26,
+  },
+  uberRecentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  uberClockIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#1E212B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uberRecentTextCol: {
     flex: 1,
   },
-  productBottomRow: {
+  uberRecentTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  uberRecentSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 13,
+  },
+  uberRecentDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    marginLeft: 70,
+  },
+
+  /* ==================== 5. UBER "FOR YOU" 4 CIRCLES ==================== */
+  uberSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  uberSectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  uberSmallArrowCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#181A20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    marginRight: 'auto',
+  },
+  clearFilterLink: {
+    color: colors.primary.light,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  uberCirclesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 28,
+  },
+  uberCircleItem: {
+    width: '23%',
+    alignItems: 'center',
+    gap: 8,
+  },
+  uberCircleGraphic: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#181A20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  uberCircleGraphicActive: {
+    borderColor: colors.primary.DEFAULT,
+    backgroundColor: 'rgba(212, 175, 55, 0.14)',
+  },
+  uberCircleEmoji: {
+    fontSize: 30,
+  },
+  uberCircleLabel: {
+    color: '#E5E7EB',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  /* ==================== 6. UBER HORIZONTAL CARDS ==================== */
+  uberHorizontalCardsScroll: {
+    gap: 14,
+    paddingRight: 16,
+  },
+  uberFeatureCard: {
+    width: 256,
+  },
+  uberCardGraphicArea: {
+    height: 148,
+    borderRadius: 18,
+    padding: 12,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 10,
+  },
+  uberCardTopBadges: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
-  priceLabel: {
-    color: colors.dark.textMuted,
+  uberBrandBadge: {
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  uberBrandBadgeText: {
+    color: colors.primary.light,
     fontSize: 10,
-  },
-  productPriceText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  addBagButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  addBagButtonText: {
-    color: '#050508',
-    fontSize: 13,
     fontWeight: '800',
   },
+  uberWeightPill: {
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  uberWeightPillText: {
+    color: '#050508',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  uberCardVisualCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bagIllustrationCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uberCardBottomTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  uberCardBottomTagText: {
+    color: '#050508',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  uberCardBody: {
+    paddingHorizontal: 2,
+  },
+  uberCardTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  uberCardSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  uberCardPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  uberCardPrice: {
+    color: colors.primary.light,
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  uberAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+  },
+  uberAddBtnText: {
+    color: '#050508',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  uberPromoWideCard: {
+    width: 260,
+  },
+  uberPromoVisual: {
+    height: 125,
+    borderRadius: 18,
+    padding: 14,
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  uberPromoBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  uberPromoBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.7,
+  },
+  uberPromoBigCoins: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+
+  /* ==================== 8. UBER FLOATING PILL BOTTOM DOCK ==================== */
+  uberFloatingDockWrapper: {
+    position: 'absolute',
+    bottom: 14,
+    left: 22,
+    right: 22,
+  },
+  uberFloatingDock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#16181F',
+    borderRadius: 38,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  uberDockTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 30,
+    gap: 2,
+  },
+  uberDockTabActivePill: {
+    backgroundColor: '#262934',
+  },
+  uberDockLabel: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  uberDockLabelActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+
+  /* ==================== CARRITO & STEPPERS ==================== */
   qtyStepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#161925',
-    borderRadius: 12,
-    padding: 4,
+    backgroundColor: '#181A20',
+    borderRadius: 16,
+    padding: 3,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
-    gap: 10,
+    borderColor: 'rgba(212, 175, 55, 0.4)',
+    gap: 8,
   },
   qtyStepBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1676,136 +1553,7 @@ const styles = StyleSheet.create({
   },
   qtyCountText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    minWidth: 16,
-    textAlign: 'center',
-  },
-  emptySearchBox: {
-    backgroundColor: '#0E1017',
-    borderRadius: 18,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-    marginBottom: 20,
-    gap: 6,
-  },
-  emptySearchTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  emptySearchDesc: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  resetFiltersBtn: {
-    marginTop: 8,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
-  },
-  resetFiltersText: {
-    color: colors.primary.light,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  complementaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  compCard: {
-    width: '48.2%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0E1017',
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.dark.border,
-    gap: 10,
-  },
-  compIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  compCardTitle: {
-    color: colors.dark.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-    flex: 1,
-  },
-  floatingCartWrapper: {
-    position: 'absolute',
-    bottom: 18,
-    left: 18,
-    right: 18,
-  },
-  floatingCartBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  floatingCartLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  floatingCartCountCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#050508',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floatingCartCountText: {
-    color: colors.primary.light,
     fontSize: 13,
-    fontWeight: '900',
-  },
-  floatingCartTotalText: {
-    color: '#050508',
-    fontSize: 15,
-    fontWeight: '900',
-  },
-  floatingCartSubText: {
-    color: 'rgba(5, 5, 8, 0.78)',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  floatingCartRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(5, 5, 8, 0.14)',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 12,
-  },
-  floatingCartActionText: {
-    color: '#050508',
-    fontSize: 12,
     fontWeight: '800',
   },
   modalBackdrop: {
@@ -1899,6 +1647,36 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     marginBottom: 8,
+  },
+  logisticsSwitchRow: {
+    flexDirection: 'row',
+    backgroundColor: '#050508',
+    borderRadius: 12,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  zonePill: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 9,
+  },
+  zonePillBogotaActive: {
+    backgroundColor: colors.primary.DEFAULT,
+  },
+  zonePillNacionalActive: {
+    backgroundColor: '#F59E0B',
+  },
+  zonePillText: {
+    color: colors.dark.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  zonePillTextActive: {
+    color: '#050508',
+    fontWeight: '800',
   },
   cartItemRow: {
     flexDirection: 'row',
