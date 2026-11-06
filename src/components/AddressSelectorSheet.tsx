@@ -348,7 +348,39 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
               {/* ==================== VISTA 1: LISTA DE DIRECCIONES GUARDADAS ==================== */}
               {mode === 'list' && (
                 <>
-                  {/* Banner informativo de cobertura Bogotá vs Nacional */}
+                  {/* 1. Botón para agregar otra dirección DE PRIMERAS */}
+                  <Pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setRecipientInput(user?.name || 'Alejandra P.');
+                      setPhoneInput(user?.phone || '+57 300 3918279');
+                      setMode('add');
+                    }}
+                    style={({ pressed }) => [
+                      styles.addNewAddressButton,
+                      { marginBottom: 14 },
+                      pressed && { opacity: 0.88 },
+                    ]}
+                  >
+                    <View style={styles.addNewPlusCircle}>
+                      <Ionicons name="add" size={20} color="#050508" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.addNewAddressTitle}>
+                        Agregar otra dirección de entrega
+                      </Text>
+                      <Text style={styles.addNewAddressSub}>
+                        Registra tu oficina, apartamento, finca o casa de un familiar
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={colors.primary.light}
+                    />
+                  </Pressable>
+
+                  {/* 2. Banner informativo de cobertura Bogotá vs Nacional */}
                   <View style={styles.logisticsRuleBanner}>
                     <View style={styles.logisticsRuleRow}>
                       <View style={styles.ruleBadgeBogota}>
@@ -364,7 +396,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                     </View>
                   </View>
 
-                  {/* Tarjetas de direcciones del cliente */}
+                  {/* 3. Tarjetas de direcciones guardadas del cliente */}
                   <View style={styles.addressesList}>
                     {addresses.map((addr) => {
                       const isSelected = addr.id === selectedAddress.id;
@@ -491,37 +523,6 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                       );
                     })}
                   </View>
-
-                  {/* Botón para agregar otra dirección */}
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setRecipientInput(user?.name || 'Alejandra P.');
-                      setPhoneInput(user?.phone || '+57 300 3918279');
-                      setMode('add');
-                    }}
-                    style={({ pressed }) => [
-                      styles.addNewAddressButton,
-                      pressed && { opacity: 0.88 },
-                    ]}
-                  >
-                    <View style={styles.addNewPlusCircle}>
-                      <Ionicons name="add" size={20} color="#050508" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.addNewAddressTitle}>
-                        Agregar otra dirección de entrega
-                      </Text>
-                      <Text style={styles.addNewAddressSub}>
-                        Registra tu oficina, apartamento, finca o casa de un familiar
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color={colors.primary.light}
-                    />
-                  </Pressable>
                 </>
               )}
 
