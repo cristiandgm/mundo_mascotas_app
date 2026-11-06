@@ -333,9 +333,14 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
 
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ flex: 1 }}
           >
             <ScrollView
+              style={{
+                maxHeight:
+                  isExpanded || mode === 'add'
+                    ? SCREEN_HEIGHT * 0.72
+                    : SCREEN_HEIGHT * 0.58,
+              }}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
