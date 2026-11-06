@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  PanResponder,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +23,8 @@ import {
   AddressLabelType,
   CustomerAddress,
 } from '../context/AuthContext';
-import { useDraggableSheet } from '../utils/useDraggableSheet';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface AddressSelectorSheetProps {
   visible: boolean;
@@ -63,6 +66,13 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
   } = useAuth();
 
   const [mode, setMode] = useState<'list' | 'add'>('list');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Animación que nace desde la parte superior (donde está la dirección)
+  const translateY = useRef(new Animated.Value(-SCREEN_HEIGHT * 0.75)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   // Estados del formulario de nueva dirección
   const [label, setLabel] = useState<AddressLabelType>('Casa');
@@ -80,30 +90,114 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
   );
   const [formError, setFormError] = useState<string>('');
 
-  const handleCloseSheet = () => {
-    setMode('list');
-    setFormError('');
-    onClose();
+  // Disparar transición desde arriba al abrir
+  useEffect(() => {
+    if (visible) {
+      setIsExpanded(false);
+      translateY.setValue(-SCREEN_HEIGHT * 0.7);
+      scaleAnim.setValue(0.95);
+      backdropOpacity.setValue(0);
+
+      Animated.parallel([
+        Animated.spring(translateY, {
+          toValue: 0,
+          damping: 22,
+          stiffness: 230,
+          mass: 0.85,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          damping: 20,
+          stiffness: 240,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible, translateY, scaleAnim, backdropOpacity]);
+
+  const animateClose = () => {
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -SCREEN_HEIGHT * 0.75,
+        duration: 230,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setMode('list');
+      setFormError('');
+      setIsExpanded(false);
+      onClose();
+    });
   };
 
-  const {
-    translateY,
-    isExpanded,
-    isDragging,
-    headerPanHandlers,
-    grabberPanHandlers,
-    animateClose,
-  } = useDraggableSheet({
-    visible,
-    onClose: handleCloseSheet,
-  });
+  // Gesto en la barra inferior del panel superior:
+  // - Deslizar hacia ARRIBA (dy < -65) -> Recoge la ventana hacia arriba y la cierra
+  // - Deslizar hacia ABAJO (dy > 55) -> Expande la ventana hacia abajo
+  const bottomGrabberPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 5,
+      onPanResponderGrant: () => {
+        setIsDragging(true);
+        Haptics.selectionAsync();
+      },
+      onPanResponderMove: (_, g) => {
+        if (g.dy < 0) {
+          // Arrastrando hacia arriba para recoger
+          translateY.setValue(g.dy);
+        } else {
+          // Arrastrando hacia abajo con resistencia elástica
+          translateY.setValue(g.dy * 0.22);
+        }
+      },
+      onPanResponderRelease: (_, g) => {
+        setIsDragging(false);
+
+        if (g.dy < -65 || g.vy < -0.75) {
+          // Cerrar recogiendo hacia arriba
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          animateClose();
+          return;
+        }
+
+        if (g.dy > 50 || g.vy > 0.6) {
+          // Expandir hacia abajo
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setIsExpanded(true);
+        }
+
+        Animated.spring(translateY, {
+          toValue: 0,
+          damping: 22,
+          stiffness: 240,
+          useNativeDriver: true,
+        }).start();
+      },
+    })
+  ).current;
 
   const handleSelectAddress = (addr: CustomerAddress) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     selectAddress(addr.id);
     setTimeout(() => {
-      handleCloseSheet();
-    }, 180);
+      animateClose();
+    }, 140);
   };
 
   const handleSaveNewAddress = () => {
@@ -142,13 +236,11 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
         : 'Despacho por Transportadora Nacional',
     });
 
-    // Limpiar campos y cerrar
     setAddress1Input('');
     setAddress2Input('');
     setLocalityInput('');
     setFormError('');
-    setMode('list');
-    onClose();
+    animateClose();
   };
 
   const getLabelEmoji = (lbl: AddressLabelType) => {
@@ -160,35 +252,39 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={animateClose}
     >
-      <View style={styles.backdrop}>
-        <Pressable style={styles.backdropDismissArea} onPress={animateClose} />
-
+      <View style={styles.backdropContainer}>
+        {/* Fondo oscuro con fade sincronizado */}
         <Animated.View
           style={[
-            styles.sheetContainer,
-            isExpanded && styles.sheetContainerExpanded,
-            { transform: [{ translateY }] },
+            StyleSheet.absoluteFill,
+            styles.backdropOverlay,
+            { opacity: backdropOpacity },
+          ]}
+        >
+          <Pressable style={{ flex: 1 }} onPress={animateClose} />
+        </Animated.View>
+
+        {/* Ventana desplegable desde ARRIBA (donde está la dirección en la esquina) */}
+        <Animated.View
+          style={[
+            styles.topDropdownSheet,
+            (isExpanded || mode === 'add') && styles.topDropdownSheetExpanded,
+            {
+              paddingTop: Math.max(insets.top, 12) + 6,
+              transform: [{ translateY }, { scale: scaleAnim }],
+            },
           ]}
         >
           <LinearGradient
-            colors={['#11131A', '#0A0B0F', '#06070A']}
+            colors={['#0A0B0F', '#11141E', '#0D0F17']}
             style={StyleSheet.absoluteFill}
           />
 
-          {/* ==================== BARRA SUPERIOR DESLIZABLE ==================== */}
-          <View style={styles.sheetTopBar} {...headerPanHandlers}>
-            <View style={styles.grabberHitArea} {...grabberPanHandlers}>
-              <View
-                style={[
-                  styles.grabberPill,
-                  isDragging && styles.grabberPillActive,
-                ]}
-              />
-            </View>
-
+          {/* ==================== CABECERA ALINEADA CON LA ESQUINA SUPERIOR ==================== */}
+          <View style={styles.sheetTopHeader}>
             <View style={styles.headerRow}>
               {mode === 'add' ? (
                 <Pressable
@@ -220,7 +316,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                 </Text>
                 <Text style={styles.sheetSubtitle}>
                   {mode === 'list'
-                    ? 'Elige dónde recibirá tu mascota su pedido hoy'
+                    ? 'Toca una dirección para actualizar tu cobertura'
                     : 'Guarda tu casa, oficina o finca para futuros pedidos'}
                 </Text>
               </View>
@@ -230,7 +326,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                 style={styles.closeIconBtn}
                 hitSlop={10}
               >
-                <Ionicons name="close" size={20} color="#FFFFFF" />
+                <Ionicons name="chevron-up" size={20} color="#FFFFFF" />
               </Pressable>
             </View>
           </View>
@@ -240,10 +336,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
             style={{ flex: 1 }}
           >
             <ScrollView
-              contentContainerStyle={[
-                styles.scrollContent,
-                { paddingBottom: Math.max(insets.bottom, 16) + 28 },
-              ]}
+              contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
@@ -518,7 +611,6 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                     </Pressable>
                   </View>
 
-                  {/* Si es fuera de Bogotá, mostrar chips de ciudades frecuentes + input */}
                   {!isBogota && (
                     <View style={styles.outsideCitySection}>
                       <Text style={styles.quickCitiesLabel}>
@@ -604,7 +696,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                     placeholderTextColor="#6B7280"
                   />
 
-                  {/* 4. Indicaciones de entrega (Timbrar, Apto, Portería) */}
+                  {/* 4. Indicaciones de entrega */}
                   <Text style={styles.fieldLabel}>
                     4. Apto / Casa / Indicaciones para entregar el bulto
                   </Text>
@@ -662,6 +754,22 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
               )}
             </ScrollView>
           </KeyboardAvoidingView>
+
+          {/* ==================== BARRA INFERIOR DESLIZABLE (GRABBER) ==================== */}
+          <View
+            style={styles.bottomGrabberFooter}
+            {...bottomGrabberPanResponder.panHandlers}
+          >
+            <View
+              style={[
+                styles.grabberPill,
+                isDragging && styles.grabberPillActive,
+              ]}
+            />
+            <Text style={styles.grabberHintText}>
+              Desliza hacia arriba para cerrar
+            </Text>
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -669,61 +777,48 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  backdrop: {
+  backdropContainer: {
     flex: 1,
+    justifyContent: 'flex-start',
+  },
+  backdropOverlay: {
     backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    justifyContent: 'flex-end',
   },
-  backdropDismissArea: {
-    flex: 1,
-  },
-  sheetContainer: {
-    height: '82%',
+  topDropdownSheet: {
+    maxHeight: '78%',
     backgroundColor: '#0A0B0F',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    borderBottomWidth: 1.5,
+    borderColor: 'rgba(212, 175, 55, 0.28)',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.65,
+    shadowRadius: 20,
+    elevation: 16,
   },
-  sheetContainerExpanded: {
-    height: '95%',
+  topDropdownSheetExpanded: {
+    maxHeight: '92%',
   },
-  sheetTopBar: {
-    paddingTop: 6,
-    paddingBottom: 14,
-    paddingHorizontal: 20,
+  sheetTopHeader: {
+    paddingBottom: 12,
+    paddingHorizontal: 18,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.07)',
-  },
-  grabberHitArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-  },
-  grabberPill: {
-    width: 42,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  grabberPillActive: {
-    width: 56,
-    backgroundColor: colors.primary.DEFAULT,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 4,
   },
   headerLocationIconBox: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+    backgroundColor: 'rgba(212, 175, 55, 0.14)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
+    borderColor: 'rgba(212, 175, 55, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -737,13 +832,13 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
   },
   sheetSubtitle: {
     color: '#9CA3AF',
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 1,
   },
   closeIconBtn: {
     width: 34,
@@ -755,7 +850,33 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
+  },
+  bottomGrabberFooter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 10,
+    backgroundColor: '#0D0F16',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 4,
+  },
+  grabberPill: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.28)',
+  },
+  grabberPillActive: {
+    width: 58,
+    backgroundColor: colors.primary.DEFAULT,
+  },
+  grabberHintText: {
+    color: '#6B7280',
+    fontSize: 10,
+    fontWeight: '600',
   },
 
   /* Banner reglas de envío */
@@ -763,7 +884,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#141720',
     borderRadius: 14,
     padding: 10,
-    marginBottom: 16,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.07)',
   },
@@ -806,15 +927,15 @@ const styles = StyleSheet.create({
 
   /* Tarjetas de direcciones */
   addressesList: {
-    gap: 12,
-    marginBottom: 18,
+    gap: 10,
+    marginBottom: 14,
   },
   addressCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: '#151821',
     borderRadius: 18,
-    padding: 14,
+    padding: 13,
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.07)',
     gap: 12,
@@ -824,9 +945,9 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
   },
   addressIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#222632',
     alignItems: 'center',
     justifyContent: 'center',
@@ -838,7 +959,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
   },
   addressEmoji: {
-    fontSize: 20,
+    fontSize: 19,
   },
   addressInfoCol: {
     flex: 1,
@@ -847,7 +968,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   addressLabelTitle: {
     color: '#FFFFFF',
@@ -885,10 +1006,10 @@ const styles = StyleSheet.create({
   addressMetaText: {
     color: '#9CA3AF',
     fontSize: 11,
-    marginTop: 4,
+    marginTop: 3,
   },
   shippingTagRow: {
-    marginTop: 8,
+    marginTop: 7,
     flexDirection: 'row',
   },
   freeBogotaTag: {
@@ -922,7 +1043,7 @@ const styles = StyleSheet.create({
   addressRightActions: {
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 18,
+    gap: 16,
   },
   radioOuter: {
     width: 24,
@@ -948,14 +1069,14 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: 'rgba(212, 175, 55, 0.08)',
     borderRadius: 18,
-    padding: 15,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(212, 175, 55, 0.35)',
   },
   addNewPlusCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.primary.DEFAULT,
     alignItems: 'center',
     justifyContent: 'center',
@@ -996,8 +1117,8 @@ const styles = StyleSheet.create({
     color: '#E5E7EB',
     fontSize: 13,
     fontWeight: '700',
-    marginTop: 8,
-    marginBottom: 6,
+    marginTop: 6,
+    marginBottom: 5,
   },
   labelPillsRow: {
     flexDirection: 'row',
@@ -1119,7 +1240,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#161922',
     borderRadius: 13,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 11,
     color: '#FFFFFF',
     fontSize: 14,
     borderWidth: 1,
@@ -1131,9 +1252,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: 16,
-    marginTop: 18,
+    marginTop: 14,
   },
   saveGoldBtnText: {
     color: '#050508',
