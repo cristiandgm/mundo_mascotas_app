@@ -8,6 +8,8 @@ export type PetCategory = 'dog' | 'cat' | 'both';
 
 export type AuthProviderType = 'email' | 'google' | 'apple' | 'whatsapp';
 
+export type AddressLabelType = 'Casa' | 'Oficina' | 'Finca' | 'Familiar' | 'Otro';
+
 export interface CustomerOrderItem {
   name: string;
   quantity: number;
@@ -27,6 +29,8 @@ export interface CustomerOrder {
 }
 
 export interface CustomerAddress {
+  id: string;
+  label: AddressLabelType;
   recipient: string;
   address1: string;
   address2?: string;
@@ -35,6 +39,8 @@ export interface CustomerAddress {
   province: string;
   country: string;
   phone: string;
+  isBogota: boolean;
+  isDefault?: boolean;
   verifiedCoverage?: boolean;
   deliveryZone?: string;
 }
@@ -63,6 +69,7 @@ export interface User {
   marketingSubscriptions?: string[];
   storeCredit?: number;
   defaultAddress?: CustomerAddress;
+  addresses?: CustomerAddress[];
   billingInfo?: CustomerBillingInfo;
   orders?: CustomerOrder[];
 }
@@ -77,6 +84,11 @@ interface AuthContextType {
   authModalView: AuthModalView;
   openAuthModal: (view?: AuthModalView) => void;
   closeAuthModal: () => void;
+  addresses: CustomerAddress[];
+  selectedAddress: CustomerAddress;
+  selectAddress: (addressId: string) => void;
+  addAddress: (newAddr: Omit<CustomerAddress, 'id'>) => CustomerAddress;
+  deleteAddress: (addressId: string) => void;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   loginWithSocial: (provider: 'google' | 'apple' | 'whatsapp') => Promise<void>;
   loginAsDemoCustomer: () => void;
@@ -91,6 +103,58 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
+
+// Direcciones guardadas reales de ejemplo para Mundo Mascotas Colombia
+export const INITIAL_SAVED_ADDRESSES: CustomerAddress[] = [
+  {
+    id: 'addr_casa_bog',
+    label: 'Casa',
+    recipient: 'Alejandra P.',
+    address1: 'Carrera 72 j # 38-36 sur',
+    address2: 'Casa timbrar en el 4 piso',
+    locality: 'Kennedy',
+    city: 'Bogotá',
+    province: 'Bogotá D.C.',
+    country: 'Colombia',
+    phone: '+57 300 3918279',
+    isBogota: true,
+    isDefault: true,
+    verifiedCoverage: true,
+    deliveryZone: 'Kennedy / Sur-Occidente (Bogotá)',
+  },
+  {
+    id: 'addr_oficina_bog',
+    label: 'Oficina',
+    recipient: 'Alejandra Pinto (Recepción)',
+    address1: 'Av. Calle 26 # 69-76',
+    address2: 'Edificio Elemento Torre 2 · Dejar en portería',
+    locality: 'Capellanía (Fontibón)',
+    city: 'Bogotá',
+    province: 'Bogotá D.C.',
+    country: 'Colombia',
+    phone: '+57 300 3918279',
+    isBogota: true,
+    isDefault: false,
+    verifiedCoverage: true,
+    deliveryZone: 'Capellanía (Fontibón)',
+  },
+  {
+    id: 'addr_finca_chia',
+    label: 'Finca',
+    recipient: 'Familia Pinto',
+    address1: 'Km 4 Vía Chía - Cajicá',
+    address2: 'Condominio San Jacinto · Casa 14',
+    locality: 'Sabana Centro',
+    city: 'Chía',
+    province: 'Cundinamarca',
+    country: 'Colombia',
+    phone: '+57 300 3918279',
+    isBogota: false,
+    isDefault: false,
+    verifiedCoverage: true,
+    deliveryZone: 'Despacho por Transportadora Nacional',
+  },
+];
 
 // Datos de cliente VIP Mundo Mascotas Colombia
 export const DEFAULT_VIP_CUSTOMER: User = {
@@ -108,18 +172,8 @@ export const DEFAULT_VIP_CUSTOMER: User = {
   customerGroup: 'Champions VIP',
   marketingSubscriptions: ['Correo electrónico', 'SMS'],
   storeCredit: 0,
-  defaultAddress: {
-    recipient: 'Alejandra P.',
-    address1: 'Carrera 72 j # 38-36 sur',
-    address2: 'Casa timbrar en el 4 piso',
-    locality: 'Kennedy',
-    city: 'Bogotá',
-    province: 'Bogotá D.C.',
-    country: 'Colombia',
-    phone: '+57 300 3918279',
-    verifiedCoverage: true,
-    deliveryZone: 'Capellanía (Fontibón)',
-  },
+  defaultAddress: INITIAL_SAVED_ADDRESSES[0],
+  addresses: INITIAL_SAVED_ADDRESSES,
   billingInfo: {
     requiresInvoice: false,
     documentType: 'Cédula de Ciudadanía (CC)',
@@ -230,6 +284,86 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(true);
   const [authModalView, setAuthModalView] = useState<AuthModalView>('login');
 
+  // Lista de direcciones activas (disponibles tanto para cliente autenticado como invitado)
+  const [addresses, setAddresses] = useState<CustomerAddress[]>(INITIAL_SAVED_ADDRESSES);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>(
+    INITIAL_SAVED_ADDRESSES[0].id
+  );
+
+  const selectedAddress =
+    addresses.find((a) => a.id === selectedAddressId) || addresses[0];
+
+  const selectAddress = (addressId: string) => {
+    const found = addresses.find((a) => a.id === addressId);
+    if (!found) return;
+    setSelectedAddressId(addressId);
+    setAddresses((prev) =>
+      prev.map((a) => ({
+        ...a,
+        isDefault: a.id === addressId,
+      }))
+    );
+    if (user) {
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              defaultAddress: { ...found, isDefault: true },
+            }
+          : prev
+      );
+    }
+  };
+
+  const addAddress = (newAddr: Omit<CustomerAddress, 'id'>): CustomerAddress => {
+    const created: CustomerAddress = {
+      ...newAddr,
+      id: 'addr_' + Date.now(),
+      isDefault: true,
+    };
+
+    setAddresses((prev) => [
+      created,
+      ...prev.map((a) => ({ ...a, isDefault: false })),
+    ]);
+    setSelectedAddressId(created.id);
+
+    if (user) {
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              defaultAddress: created,
+              addresses: [created, ...(prev.addresses || [])],
+            }
+          : prev
+      );
+    }
+
+    return created;
+  };
+
+  const deleteAddress = (addressId: string) => {
+    if (addresses.length <= 1) return; // Siempre mantener al menos 1 dirección
+    const remaining = addresses.filter((a) => a.id !== addressId);
+    setAddresses(remaining);
+    if (selectedAddressId === addressId) {
+      const next = remaining[0];
+      setSelectedAddressId(next.id);
+      if (user) {
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                defaultAddress: next,
+                addresses: remaining,
+              }
+            : prev
+        );
+      }
+    }
+  };
+
   const openAuthModal = (view: AuthModalView = 'login') => {
     setAuthModalView(view);
     setIsAuthModalOpen(true);
@@ -265,7 +399,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const normalizedEmail = email.trim().toLowerCase();
 
     if (normalizedEmail.includes('aleja')) {
-      setUser(DEFAULT_VIP_CUSTOMER);
+      setUser({
+        ...DEFAULT_VIP_CUSTOMER,
+        defaultAddress: selectedAddress,
+        addresses,
+      });
       setIsAuthModalOpen(false);
       setCurrentScreen('home');
       return { success: true };
@@ -280,6 +418,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       name: formattedName,
       email: email.trim(),
       authProvider: 'email',
+      defaultAddress: selectedAddress,
+      addresses,
     };
 
     setUser(mockUser);
@@ -289,7 +429,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loginAsDemoCustomer = () => {
-    setUser(DEFAULT_VIP_CUSTOMER);
+    setUser({
+      ...DEFAULT_VIP_CUSTOMER,
+      defaultAddress: selectedAddress,
+      addresses,
+    });
     setIsAuthModalOpen(false);
     setCurrentScreen('home');
   };
@@ -313,6 +457,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           petType: 'dog',
           petName: 'Bruno',
           points: 450,
+          defaultAddress: selectedAddress,
+          addresses,
         };
         break;
       case 'apple':
@@ -326,6 +472,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           petType: 'both',
           petName: 'Bruno & Luna',
           points: 870,
+          defaultAddress: selectedAddress,
+          addresses,
         };
         break;
       case 'whatsapp':
@@ -340,6 +488,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           petType: 'dog',
           petName: 'Max',
           points: 870,
+          defaultAddress: selectedAddress,
+          addresses,
         };
         break;
     }
@@ -406,6 +556,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       customerSince: 'Nuevo miembro VIP',
       customerGroup: 'Club Consentidos',
       authProvider: 'email',
+      defaultAddress: selectedAddress,
+      addresses,
     };
 
     setUser(newUser);
@@ -432,6 +584,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         authModalView,
         openAuthModal,
         closeAuthModal,
+        addresses,
+        selectedAddress,
+        selectAddress,
+        addAddress,
+        deleteAddress,
         login,
         loginWithSocial,
         loginAsDemoCustomer,

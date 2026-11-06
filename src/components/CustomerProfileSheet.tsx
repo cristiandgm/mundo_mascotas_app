@@ -25,15 +25,19 @@ import { useDraggableSheet } from '../utils/useDraggableSheet';
 interface CustomerProfileSheetProps {
   visible: boolean;
   onClose: () => void;
+  onManageAddresses?: () => void;
 }
 
 export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
   visible,
   onClose,
+  onManageAddresses,
 }) => {
   const insets = useSafeAreaInsets();
   const {
     user,
+    selectedAddress,
+    addresses,
     updateBillingInfo,
     updatePetInfo,
     logout,
@@ -504,15 +508,17 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 
               <View style={styles.blockSeparator} />
 
-              {/* Dirección predeterminada */}
+              {/* Dirección activa y gestor de múltiples direcciones */}
               <View style={styles.infoBlock}>
                 <View style={styles.infoIconBox}>
                   <Ionicons name="location-outline" size={18} color={colors.primary.DEFAULT} />
                 </View>
                 <View style={styles.infoTextCol}>
                   <View style={styles.addressHeaderRow}>
-                    <Text style={styles.infoBlockLabel}>Dirección predeterminada</Text>
-                    {profileData.defaultAddress?.verifiedCoverage && (
+                    <Text style={styles.infoBlockLabel}>
+                      Dirección activa ({selectedAddress.label})
+                    </Text>
+                    {selectedAddress.verifiedCoverage && (
                       <View style={styles.verifiedTag}>
                         <Ionicons name="checkmark-circle" size={12} color="#10B981" />
                         <Text style={styles.verifiedTagText}>Cobertura verificada</Text>
@@ -520,27 +526,62 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                     )}
                   </View>
                   <Text style={styles.infoBlockPrimary}>
-                    {profileData.defaultAddress?.recipient || 'Alejandra P.'}
+                    {selectedAddress.recipient || 'Alejandra P.'}
                   </Text>
                   <Text style={styles.infoBlockSecondary}>
-                    {profileData.defaultAddress?.address1 || 'Carrera 72 j # 38-36 sur'}
+                    {selectedAddress.address1}
                   </Text>
-                  {profileData.defaultAddress?.address2 && (
+                  {selectedAddress.address2 && (
                     <Text style={styles.infoBlockSecondary}>
-                      {profileData.defaultAddress.address2}
+                      {selectedAddress.address2}
                     </Text>
                   )}
                   <Text style={styles.infoBlockSecondary}>
-                    {profileData.defaultAddress?.locality
-                      ? `${profileData.defaultAddress.locality} · `
+                    {selectedAddress.locality
+                      ? `${selectedAddress.locality} · `
                       : ''}
-                    {profileData.defaultAddress?.city || 'Bogotá'},{' '}
-                    {profileData.defaultAddress?.country || 'Colombia'}
+                    {selectedAddress.city}, {selectedAddress.country}
                   </Text>
-                  {profileData.defaultAddress?.deliveryZone && (
+                  {selectedAddress.deliveryZone && (
                     <Text style={styles.zoneHighlightText}>
-                      🚚 Zona de cobertura: {profileData.defaultAddress.deliveryZone}
+                      🚚 Zona de cobertura: {selectedAddress.deliveryZone}
                     </Text>
+                  )}
+                  {onManageAddresses && (
+                    <Pressable
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        onManageAddresses();
+                      }}
+                      style={{
+                        marginTop: 10,
+                        alignSelf: 'flex-start',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                        backgroundColor: 'rgba(212, 175, 55, 0.12)',
+                        paddingHorizontal: 12,
+                        paddingVertical: 7,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: 'rgba(212, 175, 55, 0.35)',
+                      }}
+                    >
+                      <Ionicons
+                        name="map-outline"
+                        size={14}
+                        color={colors.primary.light}
+                      />
+                      <Text
+                        style={{
+                          color: colors.primary.light,
+                          fontSize: 12,
+                          fontWeight: '700',
+                        }}
+                      >
+                        Ver o cambiar mis direcciones ({addresses.length})
+                      </Text>
+                    </Pressable>
                   )}
                 </View>
               </View>

@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
+import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { useAuth } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
 
@@ -191,13 +192,16 @@ const FOR_YOU_CIRCLES = [
 ];
 
 export const HomeScreen: React.FC = () => {
-  const { user, openAuthModal } = useAuth();
+  const { user, openAuthModal, selectedAddress, addresses } = useAuth();
   const insets = useSafeAreaInsets();
   const [profileVisible, setProfileVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
+  const [addressSheetVisible, setAddressSheetVisible] = useState(false);
 
-  // Estado estilo Uber
-  const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneType>('bogota');
+  // Zona derivada automáticamente de la dirección seleccionada por el cliente
+  const deliveryZone: DeliveryZoneType = selectedAddress.isBogota
+    ? 'bogota'
+    : 'nacional';
   const [topTab, setTopTab] = useState<TopTabType>('dog');
   const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>('home');
   const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
@@ -228,7 +232,7 @@ export const HomeScreen: React.FC = () => {
 
   const handleToggleZone = () => {
     Haptics.selectionAsync();
-    setDeliveryZone((prev) => (prev === 'bogota' ? 'nacional' : 'bogota'));
+    setAddressSheetVisible(true);
   };
 
   const handleAccountAccess = () => {
@@ -350,11 +354,8 @@ export const HomeScreen: React.FC = () => {
             ]}
           />
           <Text style={styles.locationText} numberOfLines={1}>
-            {deliveryZone === 'bogota'
-              ? user?.defaultAddress?.address1
-                ? `${user.defaultAddress.address1}, Bogotá`
-                : 'Bogotá · Domicilio Gratis'
-              : 'Otra ciudad · + Flete transportadora'}
+            {selectedAddress.label}: {selectedAddress.address1},{' '}
+            {selectedAddress.city}
           </Text>
           <Ionicons
             name="chevron-down"
@@ -959,46 +960,78 @@ export const HomeScreen: React.FC = () => {
                 </View>
               ) : (
                 <>
-                  {/* Selector de destino dentro del carrito */}
-                  <View style={styles.cartZoneBox}>
-                    <Text style={styles.cartZoneLabel}>
-                      Ciudad de entrega:
-                    </Text>
-                    <View style={styles.logisticsSwitchRow}>
-                      <Pressable
-                        onPress={() => setDeliveryZone('bogota')}
-                        style={[
-                          styles.zonePill,
-                          deliveryZone === 'bogota' && styles.zonePillBogotaActive,
-                        ]}
+                  {/* Dirección seleccionada dentro del carrito (abre el selector de todas las direcciones) */}
+                  <Pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setCartModalVisible(false);
+                      setTimeout(() => setAddressSheetVisible(true), 200);
+                    }}
+                    style={styles.cartZoneBox}
+                  >
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={styles.cartZoneLabel}>
+                          Entregar en ({selectedAddress.label} · {selectedAddress.city}):
+                        </Text>
+                        <Text
+                          style={{
+                            color: '#FFFFFF',
+                            fontSize: 14,
+                            fontWeight: '800',
+                            marginTop: 2,
+                          }}
+                        >
+                          {selectedAddress.address1}
+                        </Text>
+                        {selectedAddress.address2 ? (
+                          <Text
+                            style={{
+                              color: '#9CA3AF',
+                              fontSize: 12,
+                              marginTop: 2,
+                            }}
+                          >
+                            {selectedAddress.address2}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 4,
+                          backgroundColor: 'rgba(212, 175, 55, 0.14)',
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: 'rgba(212, 175, 55, 0.35)',
+                        }}
                       >
                         <Text
-                          style={[
-                            styles.zonePillText,
-                            deliveryZone === 'bogota' && styles.zonePillTextActive,
-                          ]}
+                          style={{
+                            color: colors.primary.light,
+                            fontSize: 12,
+                            fontWeight: '800',
+                          }}
                         >
-                          📍 Bogotá (Gratis)
+                          Cambiar ({addresses.length})
                         </Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setDeliveryZone('nacional')}
-                        style={[
-                          styles.zonePill,
-                          deliveryZone === 'nacional' && styles.zonePillNacionalActive,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.zonePillText,
-                            deliveryZone === 'nacional' && styles.zonePillTextActive,
-                          ]}
-                        >
-                          🚚 Otra Ciudad / Municipio
-                        </Text>
-                      </Pressable>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={14}
+                          color={colors.primary.light}
+                        />
+                      </View>
                     </View>
-                  </View>
+                  </Pressable>
 
                   {/* Lista de bultos */}
                   {cartSummary.itemsList.map(({ product, quantity }) => (
@@ -1115,10 +1148,20 @@ export const HomeScreen: React.FC = () => {
         </View>
       </Modal>
 
+      {/* Panel Deslizable de Direcciones de Entrega */}
+      <AddressSelectorSheet
+        visible={addressSheetVisible}
+        onClose={() => setAddressSheetVisible(false)}
+      />
+
       {/* Panel Deslizable de Cuenta del Cliente */}
       <CustomerProfileSheet
         visible={profileVisible}
         onClose={() => setProfileVisible(false)}
+        onManageAddresses={() => {
+          setProfileVisible(false);
+          setTimeout(() => setAddressSheetVisible(true), 220);
+        }}
       />
     </SafeAreaView>
   );
