@@ -10,6 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
@@ -30,6 +31,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
   visible,
   onClose,
 }) => {
+  const insets = useSafeAreaInsets();
   const {
     user,
     updateBillingInfo,
@@ -135,7 +137,10 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 
           <ScrollView
             style={styles.scrollArea}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(insets.bottom, 16) + 32 },
+            ]}
             showsVerticalScrollIndicator={false}
           >
             {/* Cabecera del Cliente */}

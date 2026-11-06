@@ -9,7 +9,10 @@ import {
   Modal,
   Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -189,6 +192,7 @@ const FOR_YOU_CIRCLES = [
 
 export const HomeScreen: React.FC = () => {
   const { user, openAuthModal } = useAuth();
+  const insets = useSafeAreaInsets();
   const [profileVisible, setProfileVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
 
@@ -328,7 +332,7 @@ export const HomeScreen: React.FC = () => {
   }, [cart, deliveryZone]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* ==================== 1. UBER HEADER: LOCATION + INBOX/BOLSA ==================== */}
       <View style={styles.uberTopHeader}>
         <Pressable
@@ -417,7 +421,10 @@ export const HomeScreen: React.FC = () => {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 12) + 98 },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -763,7 +770,12 @@ export const HomeScreen: React.FC = () => {
       </ScrollView>
 
       {/* ==================== 8. UBER FLOATING PILL BOTTOM NAVIGATION BAR ==================== */}
-      <View style={styles.uberFloatingDockWrapper}>
+      <View
+        style={[
+          styles.uberFloatingDockWrapper,
+          { bottom: Math.max(insets.bottom, 12) + 6 },
+        ]}
+      >
         <View style={styles.uberFloatingDock}>
           {/* Tab 1: Home / Inicio */}
           <Pressable
@@ -927,7 +939,10 @@ export const HomeScreen: React.FC = () => {
             </View>
 
             <ScrollView
-              contentContainerStyle={styles.cartSheetScroll}
+              contentContainerStyle={[
+                styles.cartSheetScroll,
+                { paddingBottom: Math.max(insets.bottom, 16) + 24 },
+              ]}
               showsVerticalScrollIndicator={false}
             >
               {cartSummary.itemsList.length === 0 ? (
