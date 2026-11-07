@@ -451,9 +451,47 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 </View>
               </View>
 
+              {/* Tipo de Mascota (Personaliza el catálogo de la App) */}
+              <View style={styles.billingFieldRow}>
+                <Text style={styles.billingFieldLabel}>
+                  Especie de mi mascota
+                </Text>
+                <View style={styles.booleanToggleGroup}>
+                  {[
+                    { id: 'dog' as const, label: '🐶 Perro' },
+                    { id: 'cat' as const, label: '🐱 Gato' },
+                    { id: 'both' as const, label: '🐾 Ambos' },
+                  ].map((opt) => {
+                    const isSelected = (profileData.petType || 'dog') === opt.id;
+                    return (
+                      <Pressable
+                        key={opt.id}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          updatePetInfo(profileData.petName || 'Consentido', opt.id);
+                        }}
+                        style={[
+                          styles.booleanPill,
+                          isSelected && styles.booleanPillActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.booleanPillText,
+                            isSelected && styles.booleanPillTextActive,
+                          ]}
+                        >
+                          {opt.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
               {/* Mascota */}
               <View style={[styles.billingFieldRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.billingFieldLabel}>Mi Mascota</Text>
+                <Text style={styles.billingFieldLabel}>Nombre de mi mascota</Text>
                 {editingPet ? (
                   <View style={styles.petEditRow}>
                     <TextInput
@@ -477,7 +515,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                     style={styles.billingActionPill}
                   >
                     <Text style={styles.billingActionText}>
-                      {profileData.petName && profileData.petName !== 'Consentido'
+                      {profileData.petName
                         ? `🐾 ${profileData.petName} (Editar)`
                         : '+ Agregar nombre'}
                     </Text>

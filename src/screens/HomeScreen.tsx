@@ -24,7 +24,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
-type TopTabType = 'dog' | 'cat';
+type TopServiceTabType = 'bultos' | 'snacks';
 type BottomNavTab = 'home' | 'catalog' | 'activity' | 'account';
 
 interface ProductBag {
@@ -34,15 +34,19 @@ interface ProductBag {
   name: string;
   protein: string;
   weightLb: number;
+  unitLabel?: string;
   price: number;
   coins: number;
   petType: 'dog' | 'cat';
+  category: TopServiceTabType;
+  subFilter?: 'humedos' | 'premios' | 'higiene';
   stage: string;
   tag?: string;
   accentColor: string;
 }
 
 const CATALOG_BAGS: ProductBag[] = [
+  // ==================== PERROS: BULTOS DE CONCENTRADO ====================
   {
     id: 'prod_123',
     sku: '123',
@@ -53,6 +57,7 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 289000,
     coins: 289,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Adulto',
     tag: 'Más pedido',
     accentColor: '#D4AF37',
@@ -67,6 +72,7 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 270600,
     coins: 270,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Adulto Light',
     tag: 'Control Peso',
     accentColor: '#38BDF8',
@@ -81,6 +87,7 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 289600,
     coins: 290,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Todas las etapas',
     tag: 'Piel y Pelaje',
     accentColor: '#EC4899',
@@ -95,6 +102,7 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 341300,
     coins: 341,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Adulto',
     tag: 'Super Premium',
     accentColor: '#F59E0B',
@@ -109,6 +117,7 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 354500,
     coins: 355,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Cachorro',
     tag: 'Cachorros',
     accentColor: '#10B981',
@@ -123,6 +132,7 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 354500,
     coins: 355,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Adulto',
     accentColor: '#06B6D4',
   },
@@ -136,6 +146,7 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 389000,
     coins: 389,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Todas las etapas',
     tag: '70% Proteína',
     accentColor: '#8B5CF6',
@@ -150,23 +161,124 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 435000,
     coins: 435,
     petType: 'dog',
+    category: 'bultos',
     stage: 'Adulto',
     tag: 'Ultra Luxury',
     accentColor: '#EF4444',
   },
+
+  // ==================== PERROS: SNACKS & CUIDADO ====================
+  {
+    id: 'prod_dog_snack_1',
+    sku: '4401',
+    brand: 'Taste of the Wild',
+    name: 'Latas Húmedas High Prairie (Pack x6)',
+    protein: 'Estofado de Bisonte y Venado en Salsa',
+    weightLb: 5,
+    unitLabel: 'Pack x6 Latas',
+    price: 84000,
+    coins: 84,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'humedos',
+    stage: 'Húmedo Gourmet',
+    tag: 'Pack Ahorro',
+    accentColor: '#F59E0B',
+  },
+  {
+    id: 'prod_dog_snack_2',
+    sku: '4402',
+    brand: 'Orijen',
+    name: 'Orijen Original Freeze-Dried Treats',
+    protein: 'Premios Liofilizados 100% Carne de Corral',
+    weightLb: 1,
+    unitLabel: 'Bolsa 92g',
+    price: 68500,
+    coins: 69,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'premios',
+    stage: 'Premios Entrenamiento',
+    tag: '100% Carne',
+    accentColor: '#EF4444',
+  },
+  {
+    id: 'prod_dog_snack_3',
+    sku: '4403',
+    brand: 'Diamond Naturals',
+    name: 'Galletas Horneadas Cordero & Manzana',
+    protein: 'Premios Crujientes para Salud Dental',
+    weightLb: 2,
+    unitLabel: '2 LB',
+    price: 49000,
+    coins: 49,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'premios',
+    stage: 'Salud Dental',
+    accentColor: '#D4AF37',
+  },
+  {
+    id: 'prod_dog_care_1',
+    sku: '4404',
+    brand: 'Acana',
+    name: 'Kit Dermo-Cuidado Avena & Aloe Canino',
+    protein: 'Shampoo Hipoalergénico + Bálsamo de Huellas',
+    weightLb: 2,
+    unitLabel: 'Kit 500ml',
+    price: 76000,
+    coins: 76,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'higiene',
+    stage: 'Cuidado & Baño',
+    accentColor: '#10B981',
+  },
+
+  // ==================== GATOS: BULTOS DE CONCENTRADO FELINO ====================
   {
     id: 'prod_9580',
     sku: '9580',
     brand: 'Taste of the Wild',
     name: 'Taste of the Wild Rocky Mountain Cat',
-    protein: 'Venado Asado y Salmón Ahumado',
-    weightLb: 15,
+    protein: 'Venado Asado y Salmón Ahumado · Sin Granos',
+    weightLb: 14,
     price: 218000,
     coins: 218,
     petType: 'cat',
+    category: 'bultos',
     stage: 'Gatos y Gatitos',
     tag: 'Top Gatos',
     accentColor: '#F59E0B',
+  },
+  {
+    id: 'prod_9582',
+    sku: '9582',
+    brand: 'Taste of the Wild',
+    name: 'Taste of the Wild Canyon River Feline',
+    protein: 'Trucha de Manantial y Salmón Ahumado',
+    weightLb: 14,
+    price: 224000,
+    coins: 224,
+    petType: 'cat',
+    category: 'bultos',
+    stage: 'Piel y Pelaje Felino',
+    accentColor: '#06B6D4',
+  },
+  {
+    id: 'prod_1910',
+    sku: '1910',
+    brand: 'Diamond Naturals',
+    name: 'Diamond Naturals Indoor Cat Hairball',
+    protein: 'Pollo Fresco y Salmón · Control Bolas de Pelo',
+    weightLb: 18,
+    price: 189000,
+    coins: 189,
+    petType: 'cat',
+    category: 'bultos',
+    stage: 'Gatos de Interior',
+    tag: 'Control Pelaje',
+    accentColor: '#D4AF37',
   },
   {
     id: 'prod_8845',
@@ -178,18 +290,93 @@ const CATALOG_BAGS: ProductBag[] = [
     price: 245000,
     coins: 245,
     petType: 'cat',
+    category: 'bultos',
     stage: 'Gatos Adultos',
     tag: 'Salmón & Arenque',
-    accentColor: '#06B6D4',
+    accentColor: '#8B5CF6',
+  },
+  {
+    id: 'prod_7790',
+    sku: '7790',
+    brand: 'Orijen',
+    name: 'Orijen Cat & Kitten Biológico',
+    protein: '90% Pollo, Pavo y Pescado Salvaje Fresco',
+    weightLb: 12,
+    price: 315000,
+    coins: 315,
+    petType: 'cat',
+    category: 'bultos',
+    stage: 'Todas las etapas',
+    tag: 'Ultra Luxury',
+    accentColor: '#EF4444',
+  },
+
+  // ==================== GATOS: HÚMEDOS & ARENA ====================
+  {
+    id: 'prod_cat_snack_1',
+    sku: '5501',
+    brand: 'Taste of the Wild',
+    name: 'Latas Felinas Rocky Mountain (Pack x6)',
+    protein: 'Salmón y Venado en Salsa Húmeda Hidratante',
+    weightLb: 3,
+    unitLabel: 'Pack x6 Latas',
+    price: 79000,
+    coins: 79,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'humedos',
+    stage: 'Hidratación Renal',
+    tag: 'Más pedido',
+    accentColor: '#F59E0B',
+  },
+  {
+    id: 'prod_cat_snack_2',
+    sku: '5502',
+    brand: 'Orijen',
+    name: 'Orijen Six Fish Cat Treats Liofilizados',
+    protein: '100% Pescado Salvaje · Cero Carbohidratos',
+    weightLb: 1,
+    unitLabel: 'Bolsa 35g',
+    price: 58000,
+    coins: 58,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'premios',
+    stage: 'Premio Gourmet',
+    accentColor: '#EF4444',
+  },
+  {
+    id: 'prod_cat_care_1',
+    sku: '5503',
+    brand: 'Diamond Naturals',
+    name: 'Arena Aglomerante Carbón Activado',
+    protein: 'Sello Instantáneo de Olores · 99.9% Libre de Polvo',
+    weightLb: 22,
+    unitLabel: 'Bulto 22 LB',
+    price: 64000,
+    coins: 64,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'higiene',
+    stage: 'Higiene Felina',
+    accentColor: '#10B981',
   },
 ];
 
-// Los 4 círculos estilo "For you" de Uber
-const FOR_YOU_CIRCLES = [
+// Los 4 círculos estilo "For you" de Uber para la pestaña Bultos
+const FOR_YOU_BULTOS_CIRCLES = [
   { id: 'Todas', label: 'Todos', emoji: '🐾', sub: 'Ver todo' },
-  { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: '30 - 40 LB' },
-  { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: '28 LB' },
-  { id: 'Acana', label: 'Acana & +', emoji: '🥩', sub: '25 LB' },
+  { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'Super Premium' },
+  { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: 'Grain-Free' },
+  { id: 'Acana', label: 'Acana & +', emoji: '🥩', sub: 'Biológico' },
+];
+
+// Los 4 círculos estilo "For you" de Uber para la pestaña Snacks & Cuidado
+const FOR_YOU_SNACKS_CIRCLES = [
+  { id: 'Todas', label: 'Todos', emoji: '✨', sub: 'Ver todo' },
+  { id: 'humedos', label: 'Húmedos', emoji: '🥫', sub: 'Latas en salsa' },
+  { id: 'premios', label: 'Premios', emoji: '🦴', sub: 'Treats & Galletas' },
+  { id: 'higiene', label: 'Cuidado', emoji: '🧼', sub: 'Higiene & Arena' },
 ];
 
 export const HomeScreen: React.FC = () => {
@@ -204,7 +391,23 @@ export const HomeScreen: React.FC = () => {
   const deliveryZone: DeliveryZoneType = selectedAddress.isBogota
     ? 'bogota'
     : 'nacional';
-  const [topTab, setTopTab] = useState<TopTabType>('dog');
+
+  // Especie exclusiva según la mascota del cliente:
+  // - Si user.petType === 'dog' -> 100% Perros (cero rastro de gatos)
+  // - Si user.petType === 'cat' -> 100% Gatos (cero rastro de perros)
+  // - Si es Invitado (!user) o tiene Ambos ('both') -> usa fallbackSpecies
+  const [fallbackSpecies, setFallbackSpecies] = useState<'dog' | 'cat'>('dog');
+  const activeSpecies: 'dog' | 'cat' =
+    user?.petType === 'dog'
+      ? 'dog'
+      : user?.petType === 'cat'
+      ? 'cat'
+      : fallbackSpecies;
+
+  const isMultiOrGuest = !user || user.petType === 'both';
+
+  // Pestañas superiores estilo Uber (Opción A: Concentrados Bultos | Snacks & Cuidado)
+  const [topTab, setTopTab] = useState<TopServiceTabType>('bultos');
   const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>('home');
   const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
@@ -272,23 +475,37 @@ export const HomeScreen: React.FC = () => {
 
   const handleCycleWeightFilter = () => {
     Haptics.selectionAsync();
-    const weights = [null, 40, 30, 28, 25];
+    const weights =
+      activeSpecies === 'cat'
+        ? [null, 18, 14, 12, 10]
+        : [null, 40, 30, 28, 25];
     const nextIdx = (weights.indexOf(selectedWeightFilter) + 1) % weights.length;
     setSelectedWeightFilter(weights[nextIdx]);
   };
 
-  // Filtrado de productos
+  // Filtrado de productos 100% personalizado a la especie de la mascota del cliente
   const filteredProducts = useMemo(() => {
     return CATALOG_BAGS.filter((item) => {
-      if (item.petType !== topTab && !searchQuery.trim()) return false;
+      // Nunca mostrar productos de otra especie que el cliente no tiene
+      if (item.petType !== activeSpecies) return false;
+
+      // Filtrar por pestaña superior (Bultos vs Snacks & Cuidado) salvo que esté escribiendo en el buscador
+      if (!searchQuery.trim() && item.category !== topTab) return false;
+
       if (selectedBrand !== 'Todas') {
-        if (selectedBrand === 'Acana') {
+        if (topTab === 'snacks') {
+          if (item.subFilter !== selectedBrand) return false;
+        } else if (selectedBrand === 'Acana') {
           if (item.brand !== 'Acana' && item.brand !== 'Orijen') return false;
         } else if (item.brand !== selectedBrand) {
           return false;
         }
       }
-      if (selectedWeightFilter && item.weightLb !== selectedWeightFilter) {
+      if (
+        topTab === 'bultos' &&
+        selectedWeightFilter &&
+        item.weightLb !== selectedWeightFilter
+      ) {
         return false;
       }
       if (searchQuery.trim()) {
@@ -302,7 +519,17 @@ export const HomeScreen: React.FC = () => {
       }
       return true;
     });
-  }, [topTab, selectedBrand, selectedWeightFilter, searchQuery]);
+  }, [activeSpecies, topTab, selectedBrand, selectedWeightFilter, searchQuery]);
+
+  // Los 2 productos frecuentes para la tarjeta de Reloj estilo Uber según la mascota y pestaña activa
+  const recentQuickItems = useMemo(() => {
+    return CATALOG_BAGS.filter(
+      (item) => item.petType === activeSpecies && item.category === topTab
+    ).slice(0, 2);
+  }, [activeSpecies, topTab]);
+
+  const activeCircles =
+    topTab === 'bultos' ? FOR_YOU_BULTOS_CIRCLES : FOR_YOU_SNACKS_CIRCLES;
 
   // Totales del carrito
   const cartSummary = useMemo(() => {
@@ -403,44 +630,52 @@ export const HomeScreen: React.FC = () => {
         </Pressable>
       </View>
 
-      {/* ==================== 2. UBER TOP TABS: PERROS | GATOS ==================== */}
+      {/* ==================== 2. UBER TOP TABS (OPCIÓN A: CONCENTRADOS BULTOS | SNACKS & CUIDADO) ==================== */}
       <View style={styles.uberTabsContainer}>
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            setTopTab('dog');
+            setTopTab('bultos');
+            setSelectedBrand('Todas');
+            setSelectedWeightFilter(null);
           }}
           style={styles.uberTabItem}
         >
-          <Text style={styles.uberTabEmoji}>🐶</Text>
+          <Text style={styles.uberTabEmoji}>
+            {activeSpecies === 'cat' ? '🐱' : '🐶'}
+          </Text>
           <Text
             style={[
               styles.uberTabText,
-              topTab === 'dog' && styles.uberTabTextActive,
+              topTab === 'bultos' && styles.uberTabTextActive,
             ]}
           >
-            Perros
+            Concentrados
           </Text>
-          {topTab === 'dog' && <View style={styles.uberTabActiveIndicator} />}
+          {topTab === 'bultos' && <View style={styles.uberTabActiveIndicator} />}
         </Pressable>
 
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            setTopTab('cat');
+            setTopTab('snacks');
+            setSelectedBrand('Todas');
+            setSelectedWeightFilter(null);
           }}
           style={styles.uberTabItem}
         >
-          <Text style={styles.uberTabEmoji}>🐱</Text>
+          <Text style={styles.uberTabEmoji}>
+            {activeSpecies === 'cat' ? '🐟' : '🦴'}
+          </Text>
           <Text
             style={[
               styles.uberTabText,
-              topTab === 'cat' && styles.uberTabTextActive,
+              topTab === 'snacks' && styles.uberTabTextActive,
             ]}
           >
-            Gatos
+            {activeSpecies === 'cat' ? 'Húmedos & Arena' : 'Snacks & Cuidado'}
           </Text>
-          {topTab === 'cat' && <View style={styles.uberTabActiveIndicator} />}
+          {topTab === 'snacks' && <View style={styles.uberTabActiveIndicator} />}
         </Pressable>
       </View>
 
@@ -467,7 +702,17 @@ export const HomeScreen: React.FC = () => {
             ref={searchInputRef}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="¿Qué bulto busca tu mascota?"
+            placeholder={
+              topTab === 'bultos'
+                ? user?.petName
+                  ? `¿Qué bulto busca ${user.petName}?`
+                  : activeSpecies === 'cat'
+                  ? '¿Qué bulto busca tu gato?'
+                  : '¿Qué bulto busca tu perro?'
+                : user?.petName
+                ? `¿Qué premio o cuidado busca ${user.petName}?`
+                : 'Buscar húmedos, premios o cuidado...'
+            }
             placeholderTextColor="#9CA3AF"
             style={styles.uberSearchInput}
             underlineColorAndroid="transparent"
@@ -483,92 +728,118 @@ export const HomeScreen: React.FC = () => {
             </Pressable>
           ) : null}
 
-          {/* Botón interno estilo "Later" de Uber para filtrar por Libras */}
-          <Pressable
-            onPress={handleCycleWeightFilter}
-            style={[
-              styles.uberLaterButton,
-              selectedWeightFilter !== null && styles.uberLaterButtonActive,
-            ]}
-          >
-            <Ionicons
-              name="barbell-outline"
-              size={14}
-              color={selectedWeightFilter ? '#050508' : '#FFFFFF'}
-            />
-            <Text
+          {/* Botón interno estilo "Later" de Uber para filtrar por Libras (solo en Bultos) */}
+          {topTab === 'bultos' && (
+            <Pressable
+              onPress={handleCycleWeightFilter}
               style={[
-                styles.uberLaterText,
-                selectedWeightFilter !== null && { color: '#050508' },
+                styles.uberLaterButton,
+                selectedWeightFilter !== null && styles.uberLaterButtonActive,
               ]}
             >
-              {selectedWeightFilter ? `${selectedWeightFilter} LB` : 'Peso LB'}
-            </Text>
-          </Pressable>
+              <Ionicons
+                name="barbell-outline"
+                size={14}
+                color={selectedWeightFilter ? '#050508' : '#FFFFFF'}
+              />
+              <Text
+                style={[
+                  styles.uberLaterText,
+                  selectedWeightFilter !== null && { color: '#050508' },
+                ]}
+              >
+                {selectedWeightFilter ? `${selectedWeightFilter} LB` : 'Peso LB'}
+              </Text>
+            </Pressable>
+          )}
         </Pressable>
 
         {/* ==================== 4. UBER RECENT / QUICK REORDER STACKED CARD ==================== */}
         <View style={styles.uberRecentCard}>
-          {/* Fila 1: Diamond Naturals 40 LB */}
-          <Pressable
-            onPress={() => handleAddToCart('prod_123')}
-            style={({ pressed }) => [
-              styles.uberRecentRow,
-              pressed && { backgroundColor: 'rgba(255, 255, 255, 0.04)' },
-            ]}
-          >
-            <View style={styles.uberClockIconBox}>
-              <Ionicons name="time-outline" size={20} color="#D1D5DB" />
-            </View>
-            <View style={styles.uberRecentTextCol}>
-              <Text style={styles.uberRecentTitle} numberOfLines={1}>
-                Diamond Naturals Lamb & Rice 40 LB
-              </Text>
-              <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
-                $ 289.000 ·{' '}
-                {deliveryZone === 'bogota'
-                  ? 'Domicilio Gratis en Bogotá'
-                  : 'Envío nacional (+ recargo transportadora)'}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-          </Pressable>
-
-          <View style={styles.uberRecentDivider} />
-
-          {/* Fila 2: Taste of the Wild High Prairie 28 LB */}
-          <Pressable
-            onPress={() => handleAddToCart('prod_9567')}
-            style={({ pressed }) => [
-              styles.uberRecentRow,
-              pressed && { backgroundColor: 'rgba(255, 255, 255, 0.04)' },
-            ]}
-          >
-            <View style={styles.uberClockIconBox}>
-              <Ionicons name="time-outline" size={20} color="#D1D5DB" />
-            </View>
-            <View style={styles.uberRecentTextCol}>
-              <Text style={styles.uberRecentTitle} numberOfLines={1}>
-                Taste of the Wild High Prairie 28 LB
-              </Text>
-              <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
-                $ 341.300 · Bisonte y Venado · +341 Consenticoins
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-          </Pressable>
+          {recentQuickItems.map((item, idx) => (
+            <React.Fragment key={item.id}>
+              {idx > 0 && <View style={styles.uberRecentDivider} />}
+              <Pressable
+                onPress={() => handleAddToCart(item.id)}
+                style={({ pressed }) => [
+                  styles.uberRecentRow,
+                  pressed && { backgroundColor: 'rgba(255, 255, 255, 0.04)' },
+                ]}
+              >
+                <View style={styles.uberClockIconBox}>
+                  <Ionicons name="time-outline" size={20} color="#D1D5DB" />
+                </View>
+                <View style={styles.uberRecentTextCol}>
+                  <Text style={styles.uberRecentTitle} numberOfLines={1}>
+                    {item.name} ({item.unitLabel || `${item.weightLb} LB`})
+                  </Text>
+                  <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
+                    {formatCOP(item.price)} ·{' '}
+                    {deliveryZone === 'bogota'
+                      ? 'Domicilio Gratis en Bogotá'
+                      : `+${item.coins} Consenticoins`}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+              </Pressable>
+            </React.Fragment>
+          ))}
         </View>
 
-        {/* ==================== 5. UBER "FOR YOU" 4 CIRCULAR ICONS ==================== */}
+        {/* ==================== 5. UBER "FOR YOU" 4 CIRCULAR ICONS PERSONALIZADOS ==================== */}
         <View style={styles.uberSectionHeader}>
-          <Text style={styles.uberSectionTitle}>Para tu mascota</Text>
-          <View style={styles.uberSmallArrowCircle}>
-            <Ionicons name="chevron-forward" size={13} color="#D1D5DB" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.uberSectionTitle}>
+              {user?.petName
+                ? `Para ${user.petName} ${activeSpecies === 'cat' ? '🐱' : '🐶'}`
+                : activeSpecies === 'cat'
+                ? 'Especial para tu Gato 🐱'
+                : 'Especial para tu Perro 🐶'}
+            </Text>
+            <View style={styles.uberSmallArrowCircle}>
+              <Ionicons name="chevron-forward" size={13} color="#D1D5DB" />
+            </View>
           </View>
+
+          {/* Solo si es Invitado o tiene Perro y Gato ('both'), permitir alternar especie */}
+          {isMultiOrGuest && (
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setFallbackSpecies((prev) => (prev === 'dog' ? 'cat' : 'dog'));
+                setSelectedBrand('Todas');
+                setSelectedWeightFilter(null);
+              }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                backgroundColor: '#1C1E26',
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <Text style={{ fontSize: 12 }}>
+                {activeSpecies === 'dog' ? '🐱' : '🐶'}
+              </Text>
+              <Text
+                style={{
+                  color: '#D1D5DB',
+                  fontSize: 11,
+                  fontWeight: '700',
+                }}
+              >
+                {activeSpecies === 'dog' ? 'Cambiar a Gato' : 'Cambiar a Perro'}
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.uberCirclesRow}>
-          {FOR_YOU_CIRCLES.map((item) => {
+          {activeCircles.map((item) => {
             const isSelected = selectedBrand === item.id;
             return (
               <Pressable
@@ -601,12 +872,18 @@ export const HomeScreen: React.FC = () => {
           })}
         </View>
 
-        {/* ==================== 6. UBER HORIZONTAL CARDS ("Bultos Super Premium") ==================== */}
+        {/* ==================== 6. UBER HORIZONTAL CARDS ==================== */}
         <View style={styles.uberSectionHeader}>
           <Text style={styles.uberSectionTitle}>
-            {selectedBrand === 'Todas'
-              ? 'Bultos Super Premium'
-              : `Línea ${selectedBrand}`}
+            {topTab === 'bultos'
+              ? selectedBrand === 'Todas'
+                ? activeSpecies === 'cat'
+                  ? 'Bultos Super Premium Gatos'
+                  : 'Bultos Super Premium Perros'
+                : `Línea ${selectedBrand}`
+              : activeSpecies === 'cat'
+              ? 'Húmedos, Premios y Arena Felina'
+              : 'Latas Húmedas, Premios y Cuidado'}
           </Text>
           {selectedBrand !== 'Todas' || selectedWeightFilter !== null ? (
             <Pressable
@@ -644,7 +921,7 @@ export const HomeScreen: React.FC = () => {
                     </View>
                     <View style={styles.uberWeightPill}>
                       <Text style={styles.uberWeightPillText}>
-                        {product.weightLb} LB
+                        {product.unitLabel || `${product.weightLb} LB`}
                       </Text>
                     </View>
                   </View>
@@ -657,7 +934,15 @@ export const HomeScreen: React.FC = () => {
                       ]}
                     >
                       <Text style={{ fontSize: 34 }}>
-                        {product.petType === 'cat' ? '🐱' : '🐶'}
+                        {product.category === 'snacks'
+                          ? product.subFilter === 'humedos'
+                            ? '🥫'
+                            : product.subFilter === 'higiene'
+                            ? '🧼'
+                            : '🦴'
+                          : product.petType === 'cat'
+                          ? '🐱'
+                          : '🐶'}
                       </Text>
                     </View>
                   </View>
