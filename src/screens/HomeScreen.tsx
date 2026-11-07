@@ -709,15 +709,39 @@ export const HomeScreen: React.FC = () => {
   const [isDraggingCartBubble, setIsDraggingCartBubble] = useState(false);
   const cartPulseAnim = useRef(new Animated.Value(1)).current;
 
-  // Posición 2D arrastrable libremente (igual a la burbuja de engranaje de Expo Go)
+  // Posición 2D arrastrable con efecto imán hacia los bordes laterales (igual al engranaje de Expo Go)
   const { width: screenW, height: screenH } = Dimensions.get('window');
   const BUBBLE_SIZE = 58;
-  const initialBubbleX = Math.max(16, screenW - BUBBLE_SIZE - 16);
+  const EDGE_MARGIN = 12;
+  const initialBubbleX = Math.max(EDGE_MARGIN, screenW - BUBBLE_SIZE - EDGE_MARGIN);
   const initialBubbleY = Math.round(screenH * 0.64);
   const floatingCartPos = useRef(
     new Animated.ValueXY({ x: initialBubbleX, y: initialBubbleY })
   ).current;
   const lastCartPosRef = useRef({ x: initialBubbleX, y: initialBubbleY });
+
+  const snapBubbleToNearestEdge = (
+    rawX: number,
+    rawY: number,
+    vx: number
+  ) => {
+    const { width: w, height: h } = Dimensions.get('window');
+    const clampedY = Math.min(Math.max(64, rawY), h - BUBBLE_SIZE - 96);
+
+    // Proyecta ligeramente con la velocidad horizontal del dedo para que un "flick" cambie de orilla
+    const projectedCenterX = rawX + BUBBLE_SIZE / 2 + vx * 85;
+    const snapToLeft = projectedCenterX < w / 2;
+    const targetX = snapToLeft ? EDGE_MARGIN : w - BUBBLE_SIZE - EDGE_MARGIN;
+
+    lastCartPosRef.current = { x: targetX, y: clampedY };
+
+    Animated.spring(floatingCartPos, {
+      toValue: { x: targetX, y: clampedY },
+      tension: 75,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const floatingCartPanResponder = useRef(
     PanResponder.create({
@@ -725,41 +749,42 @@ export const HomeScreen: React.FC = () => {
       onMoveShouldSetPanResponder: (_, g) =>
         Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
       onPanResponderGrant: () => {
+        floatingCartPos.stopAnimation();
         setIsDraggingCartBubble(true);
       },
       onPanResponderMove: (_, gestureState) => {
         const { width: w, height: h } = Dimensions.get('window');
         const nextX = Math.min(
-          Math.max(8, lastCartPosRef.current.x + gestureState.dx),
-          w - BUBBLE_SIZE - 8
+          Math.max(6, lastCartPosRef.current.x + gestureState.dx),
+          w - BUBBLE_SIZE - 6
         );
         const nextY = Math.min(
           Math.max(60, lastCartPosRef.current.y + gestureState.dy),
-          h - BUBBLE_SIZE - 90
+          h - BUBBLE_SIZE - 92
         );
         floatingCartPos.setValue({ x: nextX, y: nextY });
       },
       onPanResponderRelease: (_, gestureState) => {
         setIsDraggingCartBubble(false);
-        const { width: w, height: h } = Dimensions.get('window');
-        const finalX = Math.min(
-          Math.max(8, lastCartPosRef.current.x + gestureState.dx),
-          w - BUBBLE_SIZE - 8
-        );
-        const finalY = Math.min(
-          Math.max(60, lastCartPosRef.current.y + gestureState.dy),
-          h - BUBBLE_SIZE - 90
-        );
-        lastCartPosRef.current = { x: finalX, y: finalY };
-        floatingCartPos.setValue({ x: finalX, y: finalY });
+        const rawX = lastCartPosRef.current.x + gestureState.dx;
+        const rawY = lastCartPosRef.current.y + gestureState.dy;
 
         // Si fue un toque rápido (sin arrastrar), abre la vista rápida de lo que va agregando
         if (Math.abs(gestureState.dx) < 8 && Math.abs(gestureState.dy) < 8) {
           Haptics.selectionAsync();
           setMiniCartPreviewOpen((prev) => !prev);
-        } else {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          return;
         }
+
+        // Efecto imán: se adhiere con resorte al borde izquierdo o derecho más cercano
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        snapBubbleToNearestEdge(rawX, rawY, gestureState.vx);
+      },
+      onPanResponderTerminate: (_, gestureState) => {
+        setIsDraggingCartBubble(false);
+        const rawX = lastCartPosRef.current.x + gestureState.dx;
+        const rawY = lastCartPosRef.current.y + gestureState.dy;
+        snapBubbleToNearestEdge(rawX, rawY, gestureState.vx);
       },
     })
   ).current;
