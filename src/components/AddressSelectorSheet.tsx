@@ -380,23 +380,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                     />
                   </Pressable>
 
-                  {/* 2. Banner informativo de cobertura Bogotá vs Nacional */}
-                  <View style={styles.logisticsRuleBanner}>
-                    <View style={styles.logisticsRuleRow}>
-                      <View style={styles.ruleBadgeBogota}>
-                        <Text style={styles.ruleBadgeBogotaText}>
-                          🚚 Bogotá D.C.: Domicilio GRATIS
-                        </Text>
-                      </View>
-                      <View style={styles.ruleBadgeNacional}>
-                        <Text style={styles.ruleBadgeNacionalText}>
-                          📦 Otros municipios: + Flete según LB
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* 3. Tarjetas de direcciones guardadas del cliente */}
+                  {/* 2. Tarjetas de direcciones guardadas del cliente */}
                   <View style={styles.addressesList}>
                     {addresses.map((addr) => {
                       const isSelected = addr.id === selectedAddress.id;
