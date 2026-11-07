@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
+import { InboxModal } from '../components/InboxModal';
 import { useAuth } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
 
@@ -197,6 +198,7 @@ export const HomeScreen: React.FC = () => {
   const [profileVisible, setProfileVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
   const [addressSheetVisible, setAddressSheetVisible] = useState(false);
+  const [inboxVisible, setInboxVisible] = useState(false);
 
   // Zona derivada automáticamente de la dirección seleccionada por el cliente
   const deliveryZone: DeliveryZoneType = selectedAddress.isBogota
@@ -390,16 +392,14 @@ export const HomeScreen: React.FC = () => {
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            setCartModalVisible(true);
+            setInboxVisible(true);
           }}
           style={styles.inboxBagPill}
           hitSlop={8}
         >
-          <Ionicons name="bag-handle-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.inboxBagText}>
-            Bolsa{cartSummary.totalItems > 0 ? ` (${cartSummary.totalItems})` : ''}
-          </Text>
-          {cartSummary.totalItems > 0 && <View style={styles.activeGoldDot} />}
+          <Ionicons name="notifications-outline" size={17} color="#FFFFFF" />
+          <Text style={styles.inboxBagText}>Inbox</Text>
+          <View style={styles.activeGoldDot} />
         </Pressable>
       </View>
 
@@ -1170,6 +1170,17 @@ export const HomeScreen: React.FC = () => {
           </Animated.View>
         </View>
       </Modal>
+
+      {/* Panel de Inbox con transición de portal desde la esquina superior derecha */}
+      <InboxModal
+        visible={inboxVisible}
+        onClose={() => setInboxVisible(false)}
+        onQuickAddProduct={(prodId) => {
+          handleAddToCart(prodId);
+          setCartModalVisible(true);
+        }}
+        onOpenProfile={() => setProfileVisible(true)}
+      />
 
       {/* Panel Deslizable de Direcciones de Entrega */}
       <AddressSelectorSheet
