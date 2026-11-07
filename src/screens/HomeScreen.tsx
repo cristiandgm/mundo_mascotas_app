@@ -724,10 +724,11 @@ export const HomeScreen: React.FC = () => {
             Haptics.selectionAsync();
             setMainTopTab('store');
           }}
-          style={styles.uberTabItem}
+          style={[styles.uberTabItem, { flex: 0.9 }]}
         >
           <Text style={styles.uberTabEmoji}>🛍️</Text>
           <Text
+            numberOfLines={1}
             style={[
               styles.uberTabText,
               mainTopTab === 'store' && styles.uberTabTextActive,
@@ -750,10 +751,11 @@ export const HomeScreen: React.FC = () => {
             setQuizWeightKg(activePet.weightKg);
             setMainTopTab('quiz');
           }}
-          style={styles.uberTabItem}
+          style={[styles.uberTabItem, { flex: 1.35 }]}
         >
           <Text style={styles.uberTabEmoji}>🧬</Text>
           <Text
+            numberOfLines={1}
             style={[
               styles.uberTabText,
               mainTopTab === 'quiz' && styles.uberTabTextActive,
@@ -772,12 +774,13 @@ export const HomeScreen: React.FC = () => {
             Haptics.selectionAsync();
             setMainTopTab('pets');
           }}
-          style={styles.uberTabItem}
+          style={[styles.uberTabItem, { flex: 1.05 }]}
         >
           <Text style={styles.uberTabEmoji}>
             {activeSpecies === 'cat' ? '🐱' : '🐶'}
           </Text>
           <Text
+            numberOfLines={1}
             style={[
               styles.uberTabText,
               mainTopTab === 'pets' && styles.uberTabTextActive,
@@ -2504,36 +2507,38 @@ const styles = StyleSheet.create({
   /* ==================== 2. UBER TOP TABS ==================== */
   uberTabsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 36,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   uberTabItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 11,
     position: 'relative',
   },
   uberTabEmoji: {
-    fontSize: 22,
+    fontSize: 16,
   },
   uberTabText: {
     color: '#9CA3AF',
-    fontSize: 16,
+    fontSize: 13.5,
     fontWeight: '700',
   },
   uberTabTextActive: {
     color: '#FFFFFF',
+    fontWeight: '800',
   },
   uberTabActiveIndicator: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    left: 10,
+    right: 10,
     height: 3,
     backgroundColor: '#FFFFFF',
     borderRadius: 2,
