@@ -10,6 +10,22 @@ export type AuthProviderType = 'email' | 'google' | 'apple' | 'whatsapp';
 
 export type AddressLabelType = 'Casa' | 'Oficina' | 'Finca' | 'Familiar' | 'Otro';
 
+export type PetStageType = 'puppy' | 'adult' | 'senior';
+export type PetActivityType = 'low' | 'moderate' | 'high';
+export type PetSensitivityType = 'none' | 'skin' | 'digestion' | 'weight' | 'grain_free';
+
+export interface PetProfile {
+  id: string;
+  name: string;
+  species: 'dog' | 'cat';
+  breed: string;
+  ageStage: PetStageType;
+  weightKg: number;
+  activityLevel: PetActivityType;
+  sensitivity: PetSensitivityType;
+  recommendedProductId?: string;
+}
+
 export interface CustomerOrderItem {
   name: string;
   quantity: number;
@@ -89,6 +105,12 @@ interface AuthContextType {
   selectAddress: (addressId: string) => void;
   addAddress: (newAddr: Omit<CustomerAddress, 'id'>) => CustomerAddress;
   deleteAddress: (addressId: string) => void;
+  pets: PetProfile[];
+  activePet: PetProfile;
+  selectPet: (petId: string) => void;
+  addPet: (newPet: Omit<PetProfile, 'id'>) => PetProfile;
+  updatePet: (petId: string, updates: Partial<PetProfile>) => void;
+  deletePet: (petId: string) => void;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   loginWithSocial: (provider: 'google' | 'apple' | 'whatsapp') => Promise<void>;
   loginAsDemoCustomer: () => void;
@@ -103,6 +125,21 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
+
+// Mascotas iniciales del cliente VIP
+export const INITIAL_PETS: PetProfile[] = [
+  {
+    id: 'pet_consentido_dog',
+    name: 'Consentido',
+    species: 'dog',
+    breed: 'Golden Retriever',
+    ageStage: 'adult',
+    weightKg: 28,
+    activityLevel: 'moderate',
+    sensitivity: 'none',
+    recommendedProductId: 'prod_123',
+  },
+];
 
 // Direcciones guardadas reales de ejemplo para Mundo Mascotas Colombia
 export const INITIAL_SAVED_ADDRESSES: CustomerAddress[] = [
@@ -289,6 +326,77 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [selectedAddressId, setSelectedAddressId] = useState<string>(
     INITIAL_SAVED_ADDRESSES[0].id
   );
+
+  // Lista de mascotas del cliente (personaliza Tienda y Quiz Biológico)
+  const [pets, setPets] = useState<PetProfile[]>(INITIAL_PETS);
+  const [activePetId, setActivePetId] = useState<string>(INITIAL_PETS[0].id);
+
+  const activePet = pets.find((p) => p.id === activePetId) || pets[0];
+
+  const selectPet = (petId: string) => {
+    const found = pets.find((p) => p.id === petId);
+    if (!found) return;
+    setActivePetId(petId);
+    if (user) {
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              petName: found.name,
+              petType: found.species,
+            }
+          : prev
+      );
+    }
+  };
+
+  const addPet = (newPet: Omit<PetProfile, 'id'>): PetProfile => {
+    const created: PetProfile = {
+      ...newPet,
+      id: 'pet_' + Date.now(),
+    };
+    setPets((prev) => [...prev, created]);
+    setActivePetId(created.id);
+    if (user) {
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              petName: created.name,
+              petType: created.species,
+            }
+          : prev
+      );
+    }
+    return created;
+  };
+
+  const updatePet = (petId: string, updates: Partial<PetProfile>) => {
+    setPets((prev) =>
+      prev.map((p) => (p.id === petId ? { ...p, ...updates } : p))
+    );
+  };
+
+  const deletePet = (petId: string) => {
+    if (pets.length <= 1) return;
+    const remaining = pets.filter((p) => p.id !== petId);
+    setPets(remaining);
+    if (activePetId === petId) {
+      const next = remaining[0];
+      setActivePetId(next.id);
+      if (user) {
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                petName: next.name,
+                petType: next.species,
+              }
+            : prev
+        );
+      }
+    }
+  };
 
   const selectedAddress =
     addresses.find((a) => a.id === selectedAddressId) || addresses[0];
@@ -515,6 +623,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updatePetInfo = (petName: string, petType: PetCategory) => {
+    const targetSpecies: 'dog' | 'cat' = petType === 'cat' ? 'cat' : 'dog';
+    setPets((prev) =>
+      prev.map((p) =>
+        p.id === activePet.id
+          ? { ...p, name: petName, species: targetSpecies }
+          : p
+      )
+    );
     setUser((prev) => {
       const baseUser = prev || DEFAULT_VIP_CUSTOMER;
       return {
@@ -589,6 +705,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         selectAddress,
         addAddress,
         deleteAddress,
+        pets,
+        activePet,
+        selectPet,
+        addPet,
+        updatePet,
+        deletePet,
         login,
         loginWithSocial,
         loginAsDemoCustomer,

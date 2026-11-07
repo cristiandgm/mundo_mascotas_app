@@ -20,11 +20,17 @@ import { colors } from '../theme/colors';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { InboxModal } from '../components/InboxModal';
-import { useAuth } from '../context/AuthContext';
+import {
+  useAuth,
+  PetStageType,
+  PetActivityType,
+  PetSensitivityType,
+} from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
 type TopServiceTabType = 'bultos' | 'snacks';
+type MainTopTabType = 'store' | 'quiz' | 'pets';
 type BottomNavTab = 'home' | 'catalog' | 'activity' | 'account';
 
 interface ProductBag {
@@ -380,7 +386,18 @@ const FOR_YOU_SNACKS_CIRCLES = [
 ];
 
 export const HomeScreen: React.FC = () => {
-  const { user, openAuthModal, selectedAddress, addresses } = useAuth();
+  const {
+    user,
+    openAuthModal,
+    selectedAddress,
+    addresses,
+    pets,
+    activePet,
+    selectPet,
+    addPet,
+    updatePet,
+    deletePet,
+  } = useAuth();
   const insets = useSafeAreaInsets();
   const [profileVisible, setProfileVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
@@ -392,26 +409,37 @@ export const HomeScreen: React.FC = () => {
     ? 'bogota'
     : 'nacional';
 
-  // Especie exclusiva según la mascota del cliente:
-  // - Si user.petType === 'dog' -> 100% Perros (cero rastro de gatos)
-  // - Si user.petType === 'cat' -> 100% Gatos (cero rastro de perros)
-  // - Si es Invitado (!user) o tiene Ambos ('both') -> usa fallbackSpecies
-  const [fallbackSpecies, setFallbackSpecies] = useState<'dog' | 'cat'>('dog');
-  const activeSpecies: 'dog' | 'cat' =
-    user?.petType === 'dog'
-      ? 'dog'
-      : user?.petType === 'cat'
-      ? 'cat'
-      : fallbackSpecies;
+  // Especie exclusiva sincronizada con la mascota activa seleccionada en "Mascota(s)"
+  const activeSpecies: 'dog' | 'cat' = activePet.species;
 
-  const isMultiOrGuest = !user || user.petType === 'both';
-
-  // Pestañas superiores estilo Uber (Opción A: Concentrados Bultos | Snacks & Cuidado)
-  const [topTab, setTopTab] = useState<TopServiceTabType>('bultos');
+  // Las 3 pestañas superiores principales: 1. Tienda | 2. Quiz Biológico | 3. Mascota(s)
+  const [mainTopTab, setMainTopTab] = useState<MainTopTabType>('store');
   const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>('home');
   const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWeightFilter, setSelectedWeightFilter] = useState<number | null>(null);
+
+  // Estados del Quiz Biológico (Pestaña 2)
+  const [quizStage, setQuizStage] = useState<PetStageType>(activePet.ageStage);
+  const [quizActivity, setQuizActivity] = useState<PetActivityType>(
+    activePet.activityLevel
+  );
+  const [quizSensitivity, setQuizSensitivity] = useState<PetSensitivityType>(
+    activePet.sensitivity
+  );
+  const [quizWeightKg, setQuizWeightKg] = useState<number>(activePet.weightKg);
+  const [quizSavedToast, setQuizSavedToast] = useState<boolean>(false);
+
+  // Estados de Mascota(s) (Pestaña 3)
+  const [isAddingPet, setIsAddingPet] = useState(false);
+  const [newPetName, setNewPetName] = useState('');
+  const [newPetSpecies, setNewPetSpecies] = useState<'dog' | 'cat'>('dog');
+  const [newPetBreed, setNewPetBreed] = useState('');
+  const [newPetWeight, setNewPetWeight] = useState('15');
+  const [newPetStage, setNewPetStage] = useState<PetStageType>('adult');
+  const [confirmDeletePetId, setConfirmDeletePetId] = useState<string | null>(
+    null
+  );
 
   // Carrito: { [productId]: quantity }
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -483,29 +511,20 @@ export const HomeScreen: React.FC = () => {
     setSelectedWeightFilter(weights[nextIdx]);
   };
 
-  // Filtrado de productos 100% personalizado a la especie de la mascota del cliente
+  // Filtrado de Bultos para la pestaña 1 (Tienda) - 100% exclusivo para la especie de la mascota activa
   const filteredProducts = useMemo(() => {
     return CATALOG_BAGS.filter((item) => {
-      // Nunca mostrar productos de otra especie que el cliente no tiene
       if (item.petType !== activeSpecies) return false;
-
-      // Filtrar por pestaña superior (Bultos vs Snacks & Cuidado) salvo que esté escribiendo en el buscador
-      if (!searchQuery.trim() && item.category !== topTab) return false;
+      if (!searchQuery.trim() && item.category !== 'bultos') return false;
 
       if (selectedBrand !== 'Todas') {
-        if (topTab === 'snacks') {
-          if (item.subFilter !== selectedBrand) return false;
-        } else if (selectedBrand === 'Acana') {
+        if (selectedBrand === 'Acana') {
           if (item.brand !== 'Acana' && item.brand !== 'Orijen') return false;
         } else if (item.brand !== selectedBrand) {
           return false;
         }
       }
-      if (
-        topTab === 'bultos' &&
-        selectedWeightFilter &&
-        item.weightLb !== selectedWeightFilter
-      ) {
+      if (selectedWeightFilter && item.weightLb !== selectedWeightFilter) {
         return false;
       }
       if (searchQuery.trim()) {
@@ -519,17 +538,84 @@ export const HomeScreen: React.FC = () => {
       }
       return true;
     });
-  }, [activeSpecies, topTab, selectedBrand, selectedWeightFilter, searchQuery]);
+  }, [activeSpecies, selectedBrand, selectedWeightFilter, searchQuery]);
 
-  // Los 2 productos frecuentes para la tarjeta de Reloj estilo Uber según la mascota y pestaña activa
+  // Complementos y snacks para la mascota activa (segundo carrusel en Tienda)
+  const speciesSnacks = useMemo(() => {
+    return CATALOG_BAGS.filter(
+      (item) => item.petType === activeSpecies && item.category === 'snacks'
+    );
+  }, [activeSpecies]);
+
+  // Los 2 productos frecuentes para la tarjeta de Reloj estilo Uber según la mascota activa
   const recentQuickItems = useMemo(() => {
     return CATALOG_BAGS.filter(
-      (item) => item.petType === activeSpecies && item.category === topTab
+      (item) => item.petType === activeSpecies && item.category === 'bultos'
     ).slice(0, 2);
-  }, [activeSpecies, topTab]);
+  }, [activeSpecies]);
 
-  const activeCircles =
-    topTab === 'bultos' ? FOR_YOU_BULTOS_CIRCLES : FOR_YOU_SNACKS_CIRCLES;
+  // Algoritmo del Quiz Biológico (Pestaña 2): calcula bulto ideal, ración en gramos y duración
+  const quizRecommendation = useMemo(() => {
+    let targetProdId = 'prod_123';
+
+    if (activeSpecies === 'dog') {
+      if (quizStage === 'puppy') {
+        targetProdId = 'prod_9571'; // Taste of the Wild High Prairie Puppy 28 LB
+      } else if (quizSensitivity === 'weight' || quizActivity === 'low') {
+        targetProdId = 'prod_1773'; // Diamond Naturals Light Lamb & Rice 30 LB
+      } else if (quizSensitivity === 'skin') {
+        targetProdId = 'prod_9423'; // Diamond Naturals Skin & Coat Salmón 30 LB
+      } else if (
+        quizSensitivity === 'grain_free' ||
+        quizActivity === 'high'
+      ) {
+        targetProdId = 'prod_9567'; // Taste of the Wild High Prairie 28 LB
+      } else {
+        targetProdId = 'prod_123'; // Diamond Naturals Lamb & Rice 40 LB
+      }
+    } else {
+      // Gatos
+      if (quizSensitivity === 'skin' || quizSensitivity === 'digestion') {
+        targetProdId = 'prod_1910'; // Diamond Indoor Cat Hairball 18 LB
+      } else if (quizActivity === 'high' || quizSensitivity === 'grain_free') {
+        targetProdId = 'prod_7790'; // Orijen Cat & Kitten 12 LB
+      } else {
+        targetProdId = 'prod_9580'; // Taste of the Wild Rocky Mountain Cat 14 LB
+      }
+    }
+
+    const product =
+      CATALOG_BAGS.find((p) => p.id === targetProdId) || CATALOG_BAGS[0];
+
+    // Cálculo de ración biológica diaria en gramos según peso y actividad
+    const baseFactor =
+      activeSpecies === 'cat'
+        ? 14
+        : quizStage === 'puppy'
+        ? 22
+        : quizActivity === 'high'
+        ? 15
+        : quizActivity === 'low'
+        ? 10.5
+        : 12.5;
+    const dailyGrams = Math.max(
+      45,
+      Math.round((quizWeightKg * baseFactor) / 5) * 5
+    );
+    const totalBagGrams = Math.round(product.weightLb * 453.592);
+    const estimatedDays = Math.max(
+      12,
+      Math.round(totalBagGrams / dailyGrams)
+    );
+    const costPerDay = Math.round(product.price / estimatedDays);
+
+    return {
+      product,
+      dailyGrams,
+      estimatedDays,
+      costPerDay,
+    };
+  }, [activeSpecies, quizStage, quizActivity, quizSensitivity, quizWeightKg]);
 
   // Totales del carrito
   const cartSummary = useMemo(() => {
@@ -630,14 +716,61 @@ export const HomeScreen: React.FC = () => {
         </Pressable>
       </View>
 
-      {/* ==================== 2. UBER TOP TABS (OPCIÓN A: CONCENTRADOS BULTOS | SNACKS & CUIDADO) ==================== */}
+      {/* ==================== 2. LAS 3 PESTAÑAS SUPERIORES: 1. TIENDA | 2. QUIZ BIOLÓGICO | 3. MASCOTA(S) ==================== */}
       <View style={styles.uberTabsContainer}>
+        {/* Opción 1: Tienda */}
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            setTopTab('bultos');
-            setSelectedBrand('Todas');
-            setSelectedWeightFilter(null);
+            setMainTopTab('store');
+          }}
+          style={styles.uberTabItem}
+        >
+          <Text style={styles.uberTabEmoji}>🛍️</Text>
+          <Text
+            style={[
+              styles.uberTabText,
+              mainTopTab === 'store' && styles.uberTabTextActive,
+            ]}
+          >
+            Tienda
+          </Text>
+          {mainTopTab === 'store' && (
+            <View style={styles.uberTabActiveIndicator} />
+          )}
+        </Pressable>
+
+        {/* Opción 2: Quiz Biológico */}
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setQuizStage(activePet.ageStage);
+            setQuizActivity(activePet.activityLevel);
+            setQuizSensitivity(activePet.sensitivity);
+            setQuizWeightKg(activePet.weightKg);
+            setMainTopTab('quiz');
+          }}
+          style={styles.uberTabItem}
+        >
+          <Text style={styles.uberTabEmoji}>🧬</Text>
+          <Text
+            style={[
+              styles.uberTabText,
+              mainTopTab === 'quiz' && styles.uberTabTextActive,
+            ]}
+          >
+            Quiz Biológico
+          </Text>
+          {mainTopTab === 'quiz' && (
+            <View style={styles.uberTabActiveIndicator} />
+          )}
+        </Pressable>
+
+        {/* Opción 3: Mascota(s) */}
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setMainTopTab('pets');
           }}
           style={styles.uberTabItem}
         >
@@ -647,35 +780,14 @@ export const HomeScreen: React.FC = () => {
           <Text
             style={[
               styles.uberTabText,
-              topTab === 'bultos' && styles.uberTabTextActive,
+              mainTopTab === 'pets' && styles.uberTabTextActive,
             ]}
           >
-            Concentrados
+            {pets.length > 1 ? `Mascotas (${pets.length})` : 'Mascota(s)'}
           </Text>
-          {topTab === 'bultos' && <View style={styles.uberTabActiveIndicator} />}
-        </Pressable>
-
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            setTopTab('snacks');
-            setSelectedBrand('Todas');
-            setSelectedWeightFilter(null);
-          }}
-          style={styles.uberTabItem}
-        >
-          <Text style={styles.uberTabEmoji}>
-            {activeSpecies === 'cat' ? '🐟' : '🦴'}
-          </Text>
-          <Text
-            style={[
-              styles.uberTabText,
-              topTab === 'snacks' && styles.uberTabTextActive,
-            ]}
-          >
-            {activeSpecies === 'cat' ? 'Húmedos & Arena' : 'Snacks & Cuidado'}
-          </Text>
-          {topTab === 'snacks' && <View style={styles.uberTabActiveIndicator} />}
+          {mainTopTab === 'pets' && (
+            <View style={styles.uberTabActiveIndicator} />
+          )}
         </Pressable>
       </View>
 
@@ -687,395 +799,1226 @@ export const HomeScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ==================== 3. UBER SEARCH PILL ("Where to?" + Later button) ==================== */}
-        <Pressable
-          onPress={() => searchInputRef.current?.focus()}
-          style={styles.uberSearchPill}
-        >
-          <Ionicons
-            name="search"
-            size={20}
-            color={colors.dark.textSecondary}
-            style={{ marginRight: 10 }}
-          />
-          <TextInput
-            ref={searchInputRef}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder={
-              topTab === 'bultos'
-                ? user?.petName
-                  ? `¿Qué bulto busca ${user.petName}?`
-                  : activeSpecies === 'cat'
-                  ? '¿Qué bulto busca tu gato?'
-                  : '¿Qué bulto busca tu perro?'
-                : user?.petName
-                ? `¿Qué premio o cuidado busca ${user.petName}?`
-                : 'Buscar húmedos, premios o cuidado...'
-            }
-            placeholderTextColor="#9CA3AF"
-            style={styles.uberSearchInput}
-            underlineColorAndroid="transparent"
-          />
-
-          {searchQuery.length > 0 ? (
+        {/* ===================================================================================== */}
+        {/* ======================= VISTA 1: TIENDA (CATÁLOGO PERSONALIZADO) ==================== */}
+        {/* ===================================================================================== */}
+        {mainTopTab === 'store' && (
+          <>
+            {/* 3. UBER SEARCH PILL ("Where to?" + Peso LB button) */}
             <Pressable
-              onPress={() => setSearchQuery('')}
-              style={{ marginRight: 8 }}
-              hitSlop={8}
-            >
-              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-            </Pressable>
-          ) : null}
-
-          {/* Botón interno estilo "Later" de Uber para filtrar por Libras (solo en Bultos) */}
-          {topTab === 'bultos' && (
-            <Pressable
-              onPress={handleCycleWeightFilter}
-              style={[
-                styles.uberLaterButton,
-                selectedWeightFilter !== null && styles.uberLaterButtonActive,
-              ]}
+              onPress={() => searchInputRef.current?.focus()}
+              style={styles.uberSearchPill}
             >
               <Ionicons
-                name="barbell-outline"
-                size={14}
-                color={selectedWeightFilter ? '#050508' : '#FFFFFF'}
+                name="search"
+                size={20}
+                color={colors.dark.textSecondary}
+                style={{ marginRight: 10 }}
               />
-              <Text
-                style={[
-                  styles.uberLaterText,
-                  selectedWeightFilter !== null && { color: '#050508' },
-                ]}
-              >
-                {selectedWeightFilter ? `${selectedWeightFilter} LB` : 'Peso LB'}
-              </Text>
-            </Pressable>
-          )}
-        </Pressable>
+              <TextInput
+                ref={searchInputRef}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder={`¿Qué bulto busca ${activePet.name}?`}
+                placeholderTextColor="#9CA3AF"
+                style={styles.uberSearchInput}
+                underlineColorAndroid="transparent"
+              />
 
-        {/* ==================== 4. UBER RECENT / QUICK REORDER STACKED CARD ==================== */}
-        <View style={styles.uberRecentCard}>
-          {recentQuickItems.map((item, idx) => (
-            <React.Fragment key={item.id}>
-              {idx > 0 && <View style={styles.uberRecentDivider} />}
-              <Pressable
-                onPress={() => handleAddToCart(item.id)}
-                style={({ pressed }) => [
-                  styles.uberRecentRow,
-                  pressed && { backgroundColor: 'rgba(255, 255, 255, 0.04)' },
-                ]}
-              >
-                <View style={styles.uberClockIconBox}>
-                  <Ionicons name="time-outline" size={20} color="#D1D5DB" />
-                </View>
-                <View style={styles.uberRecentTextCol}>
-                  <Text style={styles.uberRecentTitle} numberOfLines={1}>
-                    {item.name} ({item.unitLabel || `${item.weightLb} LB`})
-                  </Text>
-                  <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
-                    {formatCOP(item.price)} ·{' '}
-                    {deliveryZone === 'bogota'
-                      ? 'Domicilio Gratis en Bogotá'
-                      : `+${item.coins} Consenticoins`}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-              </Pressable>
-            </React.Fragment>
-          ))}
-        </View>
-
-        {/* ==================== 5. UBER "FOR YOU" 4 CIRCULAR ICONS PERSONALIZADOS ==================== */}
-        <View style={styles.uberSectionHeader}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={styles.uberSectionTitle}>
-              {user?.petName
-                ? `Para ${user.petName} ${activeSpecies === 'cat' ? '🐱' : '🐶'}`
-                : activeSpecies === 'cat'
-                ? 'Especial para tu Gato 🐱'
-                : 'Especial para tu Perro 🐶'}
-            </Text>
-            <View style={styles.uberSmallArrowCircle}>
-              <Ionicons name="chevron-forward" size={13} color="#D1D5DB" />
-            </View>
-          </View>
-
-          {/* Solo si es Invitado o tiene Perro y Gato ('both'), permitir alternar especie */}
-          {isMultiOrGuest && (
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setFallbackSpecies((prev) => (prev === 'dog' ? 'cat' : 'dog'));
-                setSelectedBrand('Todas');
-                setSelectedWeightFilter(null);
-              }}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 5,
-                backgroundColor: '#1C1E26',
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-              }}
-            >
-              <Text style={{ fontSize: 12 }}>
-                {activeSpecies === 'dog' ? '🐱' : '🐶'}
-              </Text>
-              <Text
-                style={{
-                  color: '#D1D5DB',
-                  fontSize: 11,
-                  fontWeight: '700',
-                }}
-              >
-                {activeSpecies === 'dog' ? 'Cambiar a Gato' : 'Cambiar a Perro'}
-              </Text>
-            </Pressable>
-          )}
-        </View>
-
-        <View style={styles.uberCirclesRow}>
-          {activeCircles.map((item) => {
-            const isSelected = selectedBrand === item.id;
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setSelectedBrand(item.id);
-                }}
-                style={styles.uberCircleItem}
-              >
-                <View
-                  style={[
-                    styles.uberCircleGraphic,
-                    isSelected && styles.uberCircleGraphicActive,
-                  ]}
+              {searchQuery.length > 0 ? (
+                <Pressable
+                  onPress={() => setSearchQuery('')}
+                  style={{ marginRight: 8 }}
+                  hitSlop={8}
                 >
-                  <Text style={styles.uberCircleEmoji}>{item.emoji}</Text>
-                </View>
+                  <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                </Pressable>
+              ) : null}
+
+              {/* Botón interno estilo "Later" de Uber para filtrar por Libras */}
+              <Pressable
+                onPress={handleCycleWeightFilter}
+                style={[
+                  styles.uberLaterButton,
+                  selectedWeightFilter !== null && styles.uberLaterButtonActive,
+                ]}
+              >
+                <Ionicons
+                  name="barbell-outline"
+                  size={14}
+                  color={selectedWeightFilter ? '#050508' : '#FFFFFF'}
+                />
                 <Text
                   style={[
-                    styles.uberCircleLabel,
-                    isSelected && { color: colors.primary.light, fontWeight: '800' },
+                    styles.uberLaterText,
+                    selectedWeightFilter !== null && { color: '#050508' },
                   ]}
-                  numberOfLines={1}
                 >
-                  {item.label}
+                  {selectedWeightFilter
+                    ? `${selectedWeightFilter} LB`
+                    : 'Peso LB'}
                 </Text>
               </Pressable>
-            );
-          })}
-        </View>
-
-        {/* ==================== 6. UBER HORIZONTAL CARDS ==================== */}
-        <View style={styles.uberSectionHeader}>
-          <Text style={styles.uberSectionTitle}>
-            {topTab === 'bultos'
-              ? selectedBrand === 'Todas'
-                ? activeSpecies === 'cat'
-                  ? 'Bultos Super Premium Gatos'
-                  : 'Bultos Super Premium Perros'
-                : `Línea ${selectedBrand}`
-              : activeSpecies === 'cat'
-              ? 'Húmedos, Premios y Arena Felina'
-              : 'Latas Húmedas, Premios y Cuidado'}
-          </Text>
-          {selectedBrand !== 'Todas' || selectedWeightFilter !== null ? (
-            <Pressable
-              onPress={() => {
-                setSelectedBrand('Todas');
-                setSelectedWeightFilter(null);
-              }}
-            >
-              <Text style={styles.clearFilterLink}>Ver todos</Text>
             </Pressable>
-          ) : null}
-        </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.uberHorizontalCardsScroll}
-        >
-          {filteredProducts.map((product) => {
-            const qty = cart[product.id] || 0;
-            return (
-              <View key={product.id} style={styles.uberFeatureCard}>
-                {/* Banner gráfico superior estilo ilustración de Uber */}
-                <LinearGradient
-                  colors={['#1A1E2E', '#10131C']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.uberCardGraphicArea}
+            {/* 4. UBER RECENT / QUICK REORDER STACKED CARD */}
+            <View style={styles.uberRecentCard}>
+              {recentQuickItems.map((item, idx) => (
+                <React.Fragment key={item.id}>
+                  {idx > 0 && <View style={styles.uberRecentDivider} />}
+                  <Pressable
+                    onPress={() => handleAddToCart(item.id)}
+                    style={({ pressed }) => [
+                      styles.uberRecentRow,
+                      pressed && {
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                      },
+                    ]}
+                  >
+                    <View style={styles.uberClockIconBox}>
+                      <Ionicons name="time-outline" size={20} color="#D1D5DB" />
+                    </View>
+                    <View style={styles.uberRecentTextCol}>
+                      <Text style={styles.uberRecentTitle} numberOfLines={1}>
+                        {item.name} ({item.unitLabel || `${item.weightLb} LB`})
+                      </Text>
+                      <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
+                        {formatCOP(item.price)} ·{' '}
+                        {deliveryZone === 'bogota'
+                          ? 'Domicilio Gratis en Bogotá'
+                          : `+${item.coins} Consenticoins`}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color="#6B7280"
+                    />
+                  </Pressable>
+                </React.Fragment>
+              ))}
+            </View>
+
+            {/* 5. UBER "FOR YOU" 4 CIRCULAR ICONS PERSONALIZADOS */}
+            <View style={styles.uberSectionHeader}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setMainTopTab('pets');
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+              >
+                <Text style={styles.uberSectionTitle}>
+                  Para {activePet.name}{' '}
+                  {activeSpecies === 'cat' ? '🐱' : '🐶'}
+                </Text>
+                <View style={styles.uberSmallArrowCircle}>
+                  <Ionicons name="chevron-forward" size={13} color="#D1D5DB" />
+                </View>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setMainTopTab('quiz');
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 5,
+                  backgroundColor: 'rgba(212, 175, 55, 0.12)',
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: 'rgba(212, 175, 55, 0.35)',
+                }}
+              >
+                <Text style={{ fontSize: 12 }}>🧬</Text>
+                <Text
+                  style={{
+                    color: colors.primary.light,
+                    fontSize: 11,
+                    fontWeight: '800',
+                  }}
                 >
-                  <View style={styles.uberCardTopBadges}>
-                    <View style={styles.uberBrandBadge}>
-                      <Text style={styles.uberBrandBadgeText}>
-                        {product.brand}
-                      </Text>
-                    </View>
-                    <View style={styles.uberWeightPill}>
-                      <Text style={styles.uberWeightPillText}>
-                        {product.unitLabel || `${product.weightLb} LB`}
-                      </Text>
-                    </View>
-                  </View>
+                  Hacer Quiz
+                </Text>
+              </Pressable>
+            </View>
 
-                  <View style={styles.uberCardVisualCenter}>
+            <View style={styles.uberCirclesRow}>
+              {FOR_YOU_BULTOS_CIRCLES.map((item) => {
+                const isSelected = selectedBrand === item.id;
+                return (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setSelectedBrand(item.id);
+                    }}
+                    style={styles.uberCircleItem}
+                  >
                     <View
                       style={[
-                        styles.bagIllustrationCircle,
-                        { borderColor: `${product.accentColor}55` },
+                        styles.uberCircleGraphic,
+                        isSelected && styles.uberCircleGraphicActive,
                       ]}
                     >
-                      <Text style={{ fontSize: 34 }}>
-                        {product.category === 'snacks'
-                          ? product.subFilter === 'humedos'
-                            ? '🥫'
-                            : product.subFilter === 'higiene'
-                            ? '🧼'
-                            : '🦴'
-                          : product.petType === 'cat'
-                          ? '🐱'
-                          : '🐶'}
+                      <Text style={styles.uberCircleEmoji}>{item.emoji}</Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.uberCircleLabel,
+                        isSelected && {
+                          color: colors.primary.light,
+                          fontWeight: '800',
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* 6. UBER HORIZONTAL CARDS: BULTOS SUPER PREMIUM */}
+            <View style={styles.uberSectionHeader}>
+              <Text style={styles.uberSectionTitle}>
+                {selectedBrand === 'Todas'
+                  ? activeSpecies === 'cat'
+                    ? 'Bultos Super Premium Gatos'
+                    : 'Bultos Super Premium Perros'
+                  : `Línea ${selectedBrand}`}
+              </Text>
+              {selectedBrand !== 'Todas' || selectedWeightFilter !== null ? (
+                <Pressable
+                  onPress={() => {
+                    setSelectedBrand('Todas');
+                    setSelectedWeightFilter(null);
+                  }}
+                >
+                  <Text style={styles.clearFilterLink}>Ver todos</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.uberHorizontalCardsScroll}
+            >
+              {filteredProducts.map((product) => {
+                const qty = cart[product.id] || 0;
+                return (
+                  <View key={product.id} style={styles.uberFeatureCard}>
+                    <LinearGradient
+                      colors={['#1A1E2E', '#10131C']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.uberCardGraphicArea}
+                    >
+                      <View style={styles.uberCardTopBadges}>
+                        <View style={styles.uberBrandBadge}>
+                          <Text style={styles.uberBrandBadgeText}>
+                            {product.brand}
+                          </Text>
+                        </View>
+                        <View style={styles.uberWeightPill}>
+                          <Text style={styles.uberWeightPillText}>
+                            {product.unitLabel || `${product.weightLb} LB`}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.uberCardVisualCenter}>
+                        <View
+                          style={[
+                            styles.bagIllustrationCircle,
+                            { borderColor: `${product.accentColor}55` },
+                          ]}
+                        >
+                          <Text style={{ fontSize: 34 }}>
+                            {product.petType === 'cat' ? '🐱' : '🐶'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.uberCardBottomTag}>
+                        <Text style={styles.uberCardBottomTagText}>
+                          {deliveryZone === 'bogota'
+                            ? '🚚 Domicilio Gratis Bogotá'
+                            : '📦 + Recargo transportadora'}
+                        </Text>
+                      </View>
+                    </LinearGradient>
+
+                    <View style={styles.uberCardBody}>
+                      <Text style={styles.uberCardTitle} numberOfLines={1}>
+                        {product.name}
                       </Text>
+                      <Text style={styles.uberCardSubtitle} numberOfLines={1}>
+                        {product.protein} · +{product.coins} Coins
+                      </Text>
+
+                      <View style={styles.uberCardPriceRow}>
+                        <Text style={styles.uberCardPrice}>
+                          {formatCOP(product.price)}
+                        </Text>
+
+                        {qty === 0 ? (
+                          <Pressable
+                            onPress={() => handleAddToCart(product.id)}
+                            style={({ pressed }) => [
+                              styles.uberAddBtn,
+                              pressed && { opacity: 0.85 },
+                            ]}
+                          >
+                            <Ionicons name="add" size={16} color="#050508" />
+                            <Text style={styles.uberAddBtnText}>Pedir</Text>
+                          </Pressable>
+                        ) : (
+                          <View style={styles.qtyStepper}>
+                            <Pressable
+                              onPress={() => handleDecrementCart(product.id)}
+                              style={styles.qtyStepBtn}
+                            >
+                              <Ionicons
+                                name="remove"
+                                size={14}
+                                color="#FFFFFF"
+                              />
+                            </Pressable>
+                            <Text style={styles.qtyCountText}>{qty}</Text>
+                            <Pressable
+                              onPress={() => handleAddToCart(product.id)}
+                              style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
+                            >
+                              <Ionicons name="add" size={14} color="#050508" />
+                            </Pressable>
+                          </View>
+                        )}
+                      </View>
                     </View>
                   </View>
+                );
+              })}
+            </ScrollView>
 
-                  {/* Etiqueta flotante inferior estilo logo Uber en la tarjeta */}
-                  <View style={styles.uberCardBottomTag}>
-                    <Text style={styles.uberCardBottomTagText}>
-                      {deliveryZone === 'bogota'
-                        ? '🚚 Domicilio Gratis Bogotá'
-                        : '📦 + Recargo transportadora'}
-                    </Text>
+            {/* 7. SEGUNDO CARRUSEL EN TIENDA: HÚMEDOS, PREMIOS Y CUIDADO */}
+            <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
+              <Text style={styles.uberSectionTitle}>
+                {activeSpecies === 'cat'
+                  ? `Húmedos y Arena para ${activePet.name}`
+                  : `Premios y Húmedos para ${activePet.name}`}
+              </Text>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.uberHorizontalCardsScroll}
+            >
+              {speciesSnacks.map((product) => {
+                const qty = cart[product.id] || 0;
+                return (
+                  <View key={product.id} style={styles.uberFeatureCard}>
+                    <LinearGradient
+                      colors={['#171F2C', '#0F141D']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.uberCardGraphicArea}
+                    >
+                      <View style={styles.uberCardTopBadges}>
+                        <View style={styles.uberBrandBadge}>
+                          <Text style={styles.uberBrandBadgeText}>
+                            {product.brand}
+                          </Text>
+                        </View>
+                        <View style={styles.uberWeightPill}>
+                          <Text style={styles.uberWeightPillText}>
+                            {product.unitLabel || `${product.weightLb} LB`}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.uberCardVisualCenter}>
+                        <View
+                          style={[
+                            styles.bagIllustrationCircle,
+                            { borderColor: `${product.accentColor}55` },
+                          ]}
+                        >
+                          <Text style={{ fontSize: 32 }}>
+                            {product.subFilter === 'humedos'
+                              ? '🥫'
+                              : product.subFilter === 'higiene'
+                              ? '🧼'
+                              : '🦴'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.uberCardBottomTag}>
+                        <Text style={styles.uberCardBottomTagText}>
+                          {product.stage}
+                        </Text>
+                      </View>
+                    </LinearGradient>
+
+                    <View style={styles.uberCardBody}>
+                      <Text style={styles.uberCardTitle} numberOfLines={1}>
+                        {product.name}
+                      </Text>
+                      <Text style={styles.uberCardSubtitle} numberOfLines={1}>
+                        {product.protein} · +{product.coins} Coins
+                      </Text>
+
+                      <View style={styles.uberCardPriceRow}>
+                        <Text style={styles.uberCardPrice}>
+                          {formatCOP(product.price)}
+                        </Text>
+
+                        {qty === 0 ? (
+                          <Pressable
+                            onPress={() => handleAddToCart(product.id)}
+                            style={({ pressed }) => [
+                              styles.uberAddBtn,
+                              pressed && { opacity: 0.85 },
+                            ]}
+                          >
+                            <Ionicons name="add" size={16} color="#050508" />
+                            <Text style={styles.uberAddBtnText}>Pedir</Text>
+                          </Pressable>
+                        ) : (
+                          <View style={styles.qtyStepper}>
+                            <Pressable
+                              onPress={() => handleDecrementCart(product.id)}
+                              style={styles.qtyStepBtn}
+                            >
+                              <Ionicons
+                                name="remove"
+                                size={14}
+                                color="#FFFFFF"
+                              />
+                            </Pressable>
+                            <Text style={styles.qtyCountText}>{qty}</Text>
+                            <Pressable
+                              onPress={() => handleAddToCart(product.id)}
+                              style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
+                            >
+                              <Ionicons name="add" size={14} color="#050508" />
+                            </Pressable>
+                          </View>
+                        )}
+                      </View>
+                    </View>
                   </View>
+                );
+              })}
+            </ScrollView>
+
+            {/* 8. TERCER CARRUSEL EN TIENDA ("Más beneficios en Mundo Mascotas") */}
+            <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
+              <Text style={styles.uberSectionTitle}>
+                Más beneficios en Mundo Mascotas
+              </Text>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.uberHorizontalCardsScroll}
+            >
+              <Pressable
+                onPress={handleAccountAccess}
+                style={styles.uberPromoWideCard}
+              >
+                <LinearGradient
+                  colors={['#C69214', '#D4AF37', '#8A5A10']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.uberPromoVisual}
+                >
+                  <View style={styles.uberPromoBadge}>
+                    <Text style={styles.uberPromoBadgeText}>CLUB VIP</Text>
+                  </View>
+                  <Text style={styles.uberPromoBigCoins}>
+                    {user?.points ?? 250} COINS 🪙
+                  </Text>
                 </LinearGradient>
+                <Text style={styles.uberCardTitle}>Billetera Consenticoins</Text>
+                <Text style={styles.uberCardSubtitle}>
+                  {user
+                    ? `Hola ${user.name}, redime tus monedas en tu próximo bulto`
+                    : 'Inicia sesión y recibe 250 Consenticoins de regalo'}
+                </Text>
+              </Pressable>
 
-                {/* Texto inferior y botón de compra */}
-                <View style={styles.uberCardBody}>
-                  <Text style={styles.uberCardTitle} numberOfLines={1}>
-                    {product.name}
+              <Pressable
+                onPress={handleToggleZone}
+                style={styles.uberPromoWideCard}
+              >
+                <LinearGradient
+                  colors={['#112233', '#0B1520']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.uberPromoVisual}
+                >
+                  <View style={styles.uberPromoBadge}>
+                    <Text style={styles.uberPromoBadgeText}>LOGÍSTICA</Text>
+                  </View>
+                  <Text style={[styles.uberPromoBigCoins, { fontSize: 18 }]}>
+                    {deliveryZone === 'bogota'
+                      ? '🚚 Gratis en Bogotá'
+                      : '📦 Envíos Nacionales'}
                   </Text>
-                  <Text style={styles.uberCardSubtitle} numberOfLines={1}>
-                    {product.protein} · +{product.coins} Coins
-                  </Text>
+                </LinearGradient>
+                <Text style={styles.uberCardTitle}>
+                  {deliveryZone === 'bogota'
+                    ? 'Domicilio sin costo en Bogotá'
+                    : 'Despachos a toda Colombia'}
+                </Text>
+                <Text style={styles.uberCardSubtitle}>
+                  {deliveryZone === 'bogota'
+                    ? 'Pago contraentrega con nuestra flota propia'
+                    : 'Recargo por transportadora según el peso en libras'}
+                </Text>
+              </Pressable>
+            </ScrollView>
+          </>
+        )}
 
-                  <View style={styles.uberCardPriceRow}>
-                    <Text style={styles.uberCardPrice}>
-                      {formatCOP(product.price)}
+        {/* ===================================================================================== */}
+        {/* ==================== VISTA 2: QUIZ BIOLÓGICO (ASESOR NUTRICIONAL) =================== */}
+        {/* ===================================================================================== */}
+        {mainTopTab === 'quiz' && (
+          <View style={styles.quizSectionWrapper}>
+            {/* Cabecera del Quiz Biológico */}
+            <LinearGradient
+              colors={['#191E2B', '#10131C']}
+              style={styles.quizHeroCard}
+            >
+              <View style={styles.quizHeroTopRow}>
+                <View style={styles.quizHeroBadge}>
+                  <Text style={styles.quizHeroBadgeText}>
+                    🧬 ALGORITMO NUTRICIONAL
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setMainTopTab('pets')}
+                  style={styles.quizSwitchPetPill}
+                >
+                  <Text style={styles.quizSwitchPetText}>
+                    {activeSpecies === 'cat' ? '🐱' : '🐶'} {activePet.name} ⌄
+                  </Text>
+                </Pressable>
+              </View>
+              <Text style={styles.quizHeroTitle}>
+                Fórmula Biológica Ideal para {activePet.name}
+              </Text>
+              <Text style={styles.quizHeroSub}>
+                Responde estos 4 parámetros para calcular la proteína exacta, los
+                gramos diarios y cuántos días te durará el bulto.
+              </Text>
+            </LinearGradient>
+
+            {/* Paso 1: Etapa de vida */}
+            <Text style={styles.quizStepTitle}>1. Etapa biológica actual</Text>
+            <View style={styles.quizOptionRow}>
+              {[
+                {
+                  id: 'puppy' as PetStageType,
+                  emoji: '🐣',
+                  label: activeSpecies === 'cat' ? 'Gatito' : 'Cachorro',
+                  sub: '< 12 meses',
+                },
+                {
+                  id: 'adult' as PetStageType,
+                  emoji: activeSpecies === 'cat' ? '🐱' : '🐕',
+                  label: 'Adulto',
+                  sub: '1 a 7 años',
+                },
+                {
+                  id: 'senior' as PetStageType,
+                  emoji: '🦮',
+                  label: 'Senior',
+                  sub: '+7 años',
+                },
+              ].map((st) => {
+                const active = quizStage === st.id;
+                return (
+                  <Pressable
+                    key={st.id}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setQuizStage(st.id);
+                    }}
+                    style={[
+                      styles.quizOptionCard,
+                      active && styles.quizOptionCardActive,
+                    ]}
+                  >
+                    <Text style={styles.quizOptionEmoji}>{st.emoji}</Text>
+                    <Text
+                      style={[
+                        styles.quizOptionLabel,
+                        active && styles.quizOptionLabelActive,
+                      ]}
+                    >
+                      {st.label}
                     </Text>
+                    <Text style={styles.quizOptionSub}>{st.sub}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-                    {qty === 0 ? (
-                      <Pressable
-                        onPress={() => handleAddToCart(product.id)}
-                        style={({ pressed }) => [
-                          styles.uberAddBtn,
-                          pressed && { opacity: 0.85 },
+            {/* Paso 2: Peso aproximado en Kg */}
+            <Text style={styles.quizStepTitle}>
+              2. Peso actual aproximado ({quizWeightKg} kg)
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
+            >
+              {(activeSpecies === 'cat'
+                ? [2.5, 3.5, 4.5, 6, 8]
+                : [5, 12, 20, 28, 36, 45]
+              ).map((w) => {
+                const active = quizWeightKg === w;
+                return (
+                  <Pressable
+                    key={w}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setQuizWeightKg(w);
+                    }}
+                    style={[
+                      styles.quizWeightChip,
+                      active && styles.quizWeightChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.quizWeightChipText,
+                        active && styles.quizWeightChipTextActive,
+                      ]}
+                    >
+                      {w} kg
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Paso 3: Nivel de Actividad */}
+            <Text style={styles.quizStepTitle}>3. Nivel de actividad física</Text>
+            <View style={styles.quizOptionRow}>
+              {[
+                {
+                  id: 'low' as PetActivityType,
+                  emoji: '🛋️',
+                  label: 'Hogareño',
+                  sub: 'Baja quema calórica',
+                },
+                {
+                  id: 'moderate' as PetActivityType,
+                  emoji: '🚶',
+                  label: 'Moderado',
+                  sub: 'Paseos diarios',
+                },
+                {
+                  id: 'high' as PetActivityType,
+                  emoji: '⚡',
+                  label: 'Alta Energía',
+                  sub: 'Deporte / Trabajo',
+                },
+              ].map((act) => {
+                const active = quizActivity === act.id;
+                return (
+                  <Pressable
+                    key={act.id}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setQuizActivity(act.id);
+                    }}
+                    style={[
+                      styles.quizOptionCard,
+                      active && styles.quizOptionCardActive,
+                    ]}
+                  >
+                    <Text style={styles.quizOptionEmoji}>{act.emoji}</Text>
+                    <Text
+                      style={[
+                        styles.quizOptionLabel,
+                        active && styles.quizOptionLabelActive,
+                      ]}
+                    >
+                      {act.label}
+                    </Text>
+                    <Text style={styles.quizOptionSub}>{act.sub}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Paso 4: Necesidad Biológica Principal */}
+            <Text style={styles.quizStepTitle}>
+              4. Prioridad biológica o sensibilidad
+            </Text>
+            <View style={styles.quizSensitivityGrid}>
+              {[
+                {
+                  id: 'none' as PetSensitivityType,
+                  emoji: '🥩',
+                  title: 'Nutrición Balanceada Cordero & Arroz',
+                  sub: 'Mantenimiento óptimo diario y alta digestibilidad',
+                },
+                {
+                  id: 'skin' as PetSensitivityType,
+                  emoji: '✨',
+                  title: 'Piel Sensible y Pelaje Brillante',
+                  sub: 'Rico en Salmón Salvaje, Omega 3 y Omega 6',
+                },
+                {
+                  id: 'weight' as PetSensitivityType,
+                  emoji: '⚖️',
+                  title: 'Control de Peso / Esterilizado',
+                  sub: 'Fórmula Light baja en calorías con L-Carnitina',
+                },
+                {
+                  id: 'grain_free' as PetSensitivityType,
+                  emoji: '🐺',
+                  title: '100% Libre de Granos (Ancestral)',
+                  sub: 'Proteína pura de Bisonte, Venado o Salmón Ahumado',
+                },
+              ].map((sens) => {
+                const active = quizSensitivity === sens.id;
+                return (
+                  <Pressable
+                    key={sens.id}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setQuizSensitivity(sens.id);
+                    }}
+                    style={[
+                      styles.quizSensCard,
+                      active && styles.quizOptionCardActive,
+                    ]}
+                  >
+                    <Text style={{ fontSize: 22 }}>{sens.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          styles.quizSensTitle,
+                          active && { color: colors.primary.light },
                         ]}
                       >
-                        <Ionicons name="add" size={16} color="#050508" />
-                        <Text style={styles.uberAddBtnText}>Pedir</Text>
-                      </Pressable>
-                    ) : (
-                      <View style={styles.qtyStepper}>
-                        <Pressable
-                          onPress={() => handleDecrementCart(product.id)}
-                          style={styles.qtyStepBtn}
-                        >
-                          <Ionicons name="remove" size={14} color="#FFFFFF" />
-                        </Pressable>
-                        <Text style={styles.qtyCountText}>{qty}</Text>
-                        <Pressable
-                          onPress={() => handleAddToCart(product.id)}
-                          style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                        >
-                          <Ionicons name="add" size={14} color="#050508" />
-                        </Pressable>
-                      </View>
-                    )}
-                  </View>
+                        {sens.title}
+                      </Text>
+                      <Text style={styles.quizSensSub}>{sens.sub}</Text>
+                    </View>
+                    <Ionicons
+                      name={active ? 'checkmark-circle' : 'ellipse-outline'}
+                      size={20}
+                      color={active ? colors.primary.DEFAULT : '#4B5563'}
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* TARJETA DE RESULTADO BIOLÓGICO EN TIEMPO REAL */}
+            <LinearGradient
+              colors={['#1F2433', '#12151E']}
+              style={styles.quizResultCard}
+            >
+              <View style={styles.quizResultBadgeRow}>
+                <View style={styles.quizMatchPill}>
+                  <Text style={styles.quizMatchPillText}>
+                    ✓ 99% COMPATIBILIDAD BIOLÓGICA
+                  </Text>
+                </View>
+                <Text style={styles.quizWeightBadgeText}>
+                  {quizRecommendation.product.weightLb} LB
+                </Text>
+              </View>
+
+              <Text style={styles.quizResultProdTitle}>
+                {quizRecommendation.product.name}
+              </Text>
+              <Text style={styles.quizResultProdSub}>
+                {quizRecommendation.product.protein}
+              </Text>
+
+              {/* Métricas de ración y duración */}
+              <View style={styles.quizMetricsRow}>
+                <View style={styles.quizMetricBox}>
+                  <Text style={styles.quizMetricValue}>
+                    {quizRecommendation.dailyGrams} g/día
+                  </Text>
+                  <Text style={styles.quizMetricLabel}>Ración sugerida</Text>
+                </View>
+                <View style={styles.quizMetricBox}>
+                  <Text style={styles.quizMetricValue}>
+                    ~{quizRecommendation.estimatedDays} días
+                  </Text>
+                  <Text style={styles.quizMetricLabel}>Duración del bulto</Text>
+                </View>
+                <View style={styles.quizMetricBox}>
+                  <Text style={styles.quizMetricValue}>
+                    {formatCOP(quizRecommendation.costPerDay)}
+                  </Text>
+                  <Text style={styles.quizMetricLabel}>Costo por día</Text>
                 </View>
               </View>
-            );
-          })}
-        </ScrollView>
 
-        {/* ==================== 7. SEGUNDA SECCIÓN ESTILO UBER ("Más beneficios Mundo Mascotas") ==================== */}
-        <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
-          <Text style={styles.uberSectionTitle}>
-            Más beneficios en Mundo Mascotas
-          </Text>
-        </View>
+              <View style={styles.quizResultActions}>
+                <Pressable
+                  onPress={() => {
+                    handleAddToCart(quizRecommendation.product.id);
+                    setCartModalVisible(true);
+                  }}
+                  style={styles.quizPrimaryAddBtn}
+                >
+                  <Ionicons name="bag-add" size={18} color="#050508" />
+                  <Text style={styles.quizPrimaryAddBtnText}>
+                    Pedir Bulto ({formatCOP(quizRecommendation.product.price)})
+                  </Text>
+                </Pressable>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.uberHorizontalCardsScroll}
-        >
-          {/* Tarjeta 1: Billetera Consenticoins */}
-          <Pressable
-            onPress={handleAccountAccess}
-            style={styles.uberPromoWideCard}
-          >
-            <LinearGradient
-              colors={['#C69214', '#D4AF37', '#8A5A10']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.uberPromoVisual}
-            >
-              <View style={styles.uberPromoBadge}>
-                <Text style={styles.uberPromoBadgeText}>CLUB VIP</Text>
+                <Pressable
+                  onPress={() => {
+                    Haptics.notificationAsync(
+                      Haptics.NotificationFeedbackType.Success
+                    );
+                    updatePet(activePet.id, {
+                      ageStage: quizStage,
+                      weightKg: quizWeightKg,
+                      activityLevel: quizActivity,
+                      sensitivity: quizSensitivity,
+                      recommendedProductId: quizRecommendation.product.id,
+                    });
+                    setQuizSavedToast(true);
+                    setTimeout(() => setQuizSavedToast(false), 2500);
+                  }}
+                  style={styles.quizSecondarySaveBtn}
+                >
+                  <Text style={styles.quizSecondarySaveText}>
+                    {quizSavedToast
+                      ? `✓ Guardado en la ficha de ${activePet.name}`
+                      : `Guardar diagnóstico en el perfil de ${activePet.name}`}
+                  </Text>
+                </Pressable>
               </View>
-              <Text style={styles.uberPromoBigCoins}>
-                {user?.points ?? 250} COINS 🪙
-              </Text>
             </LinearGradient>
-            <Text style={styles.uberCardTitle}>Billetera Consenticoins</Text>
-            <Text style={styles.uberCardSubtitle}>
-              {user
-                ? `Hola ${user.name}, redime tus monedas en tu próximo bulto`
-                : 'Inicia sesión y recibe 250 Consenticoins de regalo'}
-            </Text>
-          </Pressable>
+          </View>
+        )}
 
-          {/* Tarjeta 2: Cobertura Bogotá vs Nacional */}
-          <Pressable
-            onPress={handleToggleZone}
-            style={styles.uberPromoWideCard}
-          >
-            <LinearGradient
-              colors={['#112233', '#0B1520']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.uberPromoVisual}
-            >
-              <View style={styles.uberPromoBadge}>
-                <Text style={styles.uberPromoBadgeText}>LOGÍSTICA</Text>
+        {/* ===================================================================================== */}
+        {/* ==================== VISTA 3: MASCOTA(S) (PERFILES & PERSONALIZACIÓN) =============== */}
+        {/* ===================================================================================== */}
+        {mainTopTab === 'pets' && (
+          <View style={styles.petsSectionWrapper}>
+            {/* Botón de primeras: Agregar otra mascota */}
+            {!isAddingPet ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setIsAddingPet(true);
+                }}
+                style={styles.addNewPetTopBtn}
+              >
+                <View style={styles.addNewPetPlusCircle}>
+                  <Ionicons name="add" size={20} color="#050508" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.addNewPetTitle}>
+                    Agregar otra mascota (Perro o Gato)
+                  </Text>
+                  <Text style={styles.addNewPetSub}>
+                    Personaliza la Tienda y el Quiz Biológico para cada una
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.primary.light}
+                />
+              </Pressable>
+            ) : (
+              /* Formulario interno para crear una nueva mascota */
+              <View style={styles.newPetFormCard}>
+                <View style={styles.newPetFormHeader}>
+                  <Text style={styles.newPetFormTitle}>
+                    Registrar nueva mascota
+                  </Text>
+                  <Pressable
+                    onPress={() => setIsAddingPet(false)}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="close" size={20} color="#9CA3AF" />
+                  </Pressable>
+                </View>
+
+                <Text style={styles.quizStepTitle}>1. ¿Es Perro o Gato?</Text>
+                <View style={styles.quizOptionRow}>
+                  <Pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setNewPetSpecies('dog');
+                      setNewPetWeight('20');
+                    }}
+                    style={[
+                      styles.quizOptionCard,
+                      newPetSpecies === 'dog' && styles.quizOptionCardActive,
+                    ]}
+                  >
+                    <Text style={styles.quizOptionEmoji}>🐶</Text>
+                    <Text
+                      style={[
+                        styles.quizOptionLabel,
+                        newPetSpecies === 'dog' && styles.quizOptionLabelActive,
+                      ]}
+                    >
+                      Perro
+                    </Text>
+                    <Text style={styles.quizOptionSub}>Solo catálogo canino</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setNewPetSpecies('cat');
+                      setNewPetWeight('4.5');
+                    }}
+                    style={[
+                      styles.quizOptionCard,
+                      newPetSpecies === 'cat' && styles.quizOptionCardActive,
+                    ]}
+                  >
+                    <Text style={styles.quizOptionEmoji}>🐱</Text>
+                    <Text
+                      style={[
+                        styles.quizOptionLabel,
+                        newPetSpecies === 'cat' && styles.quizOptionLabelActive,
+                      ]}
+                    >
+                      Gato
+                    </Text>
+                    <Text style={styles.quizOptionSub}>Solo catálogo felino</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.quizStepTitle}>2. Nombre y Raza</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TextInput
+                    value={newPetName}
+                    onChangeText={setNewPetName}
+                    placeholder={
+                      newPetSpecies === 'cat' ? 'Ej. Luna, Michi' : 'Ej. Bruno, Max'
+                    }
+                    placeholderTextColor="#6B7280"
+                    style={[styles.petFormInput, { flex: 1 }]}
+                  />
+                  <TextInput
+                    value={newPetBreed}
+                    onChangeText={setNewPetBreed}
+                    placeholder={
+                      newPetSpecies === 'cat'
+                        ? 'Ej. Siamés / Criollo'
+                        : 'Ej. Labrador / Bulldog'
+                    }
+                    placeholderTextColor="#6B7280"
+                    style={[styles.petFormInput, { flex: 1 }]}
+                  />
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    gap: 10,
+                    marginTop: 8,
+                    alignItems: 'center',
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.quizStepTitle}>3. Peso (kg)</Text>
+                    <TextInput
+                      value={newPetWeight}
+                      onChangeText={setNewPetWeight}
+                      keyboardType="numeric"
+                      placeholder="Ej. 22"
+                      placeholderTextColor="#6B7280"
+                      style={styles.petFormInput}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.quizStepTitle}>Etapa</Text>
+                    <Pressable
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        const stages: PetStageType[] = [
+                          'puppy',
+                          'adult',
+                          'senior',
+                        ];
+                        setNewPetStage(
+                          stages[(stages.indexOf(newPetStage) + 1) % 3]
+                        );
+                      }}
+                      style={styles.petFormInput}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                        {newPetStage === 'puppy'
+                          ? '🐣 Cachorro / Gatito'
+                          : newPetStage === 'adult'
+                          ? '🐕 Adulto (1-7 años)'
+                          : '🦮 Senior (+7 años)'}{' '}
+                        ⌄
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={() => {
+                    if (!newPetName.trim()) {
+                      Haptics.notificationAsync(
+                        Haptics.NotificationFeedbackType.Warning
+                      );
+                      return;
+                    }
+                    Haptics.notificationAsync(
+                      Haptics.NotificationFeedbackType.Success
+                    );
+                    addPet({
+                      name: newPetName.trim(),
+                      species: newPetSpecies,
+                      breed:
+                        newPetBreed.trim() ||
+                        (newPetSpecies === 'cat'
+                          ? 'Felino Consentido'
+                          : 'Canino Consentido'),
+                      ageStage: newPetStage,
+                      weightKg: parseFloat(newPetWeight) || 15,
+                      activityLevel: 'moderate',
+                      sensitivity: 'none',
+                      recommendedProductId:
+                        newPetSpecies === 'cat' ? 'prod_9580' : 'prod_123',
+                    });
+                    setNewPetName('');
+                    setNewPetBreed('');
+                    setIsAddingPet(false);
+                  }}
+                  style={styles.quizPrimaryAddBtn}
+                >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color="#050508"
+                  />
+                  <Text style={styles.quizPrimaryAddBtnText}>
+                    Guardar y activar esta mascota
+                  </Text>
+                </Pressable>
               </View>
-              <Text style={[styles.uberPromoBigCoins, { fontSize: 18 }]}>
-                {deliveryZone === 'bogota'
-                  ? '🚚 Gratis en Bogotá'
-                  : '📦 Envíos Nacionales'}
-              </Text>
-            </LinearGradient>
-            <Text style={styles.uberCardTitle}>
-              {deliveryZone === 'bogota'
-                ? 'Domicilio sin costo en Bogotá'
-                : 'Despachos a toda Colombia'}
-            </Text>
-            <Text style={styles.uberCardSubtitle}>
-              {deliveryZone === 'bogota'
-                ? 'Pago contraentrega con nuestra flota propia'
-                : 'Recargo por transportadora según el peso en libras'}
-            </Text>
-          </Pressable>
-        </ScrollView>
+            )}
+
+            {/* Lista de mascotas registradas */}
+            <View style={{ gap: 12, marginTop: 14 }}>
+              {pets.map((petItem) => {
+                const isCurrent = petItem.id === activePet.id;
+                const isConfirmingDel = confirmDeletePetId === petItem.id;
+                const recBag =
+                  CATALOG_BAGS.find(
+                    (b) => b.id === petItem.recommendedProductId
+                  ) ||
+                  CATALOG_BAGS.find((b) => b.petType === petItem.species) ||
+                  CATALOG_BAGS[0];
+
+                return (
+                  <View
+                    key={petItem.id}
+                    style={[
+                      styles.petProfileCard,
+                      isCurrent && styles.petProfileCardActive,
+                    ]}
+                  >
+                    <Pressable
+                      onPress={() => {
+                        Haptics.notificationAsync(
+                          Haptics.NotificationFeedbackType.Success
+                        );
+                        selectPet(petItem.id);
+                      }}
+                      style={styles.petCardHeaderRow}
+                    >
+                      <View
+                        style={[
+                          styles.petAvatarCircle,
+                          isCurrent && styles.petAvatarCircleActive,
+                        ]}
+                      >
+                        <Text style={{ fontSize: 26 }}>
+                          {petItem.species === 'cat' ? '🐱' : '🐶'}
+                        </Text>
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 8,
+                          }}
+                        >
+                          <Text style={styles.petCardName}>{petItem.name}</Text>
+                          {isCurrent && (
+                            <View style={styles.petActiveBadge}>
+                              <Text style={styles.petActiveBadgeText}>
+                                Mascota Activa
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.petCardMeta}>
+                          {petItem.breed} · {petItem.weightKg} kg ·{' '}
+                          {petItem.ageStage === 'puppy'
+                            ? 'Cachorro'
+                            : petItem.ageStage === 'senior'
+                            ? 'Senior'
+                            : 'Adulto'}
+                        </Text>
+                        <Text style={styles.petExclusiveNote}>
+                          ✓ Tienda filtrada 100% para{' '}
+                          {petItem.species === 'cat' ? 'Gatos' : 'Perros'}
+                        </Text>
+                      </View>
+
+                      <View style={{ alignItems: 'center', gap: 12 }}>
+                        <View
+                          style={[
+                            styles.petRadioCircle,
+                            isCurrent && styles.petRadioCircleActive,
+                          ]}
+                        >
+                          {isCurrent && (
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color="#050508"
+                            />
+                          )}
+                        </View>
+
+                        {pets.length > 1 && !isCurrent && (
+                          <Pressable
+                            onPress={() => {
+                              Haptics.notificationAsync(
+                                Haptics.NotificationFeedbackType.Warning
+                              );
+                              setConfirmDeletePetId((prev) =>
+                                prev === petItem.id ? null : petItem.id
+                              );
+                            }}
+                            hitSlop={8}
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={16}
+                              color={isConfirmingDel ? '#F87171' : '#6B7280'}
+                            />
+                          </Pressable>
+                        )}
+                      </View>
+                    </Pressable>
+
+                    {/* Confirmación interna si toca la papelera de esta mascota */}
+                    {isConfirmingDel && (
+                      <View style={styles.petInlineDeleteBox}>
+                        <Text style={styles.petInlineDeleteText}>
+                          ¿Seguro que deseas eliminar el perfil de "
+                          {petItem.name}"?
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <Pressable
+                            onPress={() => setConfirmDeletePetId(null)}
+                            style={styles.petCancelDelBtn}
+                          >
+                            <Text style={styles.petCancelDelText}>
+                              No, conservar
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => {
+                              Haptics.notificationAsync(
+                                Haptics.NotificationFeedbackType.Success
+                              );
+                              setConfirmDeletePetId(null);
+                              deletePet(petItem.id);
+                            }}
+                            style={styles.petConfirmDelBtn}
+                          >
+                            <Text style={styles.petConfirmDelText}>
+                              Sí, eliminar
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Bulto recomendado y accesos rápidos */}
+                    <View style={styles.petCardFooterActions}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.petRecLabel}>
+                          Fórmula recomendada:
+                        </Text>
+                        <Text style={styles.petRecName} numberOfLines={1}>
+                          {recBag.name} ({recBag.weightLb} LB)
+                        </Text>
+                      </View>
+
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          selectPet(petItem.id);
+                          setQuizStage(petItem.ageStage);
+                          setQuizActivity(petItem.activityLevel);
+                          setQuizSensitivity(petItem.sensitivity);
+                          setQuizWeightKg(petItem.weightKg);
+                          setMainTopTab('quiz');
+                        }}
+                        style={styles.petQuizShortcutBtn}
+                      >
+                        <Text style={styles.petQuizShortcutText}>
+                          🧬 Quiz
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          selectPet(petItem.id);
+                          setMainTopTab('store');
+                        }}
+                        style={styles.petStoreShortcutBtn}
+                      >
+                        <Text style={styles.petStoreShortcutText}>
+                          Ir a Tienda ›
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       {/* ==================== 8. UBER FLOATING PILL BOTTOM NAVIGATION BAR ==================== */}
@@ -2160,5 +3103,447 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     flex: 1,
+  },
+
+  /* ==================== ESTILOS QUIZ BIOLÓGICO (PESTAÑA 2) ==================== */
+  quizSectionWrapper: {
+    gap: 10,
+  },
+  quizHeroCard: {
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
+    marginBottom: 4,
+  },
+  quizHeroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  quizHeroBadge: {
+    backgroundColor: 'rgba(212, 175, 55, 0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  quizHeroBadgeText: {
+    color: colors.primary.light,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  quizSwitchPetPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  quizSwitchPetText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  quizHeroTitle: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  quizHeroSub: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  quizStepTitle: {
+    color: '#E5E7EB',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  quizOptionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quizOptionCard: {
+    flex: 1,
+    backgroundColor: '#141720',
+    borderRadius: 16,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  quizOptionCardActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.14)',
+    borderColor: colors.primary.DEFAULT,
+  },
+  quizOptionEmoji: {
+    fontSize: 22,
+    marginBottom: 4,
+  },
+  quizOptionLabel: {
+    color: '#E5E7EB',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quizOptionLabelActive: {
+    color: colors.primary.light,
+  },
+  quizOptionSub: {
+    color: '#9CA3AF',
+    fontSize: 10,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  quizWeightChip: {
+    backgroundColor: '#141720',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  quizWeightChipActive: {
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.DEFAULT,
+  },
+  quizWeightChipText: {
+    color: '#E5E7EB',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quizWeightChipTextActive: {
+    color: '#050508',
+  },
+  quizSensitivityGrid: {
+    gap: 8,
+  },
+  quizSensCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#141720',
+    borderRadius: 15,
+    padding: 13,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  quizSensTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quizSensSub: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  quizResultCard: {
+    borderRadius: 22,
+    padding: 18,
+    marginTop: 12,
+    borderWidth: 1.5,
+    borderColor: colors.primary.DEFAULT,
+  },
+  quizResultBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  quizMatchPill: {
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+  },
+  quizMatchPillText: {
+    color: '#34D399',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  quizWeightBadgeText: {
+    color: colors.primary.light,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  quizResultProdTitle: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '900',
+  },
+  quizResultProdSub: {
+    color: '#D1D5DB',
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: 14,
+  },
+  quizMetricsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  quizMetricBox: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  quizMetricValue: {
+    color: colors.primary.light,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  quizMetricLabel: {
+    color: '#9CA3AF',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  quizResultActions: {
+    gap: 10,
+  },
+  quizPrimaryAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  quizPrimaryAddBtnText: {
+    color: '#050508',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  quizSecondarySaveBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 11,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  quizSecondarySaveText: {
+    color: '#E5E7EB',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  /* ==================== ESTILOS MASCOTA(S) (PESTAÑA 3) ==================== */
+  petsSectionWrapper: {
+    gap: 6,
+  },
+  addNewPetTopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(212, 175, 55, 0.09)',
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+  },
+  addNewPetPlusCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primary.DEFAULT,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addNewPetTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  addNewPetSub: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  newPetFormCard: {
+    backgroundColor: '#141720',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+    gap: 8,
+  },
+  newPetFormHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  newPetFormTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  petFormInput: {
+    backgroundColor: '#1B1F2B',
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    color: '#FFFFFF',
+    fontSize: 13,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  petProfileCard: {
+    backgroundColor: '#141720',
+    borderRadius: 20,
+    padding: 15,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 12,
+  },
+  petProfileCardActive: {
+    backgroundColor: '#181C27',
+    borderColor: colors.primary.DEFAULT,
+  },
+  petCardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  petAvatarCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#222634',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  petAvatarCircleActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.18)',
+    borderWidth: 1.5,
+    borderColor: colors.primary.DEFAULT,
+  },
+  petCardName: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  petActiveBadge: {
+    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.45)',
+  },
+  petActiveBadgeText: {
+    color: colors.primary.light,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  petCardMeta: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  petExclusiveNote: {
+    color: '#34D399',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  petRadioCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  petRadioCircleActive: {
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.DEFAULT,
+  },
+  petInlineDeleteBox: {
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(248, 113, 113, 0.25)',
+    gap: 8,
+  },
+  petInlineDeleteText: {
+    color: '#FCA5A5',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  petCancelDelBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  petCancelDelText: {
+    color: '#E5E7EB',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  petConfirmDelBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#EF4444',
+  },
+  petConfirmDelText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  petCardFooterActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  petRecLabel: {
+    color: '#9CA3AF',
+    fontSize: 10,
+  },
+  petRecName: {
+    color: colors.primary.light,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  petQuizShortcutBtn: {
+    backgroundColor: 'rgba(212, 175, 55, 0.14)',
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+  },
+  petQuizShortcutText: {
+    color: colors.primary.light,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  petStoreShortcutBtn: {
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  petStoreShortcutText: {
+    color: '#050508',
+    fontSize: 12,
+    fontWeight: '900',
   },
 });
