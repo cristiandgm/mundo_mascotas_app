@@ -30,13 +30,24 @@ import { useDraggableSheet } from '../utils/useDraggableSheet';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
 type TopServiceTabType = 'bultos' | 'snacks';
+type SearchCategoryType =
+  | 'concentrados'
+  | 'humedo'
+  | 'snacks'
+  | 'medicamentos'
+  | 'todo';
 type MainTopTabType = 'store' | 'quiz' | 'pets';
 type BottomNavTab = 'home' | 'catalog' | 'activity' | 'account';
 
 interface ProductBag {
   id: string;
   sku: string;
-  brand: 'Diamond Naturals' | 'Taste of the Wild' | 'Acana' | 'Orijen';
+  brand:
+    | 'Diamond Naturals'
+    | 'Taste of the Wild'
+    | 'Acana'
+    | 'Orijen'
+    | 'Salud Vet';
   name: string;
   protein: string;
   weightLb: number;
@@ -45,11 +56,61 @@ interface ProductBag {
   coins: number;
   petType: 'dog' | 'cat';
   category: TopServiceTabType;
-  subFilter?: 'humedos' | 'premios' | 'higiene';
+  subFilter?: 'humedos' | 'premios' | 'higiene' | 'medicamentos';
   stage: string;
   tag?: string;
   accentColor: string;
 }
+
+const SEARCH_CATEGORY_OPTIONS: {
+  id: SearchCategoryType;
+  label: string;
+  shortLabel: string;
+  subtitle: string;
+  emoji: string;
+  placeholderNoun: string;
+}[] = [
+  {
+    id: 'concentrados',
+    label: 'Concentrados',
+    shortLabel: 'Concentrados',
+    subtitle: 'Bultos Super Premium',
+    emoji: '🥩',
+    placeholderNoun: 'concentrado',
+  },
+  {
+    id: 'humedo',
+    label: 'Alimento Húmedo',
+    shortLabel: 'Húmedo',
+    subtitle: 'Latas y estofados en salsa',
+    emoji: '🥫',
+    placeholderNoun: 'alimento húmedo',
+  },
+  {
+    id: 'snacks',
+    label: 'Snacks',
+    shortLabel: 'Snacks',
+    subtitle: 'Premios, galletas y liofilizados',
+    emoji: '🦴',
+    placeholderNoun: 'snack o premio',
+  },
+  {
+    id: 'medicamentos',
+    label: 'Medicamentos',
+    shortLabel: 'Medicamentos',
+    subtitle: 'Antipulgas, desparasitantes y salud',
+    emoji: '💊',
+    placeholderNoun: 'medicamento',
+  },
+  {
+    id: 'todo',
+    label: 'Ver todo el catálogo',
+    shortLabel: 'Todo',
+    subtitle: 'Concentrados, húmedos, snacks y salud',
+    emoji: '✨',
+    placeholderNoun: 'producto',
+  },
+];
 
 const CATALOG_BAGS: ProductBag[] = [
   // ==================== PERROS: BULTOS DE CONCENTRADO ====================
@@ -173,7 +234,7 @@ const CATALOG_BAGS: ProductBag[] = [
     accentColor: '#EF4444',
   },
 
-  // ==================== PERROS: SNACKS & CUIDADO ====================
+  // ==================== PERROS: ALIMENTO HÚMEDO, SNACKS & MEDICAMENTOS ====================
   {
     id: 'prod_dog_snack_1',
     sku: '4401',
@@ -190,6 +251,39 @@ const CATALOG_BAGS: ProductBag[] = [
     stage: 'Húmedo Gourmet',
     tag: 'Pack Ahorro',
     accentColor: '#F59E0B',
+  },
+  {
+    id: 'prod_dog_wet_2',
+    sku: '4405',
+    brand: 'Taste of the Wild',
+    name: 'Latas Húmedas Pacific Stream Salmón (Pack x6)',
+    protein: 'Salmón Ahumado y Pescado Blanco en Salsa',
+    weightLb: 5,
+    unitLabel: 'Pack x6 Latas',
+    price: 86000,
+    coins: 86,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'humedos',
+    stage: 'Piel y Pelaje',
+    tag: 'Omega 3 & 6',
+    accentColor: '#06B6D4',
+  },
+  {
+    id: 'prod_dog_wet_3',
+    sku: '4406',
+    brand: 'Diamond Naturals',
+    name: 'Estofado Húmedo Cordero & Arroz (Pack x6)',
+    protein: 'Trozos de Cordero Real en Caldo Nutritivo',
+    weightLb: 5,
+    unitLabel: 'Pack x6 Latas',
+    price: 74000,
+    coins: 74,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'humedos',
+    stage: 'Digestión Suave',
+    accentColor: '#D4AF37',
   },
   {
     id: 'prod_dog_snack_2',
@@ -223,6 +317,71 @@ const CATALOG_BAGS: ProductBag[] = [
     subFilter: 'premios',
     stage: 'Salud Dental',
     accentColor: '#D4AF37',
+  },
+  {
+    id: 'prod_dog_snack_4',
+    sku: '4407',
+    brand: 'Acana',
+    name: 'Acana Crunchy Biscuits Hígado de Res',
+    protein: 'Bocados Proteicos con Camote y Caldo de Hueso',
+    weightLb: 1,
+    unitLabel: 'Bolsa 280g',
+    price: 54000,
+    coins: 54,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'premios',
+    stage: 'Premio Proteico',
+    accentColor: '#8B5CF6',
+  },
+  {
+    id: 'prod_dog_med_1',
+    sku: '7101',
+    brand: 'Salud Vet',
+    name: 'Bravecto Masticable 12 Semanas Perros',
+    protein: 'Protección Total Pulgas, Garrapatas y Ácaros',
+    weightLb: 1,
+    unitLabel: '1 Tableta · 90 Días',
+    price: 142000,
+    coins: 142,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'medicamentos',
+    stage: 'Antipulgas 12 Semanas',
+    tag: 'Más recetado',
+    accentColor: '#38BDF8',
+  },
+  {
+    id: 'prod_dog_med_2',
+    sku: '7102',
+    brand: 'Salud Vet',
+    name: 'NexGard Spectra Antipulgas + Desparasitante',
+    protein: 'Bocado Masticable Sabor Carne · Control Interno y Externo',
+    weightLb: 1,
+    unitLabel: 'Tableta Mensual',
+    price: 78000,
+    coins: 78,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'medicamentos',
+    stage: 'Doble Acción',
+    accentColor: '#10B981',
+  },
+  {
+    id: 'prod_dog_med_3',
+    sku: '7103',
+    brand: 'Salud Vet',
+    name: 'Condroprotector Articular Glucosamina & MSM',
+    protein: 'Regenerador de Cartílago y Movilidad Canina',
+    weightLb: 1,
+    unitLabel: 'Frasco x60 Tabs',
+    price: 96000,
+    coins: 96,
+    petType: 'dog',
+    category: 'snacks',
+    subFilter: 'medicamentos',
+    stage: 'Salud Articular',
+    accentColor: '#F59E0B',
   },
   {
     id: 'prod_dog_care_1',
@@ -317,7 +476,7 @@ const CATALOG_BAGS: ProductBag[] = [
     accentColor: '#EF4444',
   },
 
-  // ==================== GATOS: HÚMEDOS & ARENA ====================
+  // ==================== GATOS: ALIMENTO HÚMEDO, SNACKS, MEDICAMENTOS & ARENA ====================
   {
     id: 'prod_cat_snack_1',
     sku: '5501',
@@ -336,6 +495,38 @@ const CATALOG_BAGS: ProductBag[] = [
     accentColor: '#F59E0B',
   },
   {
+    id: 'prod_cat_wet_2',
+    sku: '5504',
+    brand: 'Taste of the Wild',
+    name: 'Latas Felinas Canyon River Trucha (Pack x6)',
+    protein: 'Trucha y Salmón en Caldo Hidratante Urinario',
+    weightLb: 3,
+    unitLabel: 'Pack x6 Latas',
+    price: 82000,
+    coins: 82,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'humedos',
+    stage: 'Cuidado Urinario',
+    accentColor: '#06B6D4',
+  },
+  {
+    id: 'prod_cat_wet_3',
+    sku: '5505',
+    brand: 'Acana',
+    name: 'Paté Húmedo Acana Salmón & Pollo (Pack x6)',
+    protein: '85% Ingredientes Animales en Caldo de Hueso',
+    weightLb: 3,
+    unitLabel: 'Pack x6 Latas',
+    price: 89000,
+    coins: 89,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'humedos',
+    stage: 'Gourmet Sin Granos',
+    accentColor: '#8B5CF6',
+  },
+  {
     id: 'prod_cat_snack_2',
     sku: '5502',
     brand: 'Orijen',
@@ -350,6 +541,71 @@ const CATALOG_BAGS: ProductBag[] = [
     subFilter: 'premios',
     stage: 'Premio Gourmet',
     accentColor: '#EF4444',
+  },
+  {
+    id: 'prod_cat_snack_3',
+    sku: '5506',
+    brand: 'Diamond Naturals',
+    name: 'Snacks Cremosos Hidratantes Salmón & Atún (x12)',
+    protein: 'Tubitos Cremosos Altos en Humedad y Taurina',
+    weightLb: 1,
+    unitLabel: 'Pack x12 Tubos',
+    price: 46000,
+    coins: 46,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'premios',
+    stage: 'Snack Hidratante',
+    accentColor: '#D4AF37',
+  },
+  {
+    id: 'prod_cat_med_1',
+    sku: '7201',
+    brand: 'Salud Vet',
+    name: 'Bravecto Plus Pipeta Felina 12 Semanas',
+    protein: 'Antipulgas, Garrapatas y Parásitos Internos Tópico',
+    weightLb: 1,
+    unitLabel: '1 Pipeta · 90 Días',
+    price: 138000,
+    coins: 138,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'medicamentos',
+    stage: 'Protección 12 Semanas',
+    tag: 'Sin estrés oral',
+    accentColor: '#38BDF8',
+  },
+  {
+    id: 'prod_cat_med_2',
+    sku: '7202',
+    brand: 'Salud Vet',
+    name: 'Revolution Plus Pipeta Integral para Gatos',
+    protein: 'Control de Pulgas, Ácaros de Oído y Nematodos',
+    weightLb: 1,
+    unitLabel: 'Pipeta Mensual',
+    price: 69000,
+    coins: 69,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'medicamentos',
+    stage: 'Salud Felina',
+    accentColor: '#10B981',
+  },
+  {
+    id: 'prod_cat_med_3',
+    sku: '7203',
+    brand: 'Salud Vet',
+    name: 'Malta Digestiva Felina Control Bolas de Pelo',
+    protein: 'Pasta Oral con Omega 3 y Fibra Prebiótica',
+    weightLb: 1,
+    unitLabel: 'Tubo 100g',
+    price: 52000,
+    coins: 52,
+    petType: 'cat',
+    category: 'snacks',
+    subFilter: 'medicamentos',
+    stage: 'Tránsito Digestivo',
+    accentColor: '#F59E0B',
   },
   {
     id: 'prod_cat_care_1',
@@ -417,7 +673,10 @@ export const HomeScreen: React.FC = () => {
   const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>('home');
   const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedWeightFilter, setSelectedWeightFilter] = useState<number | null>(null);
+  const [selectedSearchCategory, setSelectedSearchCategory] =
+    useState<SearchCategoryType>('concentrados');
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const categoryMenuAnim = useRef(new Animated.Value(0)).current;
 
   // Estados del Quiz Biológico (Pestaña 2)
   const [quizStage, setQuizStage] = useState<PetStageType>(activePet.ageStage);
@@ -501,21 +760,72 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
-  const handleCycleWeightFilter = () => {
+  const activeCategoryMeta = useMemo(() => {
+    return (
+      SEARCH_CATEGORY_OPTIONS.find(
+        (opt) => opt.id === selectedSearchCategory
+      ) || SEARCH_CATEGORY_OPTIONS[0]
+    );
+  }, [selectedSearchCategory]);
+
+  const toggleCategoryMenu = () => {
     Haptics.selectionAsync();
-    const weights =
-      activeSpecies === 'cat'
-        ? [null, 18, 14, 12, 10]
-        : [null, 40, 30, 28, 25];
-    const nextIdx = (weights.indexOf(selectedWeightFilter) + 1) % weights.length;
-    setSelectedWeightFilter(weights[nextIdx]);
+    if (categoryMenuOpen) {
+      Animated.timing(categoryMenuAnim, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }).start(() => setCategoryMenuOpen(false));
+    } else {
+      setCategoryMenuOpen(true);
+      Animated.spring(categoryMenuAnim, {
+        toValue: 1,
+        tension: 75,
+        friction: 9,
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
-  // Filtrado de Bultos para la pestaña 1 (Tienda) - 100% exclusivo para la especie de la mascota activa
+  const handleSelectSearchCategory = (catId: SearchCategoryType) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedSearchCategory(catId);
+    if (catId !== 'concentrados' && catId !== 'todo') {
+      setSelectedBrand('Todas');
+    }
+    Animated.timing(categoryMenuAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setCategoryMenuOpen(false));
+  };
+
+  const getCategoryItemCount = (catId: SearchCategoryType) => {
+    return CATALOG_BAGS.filter((item) => {
+      if (item.petType !== activeSpecies) return false;
+      if (catId === 'todo') return true;
+      if (catId === 'concentrados') return item.category === 'bultos';
+      if (catId === 'humedo') return item.subFilter === 'humedos';
+      if (catId === 'snacks') return item.subFilter === 'premios';
+      if (catId === 'medicamentos') return item.subFilter === 'medicamentos';
+      return true;
+    }).length;
+  };
+
+  // Filtrado de productos para la pestaña 1 (Tienda) según mascota activa + categoría del mini-menú flotante
   const filteredProducts = useMemo(() => {
     return CATALOG_BAGS.filter((item) => {
       if (item.petType !== activeSpecies) return false;
-      if (!searchQuery.trim() && item.category !== 'bultos') return false;
+
+      if (selectedSearchCategory === 'concentrados') {
+        if (item.category !== 'bultos') return false;
+      } else if (selectedSearchCategory === 'humedo') {
+        if (item.subFilter !== 'humedos') return false;
+      } else if (selectedSearchCategory === 'snacks') {
+        if (item.subFilter !== 'premios') return false;
+      } else if (selectedSearchCategory === 'medicamentos') {
+        if (item.subFilter !== 'medicamentos') return false;
+      }
 
       if (selectedBrand !== 'Todas') {
         if (selectedBrand === 'Acana') {
@@ -524,21 +834,20 @@ export const HomeScreen: React.FC = () => {
           return false;
         }
       }
-      if (selectedWeightFilter && item.weightLb !== selectedWeightFilter) {
-        return false;
-      }
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
           item.name.toLowerCase().includes(q) ||
           item.protein.toLowerCase().includes(q) ||
           item.brand.toLowerCase().includes(q) ||
+          item.stage.toLowerCase().includes(q) ||
           `${item.weightLb}`.includes(q)
         );
       }
       return true;
     });
-  }, [activeSpecies, selectedBrand, selectedWeightFilter, searchQuery]);
+  }, [activeSpecies, selectedBrand, selectedSearchCategory, searchQuery]);
 
   // Complementos y snacks para la mascota activa (segundo carrusel en Tienda)
   const speciesSnacks = useMemo(() => {
@@ -807,62 +1116,184 @@ export const HomeScreen: React.FC = () => {
         {/* ===================================================================================== */}
         {mainTopTab === 'store' && (
           <>
-            {/* 3. UBER SEARCH PILL ("Where to?" + Peso LB button) */}
-            <Pressable
-              onPress={() => searchInputRef.current?.focus()}
-              style={styles.uberSearchPill}
-            >
-              <Ionicons
-                name="search"
-                size={20}
-                color={colors.dark.textSecondary}
-                style={{ marginRight: 10 }}
-              />
-              <TextInput
-                ref={searchInputRef}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder={`¿Qué bulto busca ${activePet.name}?`}
-                placeholderTextColor="#9CA3AF"
-                style={styles.uberSearchInput}
-                underlineColorAndroid="transparent"
-              />
-
-              {searchQuery.length > 0 ? (
-                <Pressable
-                  onPress={() => setSearchQuery('')}
-                  style={{ marginRight: 8 }}
-                  hitSlop={8}
-                >
-                  <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-                </Pressable>
-              ) : null}
-
-              {/* Botón interno estilo "Later" de Uber para filtrar por Libras */}
+            {/* 3. UBER SEARCH PILL + MINI MENÚ FLOTANTE DE CATEGORÍAS */}
+            <View style={styles.searchPillWrapper}>
               <Pressable
-                onPress={handleCycleWeightFilter}
-                style={[
-                  styles.uberLaterButton,
-                  selectedWeightFilter !== null && styles.uberLaterButtonActive,
-                ]}
+                onPress={() => searchInputRef.current?.focus()}
+                style={styles.uberSearchPill}
               >
                 <Ionicons
-                  name="barbell-outline"
-                  size={14}
-                  color={selectedWeightFilter ? '#050508' : '#FFFFFF'}
+                  name="search"
+                  size={20}
+                  color={colors.dark.textSecondary}
+                  style={{ marginRight: 10 }}
                 />
-                <Text
+                <TextInput
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder={`¿Qué ${activeCategoryMeta.placeholderNoun} busca ${activePet.name}?`}
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.uberSearchInput}
+                  underlineColorAndroid="transparent"
+                />
+
+                {searchQuery.length > 0 ? (
+                  <Pressable
+                    onPress={() => setSearchQuery('')}
+                    style={{ marginRight: 8 }}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                  </Pressable>
+                ) : null}
+
+                {/* Botón selector que despliega el mini menú flotante */}
+                <Pressable
+                  onPress={toggleCategoryMenu}
                   style={[
-                    styles.uberLaterText,
-                    selectedWeightFilter !== null && { color: '#050508' },
+                    styles.uberLaterButton,
+                    (categoryMenuOpen ||
+                      selectedSearchCategory !== 'concentrados') &&
+                      styles.uberLaterButtonActive,
                   ]}
                 >
-                  {selectedWeightFilter
-                    ? `${selectedWeightFilter} LB`
-                    : 'Peso LB'}
-                </Text>
+                  <Text style={{ fontSize: 13 }}>
+                    {activeCategoryMeta.emoji}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.uberLaterText,
+                      (categoryMenuOpen ||
+                        selectedSearchCategory !== 'concentrados') && {
+                        color: '#050508',
+                      },
+                    ]}
+                  >
+                    {activeCategoryMeta.shortLabel}
+                  </Text>
+                  <Ionicons
+                    name={categoryMenuOpen ? 'chevron-up' : 'chevron-down'}
+                    size={13}
+                    color={
+                      categoryMenuOpen ||
+                      selectedSearchCategory !== 'concentrados'
+                        ? '#050508'
+                        : '#FFFFFF'
+                    }
+                  />
+                </Pressable>
               </Pressable>
-            </Pressable>
+
+              {/* MINI MENÚ FLOTANTE DESPLEGABLE (POPOVER) */}
+              {categoryMenuOpen && (
+                <Animated.View
+                  style={[
+                    styles.categoryFloatingMenu,
+                    {
+                      opacity: categoryMenuAnim,
+                      transform: [
+                        {
+                          translateY: categoryMenuAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-10, 0],
+                          }),
+                        },
+                        {
+                          scale: categoryMenuAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.94, 1],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <View style={styles.categoryMenuHeaderRow}>
+                    <Text style={styles.categoryMenuHeaderText}>
+                      ¿Qué deseas buscar para {activePet.name}{' '}
+                      {activeSpecies === 'cat' ? '🐱' : '🐶'}?
+                    </Text>
+                    <Pressable onPress={toggleCategoryMenu} hitSlop={8}>
+                      <Ionicons name="close" size={16} color="#9CA3AF" />
+                    </Pressable>
+                  </View>
+
+                  {SEARCH_CATEGORY_OPTIONS.map((option, idx) => {
+                    const isSelected = selectedSearchCategory === option.id;
+                    const count = getCategoryItemCount(option.id);
+                    return (
+                      <React.Fragment key={option.id}>
+                        {idx > 0 && (
+                          <View style={styles.categoryMenuDivider} />
+                        )}
+                        <Pressable
+                          onPress={() => handleSelectSearchCategory(option.id)}
+                          style={({ pressed }) => [
+                            styles.categoryMenuItemRow,
+                            isSelected && styles.categoryMenuItemRowActive,
+                            pressed && { opacity: 0.85 },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.categoryMenuIconBox,
+                              isSelected && styles.categoryMenuIconBoxActive,
+                            ]}
+                          >
+                            <Text style={{ fontSize: 18 }}>{option.emoji}</Text>
+                          </View>
+
+                          <View style={{ flex: 1 }}>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 6,
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.categoryMenuTitle,
+                                  isSelected && {
+                                    color: colors.primary.light,
+                                  },
+                                ]}
+                              >
+                                {option.label}
+                              </Text>
+                              <View style={styles.categoryCountPill}>
+                                <Text style={styles.categoryCountText}>
+                                  {count}
+                                </Text>
+                              </View>
+                            </View>
+                            <Text style={styles.categoryMenuSubtitle}>
+                              {option.subtitle}
+                            </Text>
+                          </View>
+
+                          <View
+                            style={[
+                              styles.categoryMenuRadio,
+                              isSelected && styles.categoryMenuRadioActive,
+                            ]}
+                          >
+                            {isSelected && (
+                              <Ionicons
+                                name="checkmark"
+                                size={13}
+                                color="#050508"
+                              />
+                            )}
+                          </View>
+                        </Pressable>
+                      </React.Fragment>
+                    );
+                  })}
+                </Animated.View>
+              )}
+            </View>
 
             {/* 4. UBER RECENT / QUICK REORDER STACKED CARD */}
             <View style={styles.uberRecentCard}>
@@ -987,23 +1418,33 @@ export const HomeScreen: React.FC = () => {
               })}
             </View>
 
-            {/* 6. UBER HORIZONTAL CARDS: BULTOS SUPER PREMIUM */}
+            {/* 6. UBER HORIZONTAL CARDS: CATÁLOGO SEGÚN CATEGORÍA DEL MINI MENÚ */}
             <View style={styles.uberSectionHeader}>
               <Text style={styles.uberSectionTitle}>
-                {selectedBrand === 'Todas'
+                {selectedSearchCategory === 'humedo'
+                  ? `🥫 Alimento Húmedo para ${activePet.name}`
+                  : selectedSearchCategory === 'snacks'
+                  ? `🦴 Snacks y Premios para ${activePet.name}`
+                  : selectedSearchCategory === 'medicamentos'
+                  ? `💊 Medicamentos y Salud para ${activePet.name}`
+                  : selectedSearchCategory === 'todo'
+                  ? `✨ Todo el catálogo para ${activePet.name}`
+                  : selectedBrand === 'Todas'
                   ? activeSpecies === 'cat'
                     ? 'Bultos Super Premium Gatos'
                     : 'Bultos Super Premium Perros'
                   : `Línea ${selectedBrand}`}
               </Text>
-              {selectedBrand !== 'Todas' || selectedWeightFilter !== null ? (
+              {selectedBrand !== 'Todas' ||
+              selectedSearchCategory !== 'concentrados' ? (
                 <Pressable
                   onPress={() => {
+                    Haptics.selectionAsync();
                     setSelectedBrand('Todas');
-                    setSelectedWeightFilter(null);
+                    setSelectedSearchCategory('concentrados');
                   }}
                 >
-                  <Text style={styles.clearFilterLink}>Ver todos</Text>
+                  <Text style={styles.clearFilterLink}>Restablecer</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -1044,7 +1485,17 @@ export const HomeScreen: React.FC = () => {
                           ]}
                         >
                           <Text style={{ fontSize: 34 }}>
-                            {product.petType === 'cat' ? '🐱' : '🐶'}
+                            {product.subFilter === 'medicamentos'
+                              ? '💊'
+                              : product.subFilter === 'humedos'
+                              ? '🥫'
+                              : product.subFilter === 'premios'
+                              ? '🦴'
+                              : product.subFilter === 'higiene'
+                              ? '🧼'
+                              : product.petType === 'cat'
+                              ? '🐱'
+                              : '🐶'}
                           </Text>
                         </View>
                       </View>
@@ -2544,11 +2995,16 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  /* ==================== 3. UBER SEARCH PILL ==================== */
+  /* ==================== 3. UBER SEARCH PILL + MINI MENÚ FLOTANTE ==================== */
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 18,
     paddingBottom: 115,
+  },
+  searchPillWrapper: {
+    position: 'relative',
+    zIndex: 50,
+    marginBottom: 14,
   },
   uberSearchPill: {
     flexDirection: 'row',
@@ -2560,25 +3016,24 @@ const styles = StyleSheet.create({
     height: 56,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.09)',
-    marginBottom: 14,
   },
   uberSearchInput: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     height: '100%',
   },
   uberLaterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#0A0B0E',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   uberLaterButtonActive: {
     backgroundColor: colors.primary.DEFAULT,
@@ -2586,8 +3041,103 @@ const styles = StyleSheet.create({
   },
   uberLaterText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  categoryFloatingMenu: {
+    marginTop: 10,
+    backgroundColor: '#141720',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.65,
+    shadowRadius: 24,
+    elevation: 18,
+  },
+  categoryMenuHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingTop: 4,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.07)',
+    marginBottom: 4,
+  },
+  categoryMenuHeaderText: {
+    color: '#9CA3AF',
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  categoryMenuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    marginLeft: 54,
+  },
+  categoryMenuItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  categoryMenuItemRowActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+  },
+  categoryMenuIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#1E2230',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  categoryMenuIconBoxActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.18)',
+    borderColor: colors.primary.DEFAULT,
+  },
+  categoryMenuTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  categoryCountPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  categoryCountText: {
+    color: '#D1D5DB',
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  categoryMenuSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginTop: 1,
+  },
+  categoryMenuRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryMenuRadioActive: {
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.light,
   },
 
   /* ==================== 4. UBER RECENT STACKED CARD ==================== */
