@@ -68,6 +68,8 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
   const [mode, setMode] = useState<'list' | 'add'>('list');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const confirmRevealAnim = useRef(new Animated.Value(0)).current;
 
   // Animación que nace desde la parte superior (donde está la dirección)
   const translateY = useRef(new Animated.Value(-SCREEN_HEIGHT * 0.75)).current;
@@ -141,9 +143,32 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
     ]).start(() => {
       setMode('list');
       setFormError('');
+      setConfirmDeleteId(null);
       setIsExpanded(false);
       onClose();
     });
+  };
+
+  const handlePromptDelete = (addrId: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    if (confirmDeleteId === addrId) {
+      setConfirmDeleteId(null);
+      return;
+    }
+    setConfirmDeleteId(addrId);
+    confirmRevealAnim.setValue(0);
+    Animated.spring(confirmRevealAnim, {
+      toValue: 1,
+      damping: 18,
+      stiffness: 240,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleConfirmDelete = (addrId: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setConfirmDeleteId(null);
+    deleteAddress(addrId);
   };
 
   // Gesto en la barra inferior del panel superior:
@@ -384,126 +409,215 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                   <View style={styles.addressesList}>
                     {addresses.map((addr) => {
                       const isSelected = addr.id === selectedAddress.id;
+                      const isConfirmingDelete = confirmDeleteId === addr.id;
                       return (
-                        <Pressable
+                        <View
                           key={addr.id}
-                          onPress={() => handleSelectAddress(addr)}
-                          style={({ pressed }) => [
+                          style={[
                             styles.addressCard,
                             isSelected && styles.addressCardSelected,
-                            pressed && { opacity: 0.92 },
+                            isConfirmingDelete && styles.addressCardDanger,
                           ]}
                         >
-                          {/* Columna Izquierda: Ícono */}
-                          <View
-                            style={[
-                              styles.addressIconCircle,
-                              isSelected && styles.addressIconCircleSelected,
-                            ]}
-                          >
-                            <Text style={styles.addressEmoji}>
-                              {getLabelEmoji(addr.label)}
-                            </Text>
-                          </View>
-
-                          {/* Columna Central: Datos de la dirección */}
-                          <View style={styles.addressInfoCol}>
-                            <View style={styles.addressLabelRow}>
-                              <Text style={styles.addressLabelTitle}>
-                                {addr.label}
-                              </Text>
-                              <Text style={styles.addressCityTag}>
-                                · {addr.city}
-                              </Text>
-                              {isSelected && (
-                                <View style={styles.activeNowPill}>
-                                  <Text style={styles.activeNowPillText}>
-                                    Activa
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-
-                            <Text style={styles.addressLine1}>
-                              {addr.address1}
-                            </Text>
-
-                            {addr.address2 ? (
-                              <Text style={styles.addressLine2}>
-                                {addr.address2}
-                              </Text>
-                            ) : null}
-
-                            <Text style={styles.addressMetaText}>
-                              {addr.locality ? `${addr.locality} · ` : ''}
-                              Recibe: {addr.recipient}
-                            </Text>
-
-                            {/* Badge de Envío según la ciudad de esta dirección */}
-                            <View style={styles.shippingTagRow}>
-                              {addr.isBogota ? (
-                                <View style={styles.freeBogotaTag}>
-                                  <Ionicons
-                                    name="checkmark-circle"
-                                    size={13}
-                                    color="#10B981"
-                                  />
-                                  <Text style={styles.freeBogotaTagText}>
-                                    Domicilio GRATIS ($ 0) · Contraentrega
-                                  </Text>
-                                </View>
-                              ) : (
-                                <View style={styles.carrierFeeTag}>
-                                  <Ionicons
-                                    name="cube-outline"
-                                    size={13}
-                                    color="#F59E0B"
-                                  />
-                                  <Text style={styles.carrierFeeTagText}>
-                                    + Recargo Transportadora (según LB)
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                          </View>
-
-                          {/* Columna Derecha: Radio check + botón eliminar */}
-                          <View style={styles.addressRightActions}>
-                            <View
-                              style={[
-                                styles.radioOuter,
-                                isSelected && styles.radioOuterSelected,
+                          <View style={styles.addressMainRow}>
+                            {/* Área seleccionable (Ícono + Info) */}
+                            <Pressable
+                              onPress={() => {
+                                if (isConfirmingDelete) {
+                                  setConfirmDeleteId(null);
+                                  return;
+                                }
+                                handleSelectAddress(addr);
+                              }}
+                              style={({ pressed }) => [
+                                styles.addressTouchableArea,
+                                pressed && { opacity: 0.9 },
                               ]}
                             >
-                              {isSelected && (
-                                <Ionicons
-                                  name="checkmark"
-                                  size={14}
-                                  color="#050508"
-                                />
+                              {/* Columna Izquierda: Ícono */}
+                              <View
+                                style={[
+                                  styles.addressIconCircle,
+                                  isSelected && styles.addressIconCircleSelected,
+                                ]}
+                              >
+                                <Text style={styles.addressEmoji}>
+                                  {getLabelEmoji(addr.label)}
+                                </Text>
+                              </View>
+
+                              {/* Columna Central: Datos de la dirección */}
+                              <View style={styles.addressInfoCol}>
+                                <View style={styles.addressLabelRow}>
+                                  <Text style={styles.addressLabelTitle}>
+                                    {addr.label}
+                                  </Text>
+                                  <Text style={styles.addressCityTag}>
+                                    · {addr.city}
+                                  </Text>
+                                  {isSelected && (
+                                    <View style={styles.activeNowPill}>
+                                      <Text style={styles.activeNowPillText}>
+                                        Activa
+                                      </Text>
+                                    </View>
+                                  )}
+                                </View>
+
+                                <Text style={styles.addressLine1}>
+                                  {addr.address1}
+                                </Text>
+
+                                {addr.address2 ? (
+                                  <Text style={styles.addressLine2}>
+                                    {addr.address2}
+                                  </Text>
+                                ) : null}
+
+                                <Text style={styles.addressMetaText}>
+                                  {addr.locality ? `${addr.locality} · ` : ''}
+                                  Recibe: {addr.recipient}
+                                </Text>
+
+                                {/* Badge de Envío según la ciudad de esta dirección */}
+                                <View style={styles.shippingTagRow}>
+                                  {addr.isBogota ? (
+                                    <View style={styles.freeBogotaTag}>
+                                      <Ionicons
+                                        name="checkmark-circle"
+                                        size={13}
+                                        color="#10B981"
+                                      />
+                                      <Text style={styles.freeBogotaTagText}>
+                                        Domicilio GRATIS ($ 0) · Contraentrega
+                                      </Text>
+                                    </View>
+                                  ) : (
+                                    <View style={styles.carrierFeeTag}>
+                                      <Ionicons
+                                        name="cube-outline"
+                                        size={13}
+                                        color="#F59E0B"
+                                      />
+                                      <Text style={styles.carrierFeeTagText}>
+                                        + Recargo Transportadora (según LB)
+                                      </Text>
+                                    </View>
+                                  )}
+                                </View>
+                              </View>
+                            </Pressable>
+
+                            {/* Columna Derecha: Radio check + botón eliminar */}
+                            <View style={styles.addressRightActions}>
+                              <Pressable
+                                onPress={() => handleSelectAddress(addr)}
+                                hitSlop={8}
+                                style={[
+                                  styles.radioOuter,
+                                  isSelected && styles.radioOuterSelected,
+                                ]}
+                              >
+                                {isSelected && (
+                                  <Ionicons
+                                    name="checkmark"
+                                    size={14}
+                                    color="#050508"
+                                  />
+                                )}
+                              </Pressable>
+
+                              {addresses.length > 1 && !isSelected && (
+                                <Pressable
+                                  onPress={() => handlePromptDelete(addr.id)}
+                                  style={[
+                                    styles.deleteAddrBtn,
+                                    isConfirmingDelete &&
+                                      styles.deleteAddrBtnActive,
+                                  ]}
+                                  hitSlop={10}
+                                >
+                                  <Ionicons
+                                    name="trash-outline"
+                                    size={16}
+                                    color={
+                                      isConfirmingDelete ? '#F87171' : '#6B7280'
+                                    }
+                                  />
+                                </Pressable>
                               )}
                             </View>
-
-                            {addresses.length > 1 && !isSelected && (
-                              <Pressable
-                                onPress={() => {
-                                  Haptics.impactAsync(
-                                    Haptics.ImpactFeedbackStyle.Light
-                                  );
-                                  deleteAddress(addr.id);
-                                }}
-                                style={styles.deleteAddrBtn}
-                                hitSlop={8}
-                              >
-                                <Ionicons
-                                  name="trash-outline"
-                                  size={15}
-                                  color="#6B7280"
-                                />
-                              </Pressable>
-                            )}
                           </View>
-                        </Pressable>
+
+                          {/* Mensaje emergente interno de confirmación para eliminar */}
+                          {isConfirmingDelete && (
+                            <Animated.View
+                              style={[
+                                styles.inlineDeleteConfirmBox,
+                                {
+                                  opacity: confirmRevealAnim,
+                                  transform: [
+                                    {
+                                      translateY: confirmRevealAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [-8, 0],
+                                      }),
+                                    },
+                                    {
+                                      scale: confirmRevealAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0.96, 1],
+                                      }),
+                                    },
+                                  ],
+                                },
+                              ]}
+                            >
+                              <View style={styles.inlineDeleteHeaderRow}>
+                                <Ionicons
+                                  name="warning"
+                                  size={16}
+                                  color="#F87171"
+                                />
+                                <Text style={styles.inlineDeleteTitle}>
+                                  ¿Seguro que deseas eliminar la dirección{' '}
+                                  <Text style={{ fontWeight: '900', color: '#FFFFFF' }}>
+                                    "{addr.label}"
+                                  </Text>
+                                  ?
+                                </Text>
+                              </View>
+
+                              <View style={styles.inlineDeleteActionsRow}>
+                                <Pressable
+                                  onPress={() => {
+                                    Haptics.selectionAsync();
+                                    setConfirmDeleteId(null);
+                                  }}
+                                  style={styles.cancelDeleteBtn}
+                                >
+                                  <Text style={styles.cancelDeleteBtnText}>
+                                    No, conservar
+                                  </Text>
+                                </Pressable>
+
+                                <Pressable
+                                  onPress={() => handleConfirmDelete(addr.id)}
+                                  style={styles.confirmDeleteBtn}
+                                >
+                                  <Ionicons
+                                    name="trash"
+                                    size={14}
+                                    color="#FFFFFF"
+                                  />
+                                  <Text style={styles.confirmDeleteBtnText}>
+                                    Sí, eliminar
+                                  </Text>
+                                </Pressable>
+                              </View>
+                            </Animated.View>
+                          )}
+                        </View>
                       );
                     })}
                   </View>
@@ -921,18 +1035,30 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   addressCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     backgroundColor: '#151821',
     borderRadius: 18,
     padding: 13,
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.07)',
-    gap: 12,
   },
   addressCardSelected: {
     backgroundColor: '#191D28',
     borderColor: colors.primary.DEFAULT,
+  },
+  addressCardDanger: {
+    borderColor: 'rgba(248, 113, 113, 0.45)',
+    backgroundColor: '#1A151B',
+  },
+  addressMainRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  addressTouchableArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
   },
   addressIconCircle: {
     width: 42,
@@ -1049,7 +1175,63 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
   },
   deleteAddrBtn: {
-    padding: 4,
+    padding: 6,
+    borderRadius: 10,
+  },
+  deleteAddrBtnActive: {
+    backgroundColor: 'rgba(248, 113, 113, 0.16)',
+  },
+  inlineDeleteConfirmBox: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(248, 113, 113, 0.22)',
+    gap: 10,
+  },
+  inlineDeleteHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  inlineDeleteTitle: {
+    color: '#FCA5A5',
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+  inlineDeleteActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  cancelDeleteBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  cancelDeleteBtnText: {
+    color: '#E5E7EB',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  confirmDeleteBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 11,
+    backgroundColor: '#EF4444',
+  },
+  confirmDeleteBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
   },
 
   /* Botón agregar nueva dirección */
