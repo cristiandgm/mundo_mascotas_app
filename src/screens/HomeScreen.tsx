@@ -2722,27 +2722,30 @@ export const HomeScreen: React.FC = () => {
               },
             ]}
           >
-            <LinearGradient
-              colors={
-                cartSummary.totalItems > 0
-                  ? ['#F5D061', '#D4AF37', '#AA8214']
-                  : ['#222738', '#151822']
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                styles.draggableCartCircle,
-                cartSummary.totalItems > 0 && styles.draggableCartCircleActive,
-                isDraggingCartBubble && styles.draggableCartCircleDragging,
-              ]}
-            >
-              <Ionicons
-                name={cartSummary.totalItems > 0 ? 'cart' : 'cart-outline'}
-                size={25}
-                color={cartSummary.totalItems > 0 ? '#050508' : '#FFFFFF'}
-              />
+            <View style={styles.draggableCartCircleWrap}>
+              <LinearGradient
+                colors={
+                  cartSummary.totalItems > 0
+                    ? ['#F5D061', '#D4AF37', '#AA8214']
+                    : ['#222738', '#151822']
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[
+                  styles.draggableCartCircle,
+                  cartSummary.totalItems > 0 &&
+                    styles.draggableCartCircleActive,
+                  isDraggingCartBubble && styles.draggableCartCircleDragging,
+                ]}
+              >
+                <Ionicons
+                  name={cartSummary.totalItems > 0 ? 'cart' : 'cart-outline'}
+                  size={25}
+                  color={cartSummary.totalItems > 0 ? '#050508' : '#FFFFFF'}
+                />
+              </LinearGradient>
 
-              {/* Contador flotante en la esquina superior derecha de la burbuja */}
+              {/* Contador flotante fuera del LinearGradient para que nunca se recorte por el borderRadius */}
               <View
                 style={[
                   styles.draggableCartBadge,
@@ -2753,13 +2756,13 @@ export const HomeScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.draggableCartBadgeText,
-                    cartSummary.totalItems === 0 && { color: '#9CA3AF' },
+                    cartSummary.totalItems === 0 && { color: '#D1D5DB' },
                   ]}
                 >
                   {cartSummary.totalItems}
                 </Text>
               </View>
-            </LinearGradient>
+            </View>
 
             {/* Mini etiqueta de precio debajo del círculo cuando lleva productos */}
             {cartSummary.totalItems > 0 && (
@@ -3687,6 +3690,11 @@ const styles = StyleSheet.create({
     zIndex: 90,
     alignItems: 'center',
   },
+  draggableCartCircleWrap: {
+    width: 58,
+    height: 58,
+    position: 'relative',
+  },
   draggableCartCircle: {
     width: 58,
     height: 58,
@@ -3711,26 +3719,30 @@ const styles = StyleSheet.create({
   },
   draggableCartBadge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
+    top: -5,
+    right: -5,
+    minWidth: 23,
+    height: 23,
+    borderRadius: 12,
     backgroundColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
     borderWidth: 2,
     borderColor: '#0A0B0E',
+    zIndex: 10,
+    elevation: 22,
   },
   draggableCartBadgeEmpty: {
     backgroundColor: '#1E2230',
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(212, 175, 55, 0.45)',
   },
   draggableCartBadgeText: {
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '900',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   draggableCartPricePill: {
     marginTop: 4,
