@@ -703,6 +703,8 @@ export const HomeScreen: React.FC = () => {
   // Carrito: { [productId]: quantity }
   const [cart, setCart] = useState<Record<string, number>>({});
   const [orderSuccessToast, setOrderSuccessToast] = useState(false);
+  const [miniCartPreviewOpen, setMiniCartPreviewOpen] = useState(false);
+  const cartPulseAnim = useRef(new Animated.Value(1)).current;
 
   const searchInputRef = useRef<any>(null);
 
@@ -736,12 +738,23 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
+  const triggerCartPulse = () => {
+    cartPulseAnim.setValue(0.95);
+    Animated.spring(cartPulseAnim, {
+      toValue: 1,
+      tension: 120,
+      friction: 6,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const handleAddToCart = (productId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCart((prev) => ({
       ...prev,
       [productId]: (prev[productId] || 0) + 1,
     }));
+    triggerCartPulse();
   };
 
   const handleDecrementCart = (productId: string) => {
@@ -1106,7 +1119,11 @@ export const HomeScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 12) + 98 },
+          {
+            paddingBottom:
+              Math.max(insets.bottom, 12) +
+              (mainTopTab === 'store' ? 166 : 98),
+          },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -2475,6 +2492,172 @@ export const HomeScreen: React.FC = () => {
         )}
       </ScrollView>
 
+      {/* ==================== 7.5 OPCIÓN FLOTANTE DE CARRITO (EXCLUSIVA EN "TIENDA") ==================== */}
+      {mainTopTab === 'store' && (
+        <Animated.View
+          style={[
+            styles.storeFloatingCartWrapper,
+            {
+              bottom: Math.max(insets.bottom, 12) + 74,
+              transform: [{ scale: cartPulseAnim }],
+            },
+          ]}
+        >
+          {/* Mini vista desplegable en tiempo real de lo que el cliente va agregando */}
+          {miniCartPreviewOpen && cartSummary.itemsList.length > 0 && (
+            <View style={styles.miniCartPreviewDrawer}>
+              <View style={styles.miniCartDrawerHeader}>
+                <Text style={styles.miniCartDrawerTitle}>
+                  🛒 Agregando para {activePet.name} ({cartSummary.totalItems})
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setMiniCartPreviewOpen(false);
+                  }}
+                  hitSlop={8}
+                >
+                  <Ionicons name="chevron-down" size={18} color="#9CA3AF" />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                style={{ maxHeight: 165 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {cartSummary.itemsList.map(({ product, quantity }, idx) => (
+                  <View
+                    key={product.id}
+                    style={[
+                      styles.miniCartItemRow,
+                      idx > 0 && styles.miniCartItemDivider,
+                    ]}
+                  >
+                    <Text style={{ fontSize: 18 }}>
+                      {product.subFilter === 'medicamentos'
+                        ? '💊'
+                        : product.subFilter === 'humedos'
+                        ? '🥫'
+                        : product.subFilter === 'premios'
+                        ? '🦴'
+                        : product.petType === 'cat'
+                        ? '🐱'
+                        : '🐶'}
+                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.miniCartItemName} numberOfLines={1}>
+                        {product.name}
+                      </Text>
+                      <Text style={styles.miniCartItemMeta}>
+                        {product.unitLabel || `${product.weightLb} LB`} ·{' '}
+                        {formatCOP(product.price * quantity)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.qtyStepper}>
+                      <Pressable
+                        onPress={() => handleDecrementCart(product.id)}
+                        style={styles.qtyStepBtn}
+                      >
+                        <Ionicons name="remove" size={13} color="#FFFFFF" />
+                      </Pressable>
+                      <Text style={styles.qtyCountText}>{quantity}</Text>
+                      <Pressable
+                        onPress={() => handleAddToCart(product.id)}
+                        style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
+                      >
+                        <Ionicons name="add" size={13} color="#050508" />
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Barra / Cápsula Flotante del Carrito en Tienda */}
+          {cartSummary.totalItems === 0 ? (
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setCartModalVisible(true);
+              }}
+              style={styles.storeFloatingCartEmptyPill}
+            >
+              <View style={styles.storeFloatingCartEmptyIcon}>
+                <Ionicons
+                  name="cart-outline"
+                  size={17}
+                  color={colors.primary.light}
+                />
+              </View>
+              <Text style={styles.storeFloatingCartEmptyText}>
+                Carrito (0)
+              </Text>
+            </Pressable>
+          ) : (
+            <View style={styles.storeFloatingCartActiveBar}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setMiniCartPreviewOpen((prev) => !prev);
+                }}
+                style={styles.storeFloatingCartLeftArea}
+              >
+                <View style={styles.storeFloatingCartBadgeCircle}>
+                  <Ionicons name="cart" size={16} color="#050508" />
+                  <View style={styles.storeFloatingCartCountDot}>
+                    <Text style={styles.storeFloatingCartCountText}>
+                      {cartSummary.totalItems}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <Text
+                      style={styles.storeFloatingCartItemsPreview}
+                      numberOfLines={1}
+                    >
+                      {cartSummary.itemsList
+                        .map((i) => `${i.quantity}x ${i.product.name}`)
+                        .join(' · ')}
+                    </Text>
+                  </View>
+                  <Text style={styles.storeFloatingCartSubText}>
+                    {formatCOP(cartSummary.subtotal)} ·{' '}
+                    {deliveryZone === 'bogota'
+                      ? '🚚 Domicilio Gratis'
+                      : `+ Flete (${cartSummary.totalWeightLb} LB)`}{' '}
+                    · {miniCartPreviewOpen ? 'Ocultar ⌄' : 'Ver lista ⌃'}
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setMiniCartPreviewOpen(false);
+                  setCartModalVisible(true);
+                }}
+                style={styles.storeFloatingCartCheckoutBtn}
+              >
+                <Text style={styles.storeFloatingCartCheckoutText}>
+                  Ver carrito
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color="#050508" />
+              </Pressable>
+            </View>
+          )}
+        </Animated.View>
+      )}
+
       {/* ==================== 8. UBER FLOATING PILL BOTTOM NAVIGATION BAR ==================== */}
       <View
         style={[
@@ -3378,6 +3561,169 @@ const styles = StyleSheet.create({
   uberPromoBigCoins: {
     color: '#FFFFFF',
     fontSize: 22,
+    fontWeight: '900',
+  },
+
+  /* ==================== 7.5 OPCIÓN FLOTANTE DE CARRITO EN TIENDA ==================== */
+  storeFloatingCartWrapper: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    zIndex: 45,
+  },
+  miniCartPreviewDrawer: {
+    backgroundColor: '#131620',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(212, 175, 55, 0.4)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.65,
+    shadowRadius: 18,
+    elevation: 16,
+  },
+  miniCartDrawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    marginBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  miniCartDrawerTitle: {
+    color: colors.primary.light,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  miniCartItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  miniCartItemDivider: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  miniCartItemName: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  miniCartItemMeta: {
+    color: '#9CA3AF',
+    fontSize: 11.5,
+    marginTop: 1,
+  },
+  storeFloatingCartEmptyPill: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#151822',
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  storeFloatingCartEmptyIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(212, 175, 55, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storeFloatingCartEmptyText: {
+    color: '#E5E7EB',
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  storeFloatingCartActiveBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#131620',
+    borderRadius: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderColor: colors.primary.DEFAULT,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.65,
+    shadowRadius: 16,
+    elevation: 14,
+    gap: 10,
+  },
+  storeFloatingCartLeftArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  storeFloatingCartBadgeCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primary.DEFAULT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  storeFloatingCartCountDot: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#0A0B0E',
+  },
+  storeFloatingCartCountText: {
+    color: '#050508',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  storeFloatingCartItemsPreview: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    flexShrink: 1,
+  },
+  storeFloatingCartSubText: {
+    color: colors.primary.light,
+    fontSize: 11.5,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  storeFloatingCartCheckoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 16,
+  },
+  storeFloatingCartCheckoutText: {
+    color: '#050508',
+    fontSize: 12.5,
     fontWeight: '900',
   },
 
