@@ -158,8 +158,8 @@ export const FloatingAuthModal: React.FC = () => {
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Barra superior deslizable con botón Atrás, Grabber central y botón X */}
-          <View style={styles.topNavigationRow} {...headerPanHandlers}>
+          {/* Barra superior con botón Atrás, Grabber central deslizable y botón X libre de colisiones */}
+          <View style={styles.topNavigationRow}>
             {authModalView !== 'login' ? (
               <Pressable
                 onPress={() => switchView('login')}
@@ -184,8 +184,11 @@ export const FloatingAuthModal: React.FC = () => {
 
             <Pressable
               onPress={animateClose}
-              style={styles.closeXButton}
-              hitSlop={12}
+              style={({ pressed }) => [
+                styles.closeXButton,
+                pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
+              ]}
+              hitSlop={14}
             >
               <Ionicons name="close" size={22} color="#FFFFFF" />
             </Pressable>

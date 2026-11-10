@@ -22,6 +22,7 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
 
   useEffect(() => {
     if (visible) {
+      translateY.stopAnimation();
       translateY.setValue(0);
       setIsExpanded(false);
       setIsDragging(false);
@@ -29,15 +30,18 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
   }, [visible, translateY]);
 
   const animateClose = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // ignore
+    }
+    translateY.stopAnimation();
     Animated.timing(translateY, {
       toValue: SCREEN_HEIGHT,
-      duration: 220,
+      duration: 210,
       useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) {
-        onCloseRef.current();
-      }
+    }).start(() => {
+      onCloseRef.current();
     });
   };
 
@@ -89,10 +93,8 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
         toValue: SCREEN_HEIGHT,
         duration: 210,
         useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished) {
-          onCloseRef.current();
-        }
+      }).start(() => {
+        onCloseRef.current();
       });
       return;
     }
