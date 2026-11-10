@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Modal,
   Pressable,
+  TouchableOpacity,
   ScrollView,
   Image,
   KeyboardAvoidingView,
@@ -139,6 +140,7 @@ export const FloatingAuthModal: React.FC = () => {
 
         {/* Pestaña trasera apilada estilo Airbnb */}
         <Animated.View
+          pointerEvents="none"
           style={[
             styles.stackedBackCard,
             { transform: [{ translateY }] },
@@ -154,6 +156,7 @@ export const FloatingAuthModal: React.FC = () => {
           ]}
         >
           <LinearGradient
+            pointerEvents="none"
             colors={['#0E1018', '#07080D', '#050508']}
             style={StyleSheet.absoluteFill}
           />
@@ -161,13 +164,14 @@ export const FloatingAuthModal: React.FC = () => {
           {/* Barra superior con botón Atrás, Grabber central deslizable y botón X libre de colisiones */}
           <View style={styles.topNavigationRow}>
             {authModalView !== 'login' ? (
-              <Pressable
+              <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={() => switchView('login')}
                 style={styles.iconCircleBtn}
-                hitSlop={12}
+                hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
               >
                 <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              </Pressable>
+              </TouchableOpacity>
             ) : (
               <View style={styles.iconPlaceholder} />
             )}
@@ -182,16 +186,14 @@ export const FloatingAuthModal: React.FC = () => {
               />
             </View>
 
-            <Pressable
+            <TouchableOpacity
+              activeOpacity={0.7}
               onPress={animateClose}
-              style={({ pressed }) => [
-                styles.closeXButton,
-                pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
-              ]}
-              hitSlop={14}
+              style={styles.closeXButton}
+              hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
             >
               <Ionicons name="close" size={22} color="#FFFFFF" />
-            </Pressable>
+            </TouchableOpacity>
           </View>
 
           <KeyboardAvoidingView
@@ -527,6 +529,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 6,
+    zIndex: 30,
+    elevation: 30,
   },
   iconPlaceholder: {
     width: 38,
@@ -539,6 +543,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.07)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 35,
+    elevation: 35,
   },
   dragHandleHitZone: {
     flex: 1,
@@ -563,6 +569,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.07)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 35,
+    elevation: 35,
   },
   scrollContent: {
     paddingHorizontal: 26,

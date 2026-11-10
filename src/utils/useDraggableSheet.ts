@@ -20,29 +20,63 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
+  const isClosingRef = useRef(false);
+
   useEffect(() => {
     if (visible) {
-      translateY.stopAnimation();
-      translateY.setValue(0);
+      isClosingRef.current = false;
       setIsExpanded(false);
       setIsDragging(false);
+      translateY.setValue(32);
+
+      // En Android es indispensable disparar una animación con useNativeDriver: true hacia 0
+      // una vez montado el Modal para que NativeAnimatedModule sincronice el nodo y el hit-testing
+      const rafId = requestAnimationFrame(() => {
+        Animated.spring(translateY, {
+          toValue: 0,
+          damping: 24,
+          stiffness: 260,
+          mass: 0.8,
+          useNativeDriver: true,
+        }).start();
+      });
+
+      return () => cancelAnimationFrame(rafId);
     }
   }, [visible, translateY]);
 
-  const animateClose = () => {
+  const triggerGuaranteedClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
       // ignore
     }
-    translateY.stopAnimation();
+
+    let closed = false;
+    const finishClose = () => {
+      if (closed) return;
+      closed = true;
+      onCloseRef.current();
+    };
+
+    // Fallback garantizado para Android por si el callback de useNativeDriver se interrumpe
+    const fallbackTimer = setTimeout(finishClose, 225);
+
     Animated.timing(translateY, {
       toValue: SCREEN_HEIGHT,
-      duration: 210,
+      duration: 200,
       useNativeDriver: true,
     }).start(() => {
-      onCloseRef.current();
+      clearTimeout(fallbackTimer);
+      finishClose();
     });
+  };
+
+  const animateClose = () => {
+    triggerGuaranteedClose();
   };
 
   const handleReleaseGesture = (dy: number, vy: number) => {
@@ -84,18 +118,7 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
 
     // 3. Deslizar hacia ABAJO fuerte -> Cerrar ventana flotante (se queda abajo en SCREEN_HEIGHT mientras cierra)
     if (dy > 95 || vy > 0.65) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {
-        // ignore
-      }
-      Animated.timing(translateY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 210,
-        useNativeDriver: true,
-      }).start(() => {
-        onCloseRef.current();
-      });
+      triggerGuaranteedClose();
       return;
     }
 
@@ -117,7 +140,6 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
         );
       },
       onPanResponderGrant: () => {
-        translateY.stopAnimation();
         setIsDragging(true);
         try {
           Haptics.selectionAsync();
@@ -152,7 +174,6 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        translateY.stopAnimation();
         setIsDragging(true);
         try {
           Haptics.selectionAsync();
