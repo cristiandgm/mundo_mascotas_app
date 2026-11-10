@@ -1433,6 +1433,177 @@ export const HomeScreen: React.FC = () => {
               )}
             </View>
 
+            {/* ===== SEARCH RESULTS PANEL: visible only when searchQuery has text ===== */}
+            {searchQuery.trim().length > 0 && (
+              <View style={styles.searchResultsPanel}>
+                {/* Header row */}
+                <View style={styles.searchResultsHeader}>
+                  <Text style={styles.searchResultsTitle}>
+                    {filteredProducts.length > 0
+                      ? `${filteredProducts.length} resultado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery.trim()}"`
+                      : `Sin resultados para "${searchQuery.trim()}"`}
+                  </Text>
+                  <Pressable
+                    onPress={() => setSearchQuery('')}
+                    hitSlop={8}
+                    style={styles.searchResultsClearBtn}
+                  >
+                    <Text style={styles.searchResultsClearText}>Limpiar</Text>
+                  </Pressable>
+                </View>
+
+                {filteredProducts.length === 0 ? (
+                  /* Empty state */
+                  <View style={styles.searchEmptyState}>
+                    <Text style={{ fontSize: 42, marginBottom: 10 }}>🔍</Text>
+                    <Text style={styles.searchEmptyTitle}>
+                      No encontramos ese producto
+                    </Text>
+                    <Text style={styles.searchEmptySubtitle}>
+                      Intenta con otro nombre, marca o proteína
+                    </Text>
+                    <Pressable
+                      onPress={() => setSearchQuery('')}
+                      style={styles.searchEmptyResetBtn}
+                    >
+                      <Text style={styles.searchEmptyResetText}>
+                        Ver todos los productos
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  /* Result rows */
+                  filteredProducts.map((item, idx) => {
+                    const inCart = cart[item.id] ?? 0;
+                    const brandEmoji =
+                      item.brand === 'Diamond Naturals'
+                        ? '💎'
+                        : item.brand === 'Taste of the Wild'
+                          ? '🌿'
+                          : item.brand === 'Acana'
+                            ? '🦅'
+                            : item.brand === 'Orijen'
+                              ? '🐾'
+                              : '🛍️';
+                    return (
+                      <React.Fragment key={item.id}>
+                        {idx > 0 && <View style={styles.uberRecentDivider} />}
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            handleAddToCart(item.id);
+                          }}
+                          style={({ pressed }) => [
+                            styles.searchResultRow,
+                            pressed && { backgroundColor: 'rgba(255,255,255,0.04)' },
+                          ]}
+                        >
+                          {/* Brand emoji icon */}
+                          <View
+                            style={[
+                              styles.searchResultIconBox,
+                              { borderColor: item.accentColor ?? '#D4AF37' },
+                            ]}
+                          >
+                            <Text style={{ fontSize: 20 }}>{brandEmoji}</Text>
+                          </View>
+
+                          {/* Text info */}
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={styles.searchResultName}
+                              numberOfLines={1}
+                            >
+                              {item.name}
+                            </Text>
+                            <Text
+                              style={styles.searchResultProtein}
+                              numberOfLines={1}
+                            >
+                              {item.protein}
+                            </Text>
+                            <View style={styles.searchResultPriceRow}>
+                              <Text style={styles.searchResultPrice}>
+                                {formatCOP(item.price)}
+                              </Text>
+                              {item.tag ? (
+                                <View
+                                  style={[
+                                    styles.searchResultTag,
+                                    {
+                                      backgroundColor:
+                                        (item.accentColor ?? '#D4AF37') + '22',
+                                      borderColor:
+                                        (item.accentColor ?? '#D4AF37') + '55',
+                                    },
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.searchResultTagText,
+                                      { color: item.accentColor ?? '#D4AF37' },
+                                    ]}
+                                  >
+                                    {item.tag}
+                                  </Text>
+                                </View>
+                              ) : null}
+                              <Text style={styles.searchResultWeight}>
+                                {item.unitLabel ?? `${item.weightLb} LB`}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Add button / quantity */}
+                          {inCart > 0 ? (
+                            <View style={styles.searchResultQtyRow}>
+                              <Pressable
+                                onPress={() => handleDecrementCart(item.id)}
+                                hitSlop={8}
+                                style={styles.searchResultQtyBtn}
+                              >
+                                <Ionicons
+                                  name="remove"
+                                  size={16}
+                                  color="#FFFFFF"
+                                />
+                              </Pressable>
+                              <Text style={styles.searchResultQtyText}>
+                                {inCart}
+                              </Text>
+                              <Pressable
+                                onPress={() => {
+                                  Haptics.selectionAsync();
+                                  handleAddToCart(item.id);
+                                }}
+                                hitSlop={8}
+                                style={[
+                                  styles.searchResultQtyBtn,
+                                  { backgroundColor: '#D4AF37' },
+                                ]}
+                              >
+                                <Ionicons name="add" size={16} color="#050508" />
+                              </Pressable>
+                            </View>
+                          ) : (
+                            <Pressable
+                              onPress={() => {
+                                Haptics.selectionAsync();
+                                handleAddToCart(item.id);
+                              }}
+                              style={styles.searchResultAddBtn}
+                            >
+                              <Ionicons name="add" size={18} color="#050508" />
+                            </Pressable>
+                          )}
+                        </Pressable>
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </View>
+            )}
+
             {/* 4. UBER RECENT / QUICK REORDER STACKED CARD */}
             <View style={styles.uberRecentCard}>
               {recentQuickItems.map((item, idx) => (
@@ -4601,5 +4772,153 @@ const styles = StyleSheet.create({
     color: '#050508',
     fontSize: 12,
     fontWeight: '900',
+  },
+
+  // ===== SEARCH RESULTS PANEL =====
+  searchResultsPanel: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    backgroundColor: '#13161F',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  searchResultsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  searchResultsTitle: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+    flexShrink: 1,
+  },
+  searchResultsClearBtn: {
+    marginLeft: 10,
+  },
+  searchResultsClearText: {
+    color: '#D4AF37',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  searchResultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    gap: 13,
+  },
+  searchResultIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#1E212B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+  },
+  searchResultName: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  searchResultProtein: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  searchResultPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  searchResultPrice: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  searchResultWeight: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  searchResultTag: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  searchResultTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  searchResultAddBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#D4AF37',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchResultQtyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  searchResultQtyBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: '#1E212B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchResultQtyText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    minWidth: 20,
+    textAlign: 'center',
+  },
+  searchEmptyState: {
+    alignItems: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 24,
+  },
+  searchEmptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  searchEmptySubtitle: {
+    color: '#6B7280',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  searchEmptyResetBtn: {
+    backgroundColor: 'rgba(212,175,55,0.15)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.4)',
+  },
+  searchEmptyResetText: {
+    color: '#D4AF37',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
