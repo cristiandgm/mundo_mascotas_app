@@ -9,11 +9,9 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../theme/colors';
 import {
   useAuth,
   DEFAULT_VIP_CUSTOMER,
@@ -90,7 +88,7 @@ export const CustomerOrdersSheet: React.FC<CustomerOrdersSheetProps> = ({
     }
     setTimeout(() => {
       setReorderedId(null);
-    }, 2200);
+    }, 2000);
   };
 
   return (
@@ -110,13 +108,7 @@ export const CustomerOrdersSheet: React.FC<CustomerOrdersSheetProps> = ({
             { transform: [{ translateY }] },
           ]}
         >
-          <LinearGradient
-            pointerEvents="none"
-            colors={['#0F121C', '#07080C', '#050508']}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {/* Top Drag Handle & Close Bar */}
+          {/* Barra superior minimalista estilo Uber */}
           <View style={styles.sheetHeaderBar}>
             <View style={styles.dragIndicatorHitZone} {...grabberPanHandlers}>
               <View
@@ -128,28 +120,57 @@ export const CustomerOrdersSheet: React.FC<CustomerOrdersSheetProps> = ({
             </View>
 
             <View style={styles.sheetTitleRow} {...headerPanHandlers}>
-              <View style={styles.brandBadge}>
-                <Ionicons
-                  name="receipt"
-                  size={14}
-                  color={colors.primary.DEFAULT}
-                />
-                <Text style={styles.brandBadgeText}>
-                  MIS PEDIDOS Y RECOMPRA RÁPIDA
-                </Text>
-              </View>
+              <Text style={styles.uberMainHeaderTitle}>Actividad</Text>
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={animateClose}
                 style={styles.closeBtn}
                 hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
               >
-                <Ionicons
-                  name="close"
-                  size={20}
-                  color={colors.dark.textSecondary}
-                />
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
+            </View>
+
+            {/* Píldoras de filtro monocromáticas estilo Uber */}
+            <View style={styles.uberFilterRow}>
+              {[
+                {
+                  id: 'all' as OrderFilterType,
+                  label: `Todos (${orders.length})`,
+                },
+                {
+                  id: 'pending' as OrderFilterType,
+                  label: `En curso (${pendingCount})`,
+                },
+                {
+                  id: 'fulfilled' as OrderFilterType,
+                  label: `Entregados (${fulfilledCount})`,
+                },
+              ].map((tab) => {
+                const isSelected = activeFilter === tab.id;
+                return (
+                  <Pressable
+                    key={tab.id}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setActiveFilter(tab.id);
+                    }}
+                    style={[
+                      styles.uberFilterPill,
+                      isSelected && styles.uberFilterPillActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.uberFilterPillText,
+                        isSelected && styles.uberFilterPillTextActive,
+                      ]}
+                    >
+                      {tab.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -161,236 +182,142 @@ export const CustomerOrdersSheet: React.FC<CustomerOrdersSheetProps> = ({
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {/* Cabecera exclusiva de Pedidos (sin contaminar con datos de cuenta) */}
-            <LinearGradient
-              colors={['#191E2B', '#10131C']}
-              style={styles.ordersSummaryHero}
-            >
-              <View style={styles.ordersSummaryTextRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.ordersHeroTitle}>
-                    Historial de Pedidos
-                  </Text>
-                  <Text style={styles.ordersHeroSubtitle}>
-                    Repite tu bulto favorito en 1 toque o revisa el estado de
-                    despacho
-                  </Text>
-                </View>
-                <View style={styles.totalOrdersCircle}>
-                  <Text style={styles.totalOrdersNumber}>{orders.length}</Text>
-                  <Text style={styles.totalOrdersLabel}>Recientes</Text>
-                </View>
-              </View>
-
-              {/* Filtros rápidos: Todos | En alistamiento | Entregados */}
-              <View style={styles.filterPillsRow}>
-                {[
-                  {
-                    id: 'all' as OrderFilterType,
-                    label: `Todos (${orders.length})`,
-                  },
-                  {
-                    id: 'pending' as OrderFilterType,
-                    label: `En curso (${pendingCount})`,
-                  },
-                  {
-                    id: 'fulfilled' as OrderFilterType,
-                    label: `Entregados (${fulfilledCount})`,
-                  },
-                ].map((tab) => {
-                  const isSelected = activeFilter === tab.id;
-                  return (
-                    <Pressable
-                      key={tab.id}
-                      onPress={() => {
-                        Haptics.selectionAsync();
-                        setActiveFilter(tab.id);
-                      }}
-                      style={[
-                        styles.filterPill,
-                        isSelected && styles.filterPillActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.filterPillText,
-                          isSelected && styles.filterPillTextActive,
-                        ]}
-                      >
-                        {tab.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </LinearGradient>
-
-            {/* Lista limpia y directa de todas las tarjetas de pedidos */}
             {filteredOrders.length === 0 ? (
               <View style={styles.emptyOrdersBox}>
-                <Ionicons
-                  name="cube-outline"
-                  size={40}
-                  color={colors.dark.textMuted}
-                />
-                <Text style={styles.emptyOrdersTitle}>
-                  No hay pedidos en este filtro
-                </Text>
+                <Ionicons name="receipt-outline" size={38} color="#4B5563" />
+                <Text style={styles.emptyOrdersTitle}>Sin pedidos</Text>
                 <Text style={styles.emptyOrdersSub}>
-                  Cambia a "Todos" para ver tu historial completo de compras.
+                  No tienes pedidos en esta categoría por el momento.
                 </Text>
               </View>
             ) : (
               filteredOrders.map((order, index) => {
-                const isLatest = index === 0 && activeFilter === 'all';
+                const isFirstHero = index === 0 && activeFilter === 'all';
                 const isReordered = reorderedId === order.orderNumber;
+                const isFulfilled = order.fulfillmentStatus === 'fulfilled';
 
                 return (
-                  <View
-                    key={order.orderNumber}
-                    style={[
-                      styles.orderCard,
-                      isLatest && styles.orderCardLatest,
-                    ]}
-                  >
-                    {isLatest && (
-                      <View style={styles.latestRibbon}>
-                        <Text style={styles.latestRibbonText}>
-                          ★ PEDIDO MÁS RECIENTE
-                        </Text>
-                      </View>
+                  <View key={order.orderNumber}>
+                    {/* Encabezado de sección estilo Uber Activity */}
+                    {index === 0 && activeFilter === 'all' && (
+                      <Text style={styles.uberSectionLabel}>Más reciente</Text>
+                    )}
+                    {index === 1 && activeFilter === 'all' && (
+                      <Text style={[styles.uberSectionLabel, { marginTop: 10 }]}>
+                        Pedidos anteriores
+                      </Text>
                     )}
 
-                    <View style={styles.orderTopBar}>
-                      <View style={styles.orderBadgesWrap}>
-                        <Text style={styles.orderIdText}>
-                          Pedido #{order.orderNumber}
-                        </Text>
-
-                        {/* Estado de pago */}
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            order.financialStatus === 'pending'
-                              ? styles.badgePendingPayment
-                              : styles.badgePaid,
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.badgeDot,
-                              {
-                                backgroundColor:
-                                  order.financialStatus === 'pending'
-                                    ? '#F97316'
-                                    : '#10B981',
-                              },
-                            ]}
-                          />
-                          <Text
-                            style={[
-                              styles.statusBadgeText,
-                              {
-                                color:
-                                  order.financialStatus === 'pending'
-                                    ? '#FDBA74'
-                                    : '#6EE7B7',
-                              },
-                            ]}
-                          >
-                            {order.financialStatus === 'pending'
-                              ? 'Pago contraentrega'
-                              : 'Pagado'}
-                          </Text>
-                        </View>
-
-                        {/* Estado de entrega */}
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            order.fulfillmentStatus === 'unfulfilled'
-                              ? styles.badgeUnfulfilled
-                              : styles.badgeFulfilled,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.statusBadgeText,
-                              {
-                                color:
-                                  order.fulfillmentStatus === 'unfulfilled'
-                                    ? '#FDE047'
-                                    : '#93C5FD',
-                              },
-                            ]}
-                          >
-                            {order.fulfillmentStatus === 'unfulfilled'
-                              ? '🚚 En alistamiento'
-                              : '✓ Entregado'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <Text style={styles.orderTotalText}>
-                        {formatCOP(order.total)}
-                      </Text>
-                    </View>
-
-                    <Text style={styles.orderDateText}>
-                      🗓️ {order.createdAt} · {order.shippingMethod}
-                    </Text>
-
-                    <View style={styles.orderItemsDivider} />
-
-                    {/* Lista de productos del pedido */}
-                    {order.items.map((item, idx) => (
-                      <View key={idx} style={styles.lineItemRow}>
-                        <View style={styles.productThumb}>
-                          <Ionicons
-                            name="paw"
-                            size={18}
-                            color={colors.primary.DEFAULT}
-                          />
-                        </View>
-                        <View style={styles.lineItemInfo}>
-                          <Text style={styles.lineItemName}>{item.name}</Text>
-                          <Text style={styles.lineItemSku}>
-                            SKU #{item.sku} · {order.paymentMethod}
-                          </Text>
-                        </View>
-                        <Text style={styles.lineItemQty}>x{item.quantity}</Text>
-                        <Text style={styles.lineItemPrice}>
-                          {formatCOP(item.price)}
-                        </Text>
-                      </View>
-                    ))}
-
-                    {/* Botón de Recompra en 1 toque */}
-                    <Pressable
-                      onPress={() => handleReorder(order)}
+                    <View
                       style={[
-                        styles.reorderButton,
-                        isReordered && styles.reorderButtonSuccess,
+                        styles.uberOrderCard,
+                        !isFirstHero && styles.uberOrderCardCompact,
                       ]}
                     >
-                      <Ionicons
-                        name={
-                          isReordered ? 'checkmark-circle' : 'repeat-outline'
-                        }
-                        size={17}
-                        color={isReordered ? '#10B981' : '#050508'}
-                      />
-                      <Text
-                        style={[
-                          styles.reorderButtonText,
-                          isReordered && { color: '#10B981' },
-                        ]}
-                      >
-                        {isReordered
-                          ? '¡Agregado a tu bolsa!'
-                          : 'Volver a pedir en 1 toque'}
-                      </Text>
-                    </Pressable>
+                      {/* Fila principal: Ícono sobrio + Info + Precio y Botón Repetir */}
+                      <View style={styles.uberOrderTopRow}>
+                        <View style={styles.uberOrderIconBox}>
+                          <Ionicons
+                            name="bag-handle-outline"
+                            size={20}
+                            color="#FFFFFF"
+                          />
+                        </View>
+
+                        <View style={styles.uberOrderInfoCol}>
+                          <View style={styles.uberOrderTitleLine}>
+                            <Text
+                              style={styles.uberOrderTitle}
+                              numberOfLines={1}
+                            >
+                              {order.items[0]?.name ||
+                                `Pedido #${order.orderNumber}`}
+                            </Text>
+                          </View>
+
+                          <Text style={styles.uberOrderMetaText}>
+                            Pedido #{order.orderNumber} · {order.createdAt}
+                          </Text>
+
+                          <View style={styles.uberStatusRow}>
+                            <View
+                              style={[
+                                styles.uberStatusDot,
+                                {
+                                  backgroundColor: isFulfilled
+                                    ? '#9CA3AF'
+                                    : '#FFFFFF',
+                                },
+                              ]}
+                            />
+                            <Text style={styles.uberStatusText}>
+                              {isFulfilled ? 'Entregado' : 'En alistamiento'} ·{' '}
+                              {order.financialStatus === 'pending'
+                                ? 'Contraentrega'
+                                : 'Pagado'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.uberOrderRightCol}>
+                          <Text style={styles.uberOrderTotal}>
+                            {formatCOP(order.total)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Desglose sutil de artículos */}
+                      <View style={styles.uberItemsList}>
+                        {order.items.map((item, idx) => (
+                          <View key={idx} style={styles.uberItemLine}>
+                            <View style={styles.uberQtyBox}>
+                              <Text style={styles.uberQtyBoxText}>
+                                {item.quantity}
+                              </Text>
+                            </View>
+                            <Text
+                              style={styles.uberItemLineName}
+                              numberOfLines={1}
+                            >
+                              {item.name}
+                            </Text>
+                            <Text style={styles.uberItemLinePrice}>
+                              {formatCOP(item.price)}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+
+                      {/* Pie de tarjeta con envío y botón píldora estilo Uber ("Repetir") */}
+                      <View style={styles.uberOrderFooter}>
+                        <Text style={styles.uberShippingLabel}>
+                          {order.shippingMethod}
+                        </Text>
+
+                        <Pressable
+                          onPress={() => handleReorder(order)}
+                          style={({ pressed }) => [
+                            styles.uberRepeatPillBtn,
+                            isReordered && styles.uberRepeatPillBtnDone,
+                            pressed && { opacity: 0.8 },
+                          ]}
+                        >
+                          <Ionicons
+                            name={isReordered ? 'checkmark' : 'refresh'}
+                            size={14}
+                            color={isReordered ? '#0A0B0E' : '#FFFFFF'}
+                          />
+                          <Text
+                            style={[
+                              styles.uberRepeatPillText,
+                              isReordered && { color: '#0A0B0E' },
+                            ]}
+                          >
+                            {isReordered ? 'Agregado' : 'Repetir pedido'}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
                   </View>
                 );
               })
@@ -413,11 +340,11 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     height: '88%',
-    backgroundColor: '#07080C',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    borderTopWidth: 1.5,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
+    backgroundColor: '#0A0B0E',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
   sheetContainerExpanded: {
@@ -425,10 +352,11 @@ const styles = StyleSheet.create({
   },
   sheetHeaderBar: {
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 14,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.07)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#0A0B0E',
     zIndex: 30,
     elevation: 30,
   },
@@ -439,293 +367,221 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   dragIndicator: {
-    width: 42,
-    height: 5,
+    width: 40,
+    height: 4.5,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   dragIndicatorActive: {
-    width: 54,
-    backgroundColor: colors.primary.light,
+    width: 52,
+    backgroundColor: '#FFFFFF',
   },
   sheetTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 4,
+    marginBottom: 14,
   },
-  brandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
-  },
-  brandBadgeText: {
-    color: colors.primary.light,
-    fontSize: 11,
+  uberMainHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: 0.7,
+    letterSpacing: -0.5,
   },
   closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 35,
     elevation: 35,
   },
+  uberFilterRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  uberFilterPill: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: '#181B22',
+  },
+  uberFilterPillActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  uberFilterPillText: {
+    color: '#D1D5DB',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  uberFilterPillTextActive: {
+    color: '#0A0B0E',
+    fontWeight: '700',
+  },
   scrollArea: {
     flex: 1,
   },
   scrollContent: {
-    padding: 18,
-    gap: 14,
-  },
-  ordersSummaryHero: {
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
-  },
-  ordersSummaryTextRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
     gap: 12,
-    marginBottom: 14,
   },
-  ordersHeroTitle: {
+  uberSectionLabel: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-    marginBottom: 4,
-  },
-  ordersHeroSubtitle: {
-    color: '#9CA3AF',
-    fontSize: 12.5,
-    lineHeight: 18,
-  },
-  totalOrdersCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: 'rgba(212, 175, 55, 0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  totalOrdersNumber: {
-    color: colors.primary.light,
-    fontSize: 19,
-    fontWeight: '900',
-  },
-  totalOrdersLabel: {
-    color: '#D1D5DB',
-    fontSize: 9.5,
+    fontSize: 17,
     fontWeight: '700',
-  },
-  filterPillsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  filterPill: {
-    flex: 1,
-    paddingVertical: 9,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-  },
-  filterPillActive: {
-    backgroundColor: colors.primary.DEFAULT,
-    borderColor: colors.primary.light,
-  },
-  filterPillText: {
-    color: '#D1D5DB',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  filterPillTextActive: {
-    color: '#050508',
-    fontWeight: '900',
+    marginBottom: 10,
+    letterSpacing: -0.2,
   },
   emptyOrdersBox: {
-    paddingVertical: 40,
+    paddingVertical: 48,
     alignItems: 'center',
     gap: 8,
   },
   emptyOrdersTitle: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   emptyOrdersSub: {
-    color: '#9CA3AF',
+    color: '#6B7280',
     fontSize: 13,
     textAlign: 'center',
   },
-  orderCard: {
-    backgroundColor: '#11141E',
-    borderRadius: 20,
+  uberOrderCard: {
+    backgroundColor: '#12151C',
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  orderCardLatest: {
-    borderColor: 'rgba(212, 175, 55, 0.42)',
-    backgroundColor: '#131724',
+  uberOrderCardCompact: {
+    backgroundColor: '#0F1117',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  latestRibbon: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(212, 175, 55, 0.16)',
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 7,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
-  },
-  latestRibbonText: {
-    color: colors.primary.light,
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  orderTopBar: {
+  uberOrderTopRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 8,
+    gap: 12,
   },
-  orderBadgesWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  uberOrderIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#1C202B',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+  },
+  uberOrderInfoCol: {
     flex: 1,
   },
-  orderIdText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '900',
-    marginRight: 4,
-  },
-  statusBadge: {
+  uberOrderTitleLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
+    gap: 6,
   },
-  badgePendingPayment: {
-    backgroundColor: 'rgba(249, 115, 22, 0.12)',
-    borderColor: 'rgba(249, 115, 22, 0.35)',
+  uberOrderTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
-  badgePaid: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    borderColor: 'rgba(16, 185, 129, 0.35)',
+  uberOrderMetaText: {
+    color: '#9CA3AF',
+    fontSize: 12.5,
+    marginTop: 3,
   },
-  badgeUnfulfilled: {
-    backgroundColor: 'rgba(234, 179, 8, 0.12)',
-    borderColor: 'rgba(234, 179, 8, 0.35)',
+  uberStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 5,
   },
-  badgeFulfilled: {
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
-    borderColor: 'rgba(59, 130, 246, 0.35)',
+  uberStatusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusBadgeText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-  },
-  orderTotalText: {
-    color: colors.primary.light,
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  orderDateText: {
+  uberStatusText: {
     color: '#9CA3AF',
     fontSize: 12,
-    marginTop: 7,
+    fontWeight: '500',
   },
-  orderItemsDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    marginVertical: 12,
+  uberOrderRightCol: {
+    alignItems: 'flex-end',
   },
-  lineItemRow: {
+  uberOrderTotal: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  uberItemsList: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 8,
+  },
+  uberItemLine: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 10,
   },
-  productThumb: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+  uberQtyBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: '#1C202B',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
   },
-  lineItemInfo: {
-    flex: 1,
-  },
-  lineItemName: {
-    color: '#F3F4F6',
-    fontSize: 13,
+  uberQtyBoxText: {
+    color: '#D1D5DB',
+    fontSize: 11.5,
     fontWeight: '700',
   },
-  lineItemSku: {
-    color: '#6B7280',
-    fontSize: 11,
-    marginTop: 2,
+  uberItemLineName: {
+    flex: 1,
+    color: '#D1D5DB',
+    fontSize: 13,
+    fontWeight: '500',
   },
-  lineItemQty: {
+  uberItemLinePrice: {
     color: '#9CA3AF',
     fontSize: 12.5,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  lineItemPrice: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  reorderButton: {
-    marginTop: 6,
+  uberOrderFooter: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: 11,
-    borderRadius: 13,
+    justifyContent: 'space-between',
   },
-  reorderButtonSuccess: {
-    backgroundColor: 'rgba(16, 185, 129, 0.16)',
-    borderWidth: 1,
-    borderColor: '#10B981',
+  uberShippingLabel: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '500',
   },
-  reorderButtonText: {
-    color: '#050508',
-    fontSize: 13,
-    fontWeight: '900',
+  uberRepeatPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1E222D',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+  },
+  uberRepeatPillBtnDone: {
+    backgroundColor: '#FFFFFF',
+  },
+  uberRepeatPillText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
 });
