@@ -26,6 +26,7 @@ interface CustomerProfileSheetProps {
   onClose: () => void;
   onManageAddresses?: () => void;
   onOpenOrders?: () => void;
+  onOpenWallet?: () => void;
 }
 
 export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
@@ -33,6 +34,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
   onClose,
   onManageAddresses,
   onOpenOrders,
+  onOpenWallet,
 }) => {
   const insets = useSafeAreaInsets();
   const {
@@ -198,15 +200,26 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 </Text>
               </Pressable>
 
-              <View style={styles.uberQuickTileGold}>
-                <Ionicons name="sparkles-outline" size={22} color={colors.primary.light} />
+              <Pressable
+                onPress={() => {
+                  if (onOpenWallet) {
+                    Haptics.selectionAsync();
+                    onOpenWallet();
+                  }
+                }}
+                style={({ pressed }) => [
+                  styles.uberQuickTileGold,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Ionicons name="wallet-outline" size={22} color={colors.primary.light} />
                 <Text style={styles.uberQuickTileTitle}>
                   {profileData.points} Coins
                 </Text>
                 <Text style={styles.uberQuickTileSubGold}>
-                  {formatCOP(profileData.totalSpent ?? 8721100)}
+                  Ver Billetera ›
                 </Text>
-              </View>
+              </Pressable>
             </View>
 
             {/* SECCIÓN: CONTACTO Y DIRECCIÓN DE ENTREGA */}

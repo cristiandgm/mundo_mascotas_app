@@ -26,8 +26,10 @@ import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { InboxModal } from '../components/InboxModal';
 import { BrandDnaModal, FoodBrandName } from '../components/BrandDnaModal';
+import { ConsenticoinsWalletModal } from '../components/ConsenticoinsWalletModal';
 import {
   useAuth,
+  COIN_VALUE_COP,
   PetStageType,
   PetActivityType,
   PetSensitivityType,
@@ -664,6 +666,8 @@ export const HomeScreen: React.FC = () => {
     addPet,
     updatePet,
     deletePet,
+    addCoins,
+    redeemCoins,
   } = useAuth();
   const insets = useSafeAreaInsets();
   const [profileVisible, setProfileVisible] = useState(false);
@@ -671,6 +675,8 @@ export const HomeScreen: React.FC = () => {
   const [cartModalVisible, setCartModalVisible] = useState(false);
   const [addressSheetVisible, setAddressSheetVisible] = useState(false);
   const [inboxVisible, setInboxVisible] = useState(false);
+  const [walletVisible, setWalletVisible] = useState(false);
+  const [applyCoinsInCart, setApplyCoinsInCart] = useState(false);
 
   // Vista especializada de ADN de Marca (Diamond Naturals, Taste of the Wild, Acana, Orijen)
   const [activeBrandDna, setActiveBrandDna] = useState<FoodBrandName | null>(
@@ -1129,16 +1135,31 @@ export const HomeScreen: React.FC = () => {
     const estimatedCarrierFee =
       deliveryZone === 'bogota' ? 0 : Math.max(18000, Math.round(totalWeightLb * 850));
 
+    const availableCoins = user ? user.points : 0;
+    const maxRedeemableCoins = Math.min(
+      availableCoins,
+      Math.floor((subtotal + estimatedCarrierFee) / COIN_VALUE_COP)
+    );
+    const coinsToRedeem =
+      user && applyCoinsInCart ? maxRedeemableCoins : 0;
+    const coinsDiscountCop = coinsToRedeem * COIN_VALUE_COP;
+
     return {
       totalItems,
       subtotal,
       totalWeightLb,
       totalCoins,
       estimatedCarrierFee,
-      totalWithShipping: subtotal + estimatedCarrierFee,
+      availableCoins,
+      coinsToRedeem,
+      coinsDiscountCop,
+      totalWithShipping: Math.max(
+        0,
+        subtotal + estimatedCarrierFee - coinsDiscountCop
+      ),
       itemsList,
     };
-  }, [cart, deliveryZone]);
+  }, [cart, deliveryZone, user, applyCoinsInCart]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -2087,27 +2108,59 @@ export const HomeScreen: React.FC = () => {
               contentContainerStyle={styles.uberHorizontalCardsScroll}
             >
               <Pressable
-                onPress={handleAccountAccess}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setWalletVisible(true);
+                }}
                 style={styles.uberPromoWideCard}
               >
                 <LinearGradient
-                  colors={['#C69214', '#D4AF37', '#8A5A10']}
+                  colors={['#261F10', '#161922', '#0E1016']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.uberPromoVisual}
+                  style={[
+                    styles.uberPromoVisual,
+                    {
+                      borderWidth: 1,
+                      borderColor: 'rgba(212, 175, 55, 0.45)',
+                    },
+                  ]}
                 >
-                  <View style={styles.uberPromoBadge}>
-                    <Text style={styles.uberPromoBadgeText}>CLUB VIP</Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <View style={styles.uberPromoBadge}>
+                      <Text style={styles.uberPromoBadgeText}>
+                        CONSENTICOINS CASH
+                      </Text>
+                    </View>
+                    <Text
+                      style={{
+                        color: colors.primary.light,
+                        fontSize: 11,
+                        fontWeight: '800',
+                      }}
+                    >
+                      = {formatCOP((user?.points ?? 250) * COIN_VALUE_COP)}
+                    </Text>
                   </View>
                   <Text style={styles.uberPromoBigCoins}>
                     {user?.points ?? 250} COINS 🪙
                   </Text>
                 </LinearGradient>
-                <Text style={styles.uberCardTitle}>Billetera Consenticoins</Text>
+                <Text style={styles.uberCardTitle}>
+                  Billetera Consenticoins ›
+                </Text>
                 <Text style={styles.uberCardSubtitle}>
                   {user
-                    ? `Hola ${user.name}, redime tus monedas en tu próximo bulto`
-                    : 'Inicia sesión y recibe 250 Consenticoins de regalo'}
+                    ? `Saldo disponible: ${formatCOP(
+                        user.points * COIN_VALUE_COP
+                      )} · Extracto y Bóveda`
+                    : 'Bono de 250 Coins ($ 5.000) listo para activar'}
                 </Text>
               </Pressable>
 
@@ -3552,6 +3605,104 @@ export const HomeScreen: React.FC = () => {
                     </View>
                   ))}
 
+                  {/* Selector estilo Uber Cash para usar Consenticoins en la Bolsa */}
+                  <View style={styles.cartZoneBox}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                      }}
+                    >
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setCartModalVisible(false);
+                          setTimeout(() => setWalletVisible(true), 200);
+                        }}
+                        style={{ flex: 1 }}
+                      >
+                        <Text style={styles.cartZoneLabel}>
+                          🪙 BILLETERA CONSENTICOINS CASH
+                        </Text>
+                        <Text
+                          style={{
+                            color: '#FFFFFF',
+                            fontSize: 13.5,
+                            fontWeight: '800',
+                            marginTop: 2,
+                          }}
+                        >
+                          {user
+                            ? `Saldo: ${user.points} Coins (${formatCOP(
+                                user.points * COIN_VALUE_COP
+                              )})`
+                            : 'Tienes 250 Coins ($ 5.000) de bienvenida'}
+                        </Text>
+                        <Text
+                          style={{
+                            color: colors.primary.light,
+                            fontSize: 11.5,
+                            fontWeight: '700',
+                            marginTop: 2,
+                          }}
+                        >
+                          Ver extracto y bóveda de premios ›
+                        </Text>
+                      </Pressable>
+
+                      {user && user.points > 0 ? (
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setApplyCoinsInCart((prev) => !prev);
+                          }}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 5,
+                            backgroundColor: applyCoinsInCart
+                              ? colors.primary.DEFAULT
+                              : '#181B22',
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderRadius: 14,
+                            borderWidth: 1,
+                            borderColor: applyCoinsInCart
+                              ? colors.primary.light
+                              : 'rgba(212, 175, 55, 0.35)',
+                          }}
+                        >
+                          <Ionicons
+                            name={
+                              applyCoinsInCart
+                                ? 'checkmark-circle'
+                                : 'ellipse-outline'
+                            }
+                            size={16}
+                            color={
+                              applyCoinsInCart
+                                ? '#050508'
+                                : colors.primary.light
+                            }
+                          />
+                          <Text
+                            style={{
+                              color: applyCoinsInCart
+                                ? '#050508'
+                                : colors.primary.light,
+                              fontSize: 12,
+                              fontWeight: '900',
+                            }}
+                          >
+                            {applyCoinsInCart ? 'Aplicado' : 'Usar saldo'}
+                          </Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
+
                   {/* Desglose de Costos */}
                   <View style={styles.costBreakdownCard}>
                     <View style={styles.costRow}>
@@ -3587,6 +3738,28 @@ export const HomeScreen: React.FC = () => {
                       </Text>
                     </View>
 
+                    {cartSummary.coinsDiscountCop > 0 && (
+                      <View style={styles.costRow}>
+                        <Text
+                          style={[
+                            styles.costLabel,
+                            { color: colors.primary.light, fontWeight: '700' },
+                          ]}
+                        >
+                          Redención Consenticoins (-{cartSummary.coinsToRedeem}{' '}
+                          🪙)
+                        </Text>
+                        <Text
+                          style={[
+                            styles.costValue,
+                            { color: colors.primary.light, fontWeight: '900' },
+                          ]}
+                        >
+                          - {formatCOP(cartSummary.coinsDiscountCop)}
+                        </Text>
+                      </View>
+                    )}
+
                     <View style={styles.costRow}>
                       <Text style={styles.costLabel}>Consenticoins a ganar</Text>
                       <Text style={[styles.costValue, { color: colors.primary.light }]}>
@@ -3615,7 +3788,8 @@ export const HomeScreen: React.FC = () => {
                         ¡Pedido listo!{' '}
                         {deliveryZone === 'bogota'
                           ? 'Domicilio Gratis en Bogotá confirmado.'
-                          : 'Incluye guía de transportadora nacional.'}
+                          : 'Incluye guía de transportadora nacional.'}{' '}
+                        (+{cartSummary.totalCoins} Coins abonados)
                       </Text>
                     </View>
                   ) : (
@@ -3630,6 +3804,22 @@ export const HomeScreen: React.FC = () => {
                         Haptics.notificationAsync(
                           Haptics.NotificationFeedbackType.Success
                         );
+                        if (cartSummary.coinsToRedeem > 0) {
+                          redeemCoins(
+                            cartSummary.coinsToRedeem,
+                            'Redención en Bolsa · Descuento en Pedido',
+                            `Aplicado en compra de ${cartSummary.totalItems} ítem(s)`
+                          );
+                        }
+                        if (cartSummary.totalCoins > 0) {
+                          addCoins(
+                            cartSummary.totalCoins,
+                            `Cashback · Pedido de ${cartSummary.totalItems} ítem(s)`,
+                            `Abono automático en Billetera Consenticoins`,
+                            'cashback'
+                          );
+                        }
+                        setApplyCoinsInCart(false);
                         setOrderSuccessToast(true);
                         setTimeout(() => {
                           setOrderSuccessToast(false);
@@ -3695,6 +3885,24 @@ export const HomeScreen: React.FC = () => {
         onOpenOrders={() => {
           setProfileVisible(false);
           setTimeout(() => setOrdersVisible(true), 220);
+        }}
+        onOpenWallet={() => {
+          setProfileVisible(false);
+          setTimeout(() => setWalletVisible(true), 220);
+        }}
+      />
+
+      {/* Billetera Bancaria Consenticoins Cash (Extracto, Tarjeta Metálica y Bóveda de Canje) */}
+      <ConsenticoinsWalletModal
+        visible={walletVisible}
+        onClose={() => setWalletVisible(false)}
+        applyCoinsInCart={applyCoinsInCart}
+        onToggleApplyCoinsInCart={(val) => setApplyCoinsInCart(val)}
+        onOpenCartWithCoins={() => {
+          setCartModalVisible(true);
+        }}
+        onRedeemFreeProduct={(prodId) => {
+          handleAddToCart(prodId);
         }}
       />
 

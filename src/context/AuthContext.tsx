@@ -68,6 +68,21 @@ export interface CustomerBillingInfo {
   petNotes?: string;
 }
 
+// Tasa oficial del Banco de Puntos Mundo Mascotas: 1 Consenticoin = $20 COP
+export const COIN_VALUE_COP = 20;
+
+export interface CoinTransaction {
+  id: string;
+  type: 'earn' | 'redeem';
+  category: 'cashback' | 'bonus' | 'mission' | 'redemption';
+  title: string;
+  subtitle: string;
+  coins: number;
+  copEquivalent: number;
+  date: string;
+  reference?: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -116,6 +131,27 @@ interface AuthContextType {
   loginAsDemoCustomer: () => void;
   updateBillingInfo: (updates: Partial<CustomerBillingInfo>) => void;
   updatePetInfo: (petName: string, petType: PetCategory) => void;
+  coinTransactions: CoinTransaction[];
+  claimedMissions: string[];
+  addCoins: (
+    coins: number,
+    title: string,
+    subtitle: string,
+    category?: CoinTransaction['category'],
+    reference?: string
+  ) => void;
+  redeemCoins: (
+    coins: number,
+    title: string,
+    subtitle: string,
+    reference?: string
+  ) => boolean;
+  claimMission: (
+    missionId: string,
+    coins: number,
+    title: string,
+    subtitle: string
+  ) => boolean;
   register: (
     name: string,
     email: string,
@@ -125,6 +161,87 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
+
+// Extracto bancario inicial de Consenticoins sincronizado con los pedidos reales del cliente VIP
+export const INITIAL_COIN_TRANSACTIONS: CoinTransaction[] = [
+  {
+    id: 'tx_59547',
+    type: 'earn',
+    category: 'cashback',
+    title: 'Cashback · Diamond Naturals Lamb & Rice 40 LB',
+    subtitle: 'Abono automático por compra · Pedido #59547',
+    coins: 289,
+    copEquivalent: 289 * COIN_VALUE_COP,
+    date: '4 nov 2026 · 6:47 p. m.',
+    reference: '#59547',
+  },
+  {
+    id: 'tx_58756',
+    type: 'earn',
+    category: 'cashback',
+    title: 'Cashback · Taste of the Wild High Prairie + Light',
+    subtitle: 'Abono automático por 2 bultos · Pedido #58756',
+    coins: 612,
+    copEquivalent: 612 * COIN_VALUE_COP,
+    date: '5 oct 2026 · 8:35 a. m.',
+    reference: '#58756',
+  },
+  {
+    id: 'tx_redeem_1',
+    type: 'redeem',
+    category: 'redemption',
+    title: 'Redención en Bolsa · Bono de Descuento VIP',
+    subtitle: 'Aplicado al pagar en efectivo · Pedido #57886',
+    coins: 450,
+    copEquivalent: 450 * COIN_VALUE_COP,
+    date: '4 sep 2026 · 8:50 p. m.',
+    reference: 'CANJE-886',
+  },
+  {
+    id: 'tx_57886',
+    type: 'earn',
+    category: 'cashback',
+    title: 'Cashback · Diamond Naturals Lamb & Rice 40 LB',
+    subtitle: 'Abono automático por compra · Pedido #57886',
+    coins: 289,
+    copEquivalent: 289 * COIN_VALUE_COP,
+    date: '4 sep 2026 · 8:49 p. m.',
+    reference: '#57886',
+  },
+  {
+    id: 'tx_57173',
+    type: 'earn',
+    category: 'cashback',
+    title: 'Cashback · Diamond Naturals Skin & Coat 30 LB',
+    subtitle: 'Abono automático por compra · Pedido #57173',
+    coins: 290,
+    copEquivalent: 290 * COIN_VALUE_COP,
+    date: '11 ago 2026 · 8:07 p. m.',
+    reference: '#57173',
+  },
+  {
+    id: 'tx_redeem_2',
+    type: 'redeem',
+    category: 'redemption',
+    title: 'Canje Bóveda · Snacks Cremosos Salmón & Atún',
+    subtitle: 'Premio 100% gratis con Consenticoins',
+    coins: 410,
+    copEquivalent: 410 * COIN_VALUE_COP,
+    date: '20 jul 2026 · 4:15 p. m.',
+    reference: 'BÓVEDA-410',
+  },
+  {
+    id: 'tx_welcome',
+    type: 'earn',
+    category: 'bonus',
+    title: 'Bono de Apertura · Billetera Club Consentidos',
+    subtitle: 'Regalo de bienvenida Mundo Mascotas Colombia',
+    coins: 250,
+    copEquivalent: 250 * COIN_VALUE_COP,
+    date: '15 jul 2026 · 9:10 p. m.',
+    reference: 'WELCOME-250',
+  },
+];
 
 // Mascotas iniciales del cliente VIP
 export const INITIAL_PETS: PetProfile[] = [
@@ -330,6 +447,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Lista de mascotas del cliente (personaliza Tienda y Quiz Biológico)
   const [pets, setPets] = useState<PetProfile[]>(INITIAL_PETS);
   const [activePetId, setActivePetId] = useState<string>(INITIAL_PETS[0].id);
+
+  // Billetera Bancaria Consenticoins: movimientos y misiones reclamadas
+  const [coinTransactions, setCoinTransactions] = useState<CoinTransaction[]>(
+    INITIAL_COIN_TRANSACTIONS
+  );
+  const [claimedMissions, setClaimedMissions] = useState<string[]>([]);
 
   const activePet = pets.find((p) => p.id === activePetId) || pets[0];
 
@@ -641,6 +764,76 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
+  const addCoins = (
+    coins: number,
+    title: string,
+    subtitle: string,
+    category: CoinTransaction['category'] = 'cashback',
+    reference?: string
+  ) => {
+    if (coins <= 0) return;
+    const newTx: CoinTransaction = {
+      id: 'tx_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      type: 'earn',
+      category,
+      title,
+      subtitle,
+      coins,
+      copEquivalent: coins * COIN_VALUE_COP,
+      date: 'Hoy · Ahora mismo',
+      reference: reference || `ABONO-${Math.floor(100 + Math.random() * 900)}`,
+    };
+    setCoinTransactions((prev) => [newTx, ...prev]);
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        points: prev.points + coins,
+      };
+    });
+  };
+
+  const redeemCoins = (
+    coins: number,
+    title: string,
+    subtitle: string,
+    reference?: string
+  ): boolean => {
+    if (!user || coins <= 0 || user.points < coins) return false;
+    const newTx: CoinTransaction = {
+      id: 'tx_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      type: 'redeem',
+      category: 'redemption',
+      title,
+      subtitle,
+      coins,
+      copEquivalent: coins * COIN_VALUE_COP,
+      date: 'Hoy · Ahora mismo',
+      reference: reference || `CANJE-${Math.floor(100 + Math.random() * 900)}`,
+    };
+    setCoinTransactions((prev) => [newTx, ...prev]);
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        points: Math.max(0, prev.points - coins),
+      };
+    });
+    return true;
+  };
+
+  const claimMission = (
+    missionId: string,
+    coins: number,
+    title: string,
+    subtitle: string
+  ): boolean => {
+    if (!user || claimedMissions.includes(missionId)) return false;
+    setClaimedMissions((prev) => [...prev, missionId]);
+    addCoins(coins, title, subtitle, 'mission', `MISIÓN-${missionId.toUpperCase()}`);
+    return true;
+  };
+
   const register = async (
     name: string,
     email: string,
@@ -716,6 +909,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loginAsDemoCustomer,
         updateBillingInfo,
         updatePetInfo,
+        coinTransactions,
+        claimedMissions,
+        addCoins,
+        redeemCoins,
+        claimMission,
         register,
         logout,
       }}
