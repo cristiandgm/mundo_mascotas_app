@@ -702,13 +702,23 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
-  // Zona derivada automáticamente de la dirección seleccionada por el cliente
-  const deliveryZone: DeliveryZoneType = selectedAddress.isBogota
-    ? 'bogota'
-    : 'nacional';
+  // Zona derivada automáticamente de la dirección seleccionada por el cliente (en modo invitado asume cobertura Bogotá de referencia)
+  const deliveryZone: DeliveryZoneType = user
+    ? selectedAddress.isBogota
+      ? 'bogota'
+      : 'nacional'
+    : 'bogota';
 
-  // Especie exclusiva sincronizada con la mascota activa seleccionada en "Mascota(s)"
-  const activeSpecies: 'dog' | 'cat' = activePet.species;
+  // Especie en modo invitado (permite alternar entre Perro y Gato sin tener cuenta aún)
+  const [guestSpecies, setGuestSpecies] = useState<'dog' | 'cat'>('dog');
+
+  // Especie exclusiva sincronizada con la mascota activa (o la elegida por el invitado)
+  const activeSpecies: 'dog' | 'cat' = user ? activePet.species : guestSpecies;
+  const displayPetName: string = user
+    ? activePet.name
+    : activeSpecies === 'cat'
+    ? 'tu Gato'
+    : 'tu Perro';
 
   // Las 3 pestañas superiores principales: 1. Tienda | 2. Quiz Biológico | 3. Mascota(s)
   const [mainTopTab, setMainTopTab] = useState<MainTopTabType>('store');
@@ -849,7 +859,11 @@ export const HomeScreen: React.FC = () => {
 
   const handleToggleZone = () => {
     Haptics.selectionAsync();
-    setAddressSheetVisible(true);
+    if (user) {
+      setAddressSheetVisible(true);
+    } else {
+      openAuthModal('login');
+    }
   };
 
   const handleAccountAccess = () => {
@@ -1228,10 +1242,12 @@ export const HomeScreen: React.FC = () => {
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            setQuizStage(activePet.ageStage);
-            setQuizActivity(activePet.activityLevel);
-            setQuizSensitivity(activePet.sensitivity);
-            setQuizWeightKg(activePet.weightKg);
+            if (user) {
+              setQuizStage(activePet.ageStage);
+              setQuizActivity(activePet.activityLevel);
+              setQuizSensitivity(activePet.sensitivity);
+              setQuizWeightKg(activePet.weightKg);
+            }
             setMainTopTab('quiz');
           }}
           style={[styles.uberTabItem, { flex: 1.35 }]}
@@ -1269,7 +1285,7 @@ export const HomeScreen: React.FC = () => {
               mainTopTab === 'pets' && styles.uberTabTextActive,
             ]}
           >
-            {pets.length > 1 ? `Mascotas (${pets.length})` : 'Mascota(s)'}
+            {user && pets.length > 1 ? `Mascotas (${pets.length})` : 'Mascota(s)'}
           </Text>
           {mainTopTab === 'pets' && (
             <View style={styles.uberTabActiveIndicator} />
@@ -1310,7 +1326,7 @@ export const HomeScreen: React.FC = () => {
                   ref={searchInputRef}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  placeholder={`¿Qué ${activeCategoryMeta.placeholderNoun} busca ${activePet.name}?`}
+                  placeholder={`¿Qué ${activeCategoryMeta.placeholderNoun} busca ${displayPetName}?`}
                   placeholderTextColor="#9CA3AF"
                   style={styles.uberSearchInput}
                   underlineColorAndroid="transparent"
@@ -1389,7 +1405,7 @@ export const HomeScreen: React.FC = () => {
                 >
                   <View style={styles.categoryMenuHeaderRow}>
                     <Text style={styles.categoryMenuHeaderText}>
-                      ¿Qué deseas buscar para {activePet.name}{' '}
+                      ¿Qué deseas buscar para {displayPetName}{' '}
                       {activeSpecies === 'cat' ? '🐱' : '🐶'}?
                     </Text>
                     <Pressable onPress={toggleCategoryMenu} hitSlop={8}>
@@ -1641,13 +1657,13 @@ export const HomeScreen: React.FC = () => {
               </View>
             )}
 
-            {/* 4. UBER RECENT / QUICK REORDER STACKED CARD */}
+            {/* 4. UBER RECENT (CON SESIÓN) O MÁS PEDIDOS DESTACADOS (MODO INVITADO) */}
             <View style={styles.uberRecentCard}>
               {recentQuickItems.map((item, idx) => (
                 <React.Fragment key={item.id}>
                   {idx > 0 && <View style={styles.uberRecentDivider} />}
                   <Pressable
-                    onPress={() => handleAddToCart(item.id)}
+                    onPress={() => openProductDetail(item)}
                     style={({ pressed }) => [
                       styles.uberRecentRow,
                       pressed && {
@@ -1656,7 +1672,11 @@ export const HomeScreen: React.FC = () => {
                     ]}
                   >
                     <View style={styles.uberClockIconBox}>
-                      <Ionicons name="time-outline" size={20} color="#D1D5DB" />
+                      <Ionicons
+                        name={user ? 'time-outline' : 'flame-outline'}
+                        size={20}
+                        color={user ? '#D1D5DB' : colors.primary.light}
+                      />
                     </View>
                     <View style={styles.uberRecentTextCol}>
                       <Text style={styles.uberRecentTitle} numberOfLines={1}>
@@ -1664,9 +1684,11 @@ export const HomeScreen: React.FC = () => {
                       </Text>
                       <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
                         {formatCOP(item.price)} ·{' '}
-                        {deliveryZone === 'bogota'
-                          ? 'Domicilio Gratis en Bogotá'
-                          : `+${item.coins} Consenticoins`}
+                        {user
+                          ? deliveryZone === 'bogota'
+                            ? 'Domicilio Gratis en Bogotá'
+                            : `+${item.coins} Consenticoins`
+                          : '🔥 Favorito en Mundo Mascotas'}
                       </Text>
                     </View>
                     <Ionicons
@@ -1689,7 +1711,7 @@ export const HomeScreen: React.FC = () => {
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
               >
                 <Text style={styles.uberSectionTitle}>
-                  Para {activePet.name}{' '}
+                  Para {displayPetName}{' '}
                   {activeSpecies === 'cat' ? '🐱' : '🐶'}
                 </Text>
                 <View style={styles.uberSmallArrowCircle}>
@@ -1768,13 +1790,13 @@ export const HomeScreen: React.FC = () => {
             <View style={styles.uberSectionHeader}>
               <Text style={styles.uberSectionTitle}>
                 {selectedSearchCategory === 'humedo'
-                  ? `🥫 Alimento Húmedo para ${activePet.name}`
+                  ? `🥫 Alimento Húmedo para ${displayPetName}`
                   : selectedSearchCategory === 'snacks'
-                  ? `🦴 Snacks y Premios para ${activePet.name}`
+                  ? `🦴 Snacks y Premios para ${displayPetName}`
                   : selectedSearchCategory === 'medicamentos'
-                  ? `💊 Medicamentos y Salud para ${activePet.name}`
+                  ? `💊 Medicamentos y Salud para ${displayPetName}`
                   : selectedSearchCategory === 'todo'
-                  ? `✨ Todo el catálogo para ${activePet.name}`
+                  ? `✨ Todo el catálogo para ${displayPetName}`
                   : selectedBrand === 'Todas'
                   ? activeSpecies === 'cat'
                     ? 'Bultos Super Premium Gatos'
@@ -1804,64 +1826,68 @@ export const HomeScreen: React.FC = () => {
                 const qty = cart[product.id] || 0;
                 return (
                   <View key={product.id} style={styles.uberFeatureCard}>
-                    <LinearGradient
-                      colors={['#1A1E2E', '#10131C']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.uberCardGraphicArea}
-                    >
-                      <View style={styles.uberCardTopBadges}>
-                        <View style={styles.uberBrandBadge}>
-                          <Text style={styles.uberBrandBadgeText}>
-                            {product.brand}
-                          </Text>
+                    <Pressable onPress={() => openProductDetail(product)}>
+                      <LinearGradient
+                        colors={['#1A1E2E', '#10131C']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.uberCardGraphicArea}
+                      >
+                        <View style={styles.uberCardTopBadges}>
+                          <View style={styles.uberBrandBadge}>
+                            <Text style={styles.uberBrandBadgeText}>
+                              {product.brand}
+                            </Text>
+                          </View>
+                          <View style={styles.uberWeightPill}>
+                            <Text style={styles.uberWeightPillText}>
+                              {product.unitLabel || `${product.weightLb} LB`}
+                            </Text>
+                          </View>
                         </View>
-                        <View style={styles.uberWeightPill}>
-                          <Text style={styles.uberWeightPillText}>
-                            {product.unitLabel || `${product.weightLb} LB`}
-                          </Text>
-                        </View>
-                      </View>
 
-                      <View style={styles.uberCardVisualCenter}>
-                        <View
-                          style={[
-                            styles.bagIllustrationCircle,
-                            { borderColor: `${product.accentColor}55` },
-                          ]}
-                        >
-                          <Text style={{ fontSize: 34 }}>
-                            {product.subFilter === 'medicamentos'
-                              ? '💊'
-                              : product.subFilter === 'humedos'
-                              ? '🥫'
-                              : product.subFilter === 'premios'
-                              ? '🦴'
-                              : product.subFilter === 'higiene'
-                              ? '🧼'
-                              : product.petType === 'cat'
-                              ? '🐱'
-                              : '🐶'}
+                        <View style={styles.uberCardVisualCenter}>
+                          <View
+                            style={[
+                              styles.bagIllustrationCircle,
+                              { borderColor: `${product.accentColor}55` },
+                            ]}
+                          >
+                            <Text style={{ fontSize: 34 }}>
+                              {product.subFilter === 'medicamentos'
+                                ? '💊'
+                                : product.subFilter === 'humedos'
+                                ? '🥫'
+                                : product.subFilter === 'premios'
+                                ? '🦴'
+                                : product.subFilter === 'higiene'
+                                ? '🧼'
+                                : product.petType === 'cat'
+                                ? '🐱'
+                                : '🐶'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.uberCardBottomTag}>
+                          <Text style={styles.uberCardBottomTagText}>
+                            {deliveryZone === 'bogota'
+                              ? '🚚 Domicilio Gratis Bogotá'
+                              : '📦 + Recargo transportadora'}
                           </Text>
                         </View>
-                      </View>
-
-                      <View style={styles.uberCardBottomTag}>
-                        <Text style={styles.uberCardBottomTagText}>
-                          {deliveryZone === 'bogota'
-                            ? '🚚 Domicilio Gratis Bogotá'
-                            : '📦 + Recargo transportadora'}
-                        </Text>
-                      </View>
-                    </LinearGradient>
+                      </LinearGradient>
+                    </Pressable>
 
                     <View style={styles.uberCardBody}>
-                      <Text style={styles.uberCardTitle} numberOfLines={1}>
-                        {product.name}
-                      </Text>
-                      <Text style={styles.uberCardSubtitle} numberOfLines={1}>
-                        {product.protein} · +{product.coins} Coins
-                      </Text>
+                      <Pressable onPress={() => openProductDetail(product)}>
+                        <Text style={styles.uberCardTitle} numberOfLines={1}>
+                          {product.name}
+                        </Text>
+                        <Text style={styles.uberCardSubtitle} numberOfLines={1}>
+                          {product.protein} · +{product.coins} Coins
+                        </Text>
+                      </Pressable>
 
                       <View style={styles.uberCardPriceRow}>
                         <Text style={styles.uberCardPrice}>
@@ -1911,8 +1937,8 @@ export const HomeScreen: React.FC = () => {
             <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
               <Text style={styles.uberSectionTitle}>
                 {activeSpecies === 'cat'
-                  ? `Húmedos y Arena para ${activePet.name}`
-                  : `Premios y Húmedos para ${activePet.name}`}
+                  ? `Húmedos y Arena para ${displayPetName}`
+                  : `Premios y Húmedos para ${displayPetName}`}
               </Text>
             </View>
 
@@ -1925,56 +1951,60 @@ export const HomeScreen: React.FC = () => {
                 const qty = cart[product.id] || 0;
                 return (
                   <View key={product.id} style={styles.uberFeatureCard}>
-                    <LinearGradient
-                      colors={['#171F2C', '#0F141D']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.uberCardGraphicArea}
-                    >
-                      <View style={styles.uberCardTopBadges}>
-                        <View style={styles.uberBrandBadge}>
-                          <Text style={styles.uberBrandBadgeText}>
-                            {product.brand}
-                          </Text>
+                    <Pressable onPress={() => openProductDetail(product)}>
+                      <LinearGradient
+                        colors={['#171F2C', '#0F141D']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.uberCardGraphicArea}
+                      >
+                        <View style={styles.uberCardTopBadges}>
+                          <View style={styles.uberBrandBadge}>
+                            <Text style={styles.uberBrandBadgeText}>
+                              {product.brand}
+                            </Text>
+                          </View>
+                          <View style={styles.uberWeightPill}>
+                            <Text style={styles.uberWeightPillText}>
+                              {product.unitLabel || `${product.weightLb} LB`}
+                            </Text>
+                          </View>
                         </View>
-                        <View style={styles.uberWeightPill}>
-                          <Text style={styles.uberWeightPillText}>
-                            {product.unitLabel || `${product.weightLb} LB`}
-                          </Text>
-                        </View>
-                      </View>
 
-                      <View style={styles.uberCardVisualCenter}>
-                        <View
-                          style={[
-                            styles.bagIllustrationCircle,
-                            { borderColor: `${product.accentColor}55` },
-                          ]}
-                        >
-                          <Text style={{ fontSize: 32 }}>
-                            {product.subFilter === 'humedos'
-                              ? '🥫'
-                              : product.subFilter === 'higiene'
-                              ? '🧼'
-                              : '🦴'}
+                        <View style={styles.uberCardVisualCenter}>
+                          <View
+                            style={[
+                              styles.bagIllustrationCircle,
+                              { borderColor: `${product.accentColor}55` },
+                            ]}
+                          >
+                            <Text style={{ fontSize: 32 }}>
+                              {product.subFilter === 'humedos'
+                                ? '🥫'
+                                : product.subFilter === 'higiene'
+                                ? '🧼'
+                                : '🦴'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.uberCardBottomTag}>
+                          <Text style={styles.uberCardBottomTagText}>
+                            {product.stage}
                           </Text>
                         </View>
-                      </View>
-
-                      <View style={styles.uberCardBottomTag}>
-                        <Text style={styles.uberCardBottomTagText}>
-                          {product.stage}
-                        </Text>
-                      </View>
-                    </LinearGradient>
+                      </LinearGradient>
+                    </Pressable>
 
                     <View style={styles.uberCardBody}>
-                      <Text style={styles.uberCardTitle} numberOfLines={1}>
-                        {product.name}
-                      </Text>
-                      <Text style={styles.uberCardSubtitle} numberOfLines={1}>
-                        {product.protein} · +{product.coins} Coins
-                      </Text>
+                      <Pressable onPress={() => openProductDetail(product)}>
+                        <Text style={styles.uberCardTitle} numberOfLines={1}>
+                          {product.name}
+                        </Text>
+                        <Text style={styles.uberCardSubtitle} numberOfLines={1}>
+                          {product.protein} · +{product.coins} Coins
+                        </Text>
+                      </Pressable>
 
                       <View style={styles.uberCardPriceRow}>
                         <Text style={styles.uberCardPrice}>
@@ -2108,16 +2138,27 @@ export const HomeScreen: React.FC = () => {
                   </Text>
                 </View>
                 <Pressable
-                  onPress={() => setMainTopTab('pets')}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    if (user) {
+                      setMainTopTab('pets');
+                    } else {
+                      const nextSp = activeSpecies === 'dog' ? 'cat' : 'dog';
+                      setGuestSpecies(nextSp);
+                      setQuizWeightKg(nextSp === 'cat' ? 4.5 : 20);
+                    }
+                  }}
                   style={styles.quizSwitchPetPill}
                 >
                   <Text style={styles.quizSwitchPetText}>
-                    {activeSpecies === 'cat' ? '🐱' : '🐶'} {activePet.name} ⌄
+                    {user
+                      ? `${activeSpecies === 'cat' ? '🐱' : '🐶'} ${activePet.name} ⌄`
+                      : `${activeSpecies === 'cat' ? '🐱 Modo Gato' : '🐶 Modo Perro'} ⇄`}
                   </Text>
                 </Pressable>
               </View>
               <Text style={styles.quizHeroTitle}>
-                Fórmula Biológica Ideal para {activePet.name}
+                Fórmula Biológica Ideal para {displayPetName}
               </Text>
               <Text style={styles.quizHeroSub}>
                 Responde estos 4 parámetros para calcular la proteína exacta, los
@@ -2393,6 +2434,11 @@ export const HomeScreen: React.FC = () => {
 
                 <Pressable
                   onPress={() => {
+                    if (!user) {
+                      Haptics.selectionAsync();
+                      openAuthModal('login');
+                      return;
+                    }
                     Haptics.notificationAsync(
                       Haptics.NotificationFeedbackType.Success
                     );
@@ -2409,7 +2455,9 @@ export const HomeScreen: React.FC = () => {
                   style={styles.quizSecondarySaveBtn}
                 >
                   <Text style={styles.quizSecondarySaveText}>
-                    {quizSavedToast
+                    {!user
+                      ? '🔒 Inicia sesión para guardar este diagnóstico en tu perfil'
+                      : quizSavedToast
                       ? `✓ Guardado en la ficha de ${activePet.name}`
                       : `Guardar diagnóstico en el perfil de ${activePet.name}`}
                   </Text>
@@ -2424,399 +2472,538 @@ export const HomeScreen: React.FC = () => {
         {/* ===================================================================================== */}
         {mainTopTab === 'pets' && (
           <View style={styles.petsSectionWrapper}>
-            {/* Botón de primeras: Agregar otra mascota */}
-            {!isAddingPet ? (
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setIsAddingPet(true);
-                }}
-                style={styles.addNewPetTopBtn}
-              >
-                <View style={styles.addNewPetPlusCircle}>
-                  <Ionicons name="add" size={20} color="#050508" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.addNewPetTitle}>
-                    Agregar otra mascota (Perro o Gato)
-                  </Text>
-                  <Text style={styles.addNewPetSub}>
-                    Personaliza la Tienda y el Quiz Biológico para cada una
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={colors.primary.light}
-                />
-              </Pressable>
-            ) : (
-              /* Formulario interno para crear una nueva mascota */
-              <View style={styles.newPetFormCard}>
-                <View style={styles.newPetFormHeader}>
-                  <Text style={styles.newPetFormTitle}>
-                    Registrar nueva mascota
-                  </Text>
-                  <Pressable
-                    onPress={() => setIsAddingPet(false)}
-                    hitSlop={8}
-                  >
-                    <Ionicons name="close" size={20} color="#9CA3AF" />
-                  </Pressable>
-                </View>
-
-                <Text style={styles.quizStepTitle}>1. ¿Es Perro o Gato?</Text>
-                <View style={styles.quizOptionRow}>
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setNewPetSpecies('dog');
-                      setNewPetWeight('20');
-                    }}
-                    style={[
-                      styles.quizOptionCard,
-                      newPetSpecies === 'dog' && styles.quizOptionCardActive,
-                    ]}
-                  >
-                    <Text style={styles.quizOptionEmoji}>🐶</Text>
-                    <Text
-                      style={[
-                        styles.quizOptionLabel,
-                        newPetSpecies === 'dog' && styles.quizOptionLabelActive,
-                      ]}
-                    >
-                      Perro
-                    </Text>
-                    <Text style={styles.quizOptionSub}>Solo catálogo canino</Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setNewPetSpecies('cat');
-                      setNewPetWeight('4.5');
-                    }}
-                    style={[
-                      styles.quizOptionCard,
-                      newPetSpecies === 'cat' && styles.quizOptionCardActive,
-                    ]}
-                  >
-                    <Text style={styles.quizOptionEmoji}>🐱</Text>
-                    <Text
-                      style={[
-                        styles.quizOptionLabel,
-                        newPetSpecies === 'cat' && styles.quizOptionLabelActive,
-                      ]}
-                    >
-                      Gato
-                    </Text>
-                    <Text style={styles.quizOptionSub}>Solo catálogo felino</Text>
-                  </Pressable>
-                </View>
-
-                <Text style={styles.quizStepTitle}>2. Nombre y Raza</Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <TextInput
-                    value={newPetName}
-                    onChangeText={setNewPetName}
-                    placeholder={
-                      newPetSpecies === 'cat' ? 'Ej. Luna, Michi' : 'Ej. Bruno, Max'
-                    }
-                    placeholderTextColor="#6B7280"
-                    style={[styles.petFormInput, { flex: 1 }]}
-                  />
-                  <TextInput
-                    value={newPetBreed}
-                    onChangeText={setNewPetBreed}
-                    placeholder={
-                      newPetSpecies === 'cat'
-                        ? 'Ej. Siamés / Criollo'
-                        : 'Ej. Labrador / Bulldog'
-                    }
-                    placeholderTextColor="#6B7280"
-                    style={[styles.petFormInput, { flex: 1 }]}
-                  />
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    gap: 10,
-                    marginTop: 8,
-                    alignItems: 'center',
-                  }}
+            {!user ? (
+              /* MODO INVITADO EN PESTAÑA MASCOTA(S): COHERENTE SIN DATOS AJENOS */
+              <View style={{ gap: 14 }}>
+                <LinearGradient
+                  colors={['#191E2B', '#10131C']}
+                  style={styles.quizHeroCard}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.quizStepTitle}>3. Peso (kg)</Text>
-                    <TextInput
-                      value={newPetWeight}
-                      onChangeText={setNewPetWeight}
-                      keyboardType="numeric"
-                      placeholder="Ej. 22"
-                      placeholderTextColor="#6B7280"
-                      style={styles.petFormInput}
-                    />
+                  <View style={styles.quizHeroBadge}>
+                    <Text style={styles.quizHeroBadgeText}>
+                      🐾 EXPLORACIÓN EN MODO INVITADO
+                    </Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.quizStepTitle}>Etapa</Text>
+                  <Text style={[styles.quizHeroTitle, { marginTop: 10 }]}>
+                    ¿Para qué mascota estás buscando hoy?
+                  </Text>
+                  <Text style={styles.quizHeroSub}>
+                    Elige la especie para filtrar inmediatamente la Tienda y el
+                    Quiz Biológico mientras exploras como invitado.
+                  </Text>
+
+                  <View style={[styles.quizOptionRow, { marginTop: 14 }]}>
                     <Pressable
                       onPress={() => {
                         Haptics.selectionAsync();
-                        const stages: PetStageType[] = [
-                          'puppy',
-                          'adult',
-                          'senior',
-                        ];
-                        setNewPetStage(
-                          stages[(stages.indexOf(newPetStage) + 1) % 3]
-                        );
+                        setGuestSpecies('dog');
+                        setQuizWeightKg(20);
                       }}
-                      style={styles.petFormInput}
+                      style={[
+                        styles.quizOptionCard,
+                        guestSpecies === 'dog' && styles.quizOptionCardActive,
+                      ]}
                     >
-                      <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
-                        {newPetStage === 'puppy'
-                          ? '🐣 Cachorro / Gatito'
-                          : newPetStage === 'adult'
-                          ? '🐕 Adulto (1-7 años)'
-                          : '🦮 Senior (+7 años)'}{' '}
-                        ⌄
+                      <Text style={styles.quizOptionEmoji}>🐶</Text>
+                      <Text
+                        style={[
+                          styles.quizOptionLabel,
+                          guestSpecies === 'dog' && styles.quizOptionLabelActive,
+                        ]}
+                      >
+                        Perros
+                      </Text>
+                      <Text style={styles.quizOptionSub}>
+                        {guestSpecies === 'dog'
+                          ? '✓ Catálogo activo'
+                          : 'Ver línea canina'}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setGuestSpecies('cat');
+                        setQuizWeightKg(4.5);
+                      }}
+                      style={[
+                        styles.quizOptionCard,
+                        guestSpecies === 'cat' && styles.quizOptionCardActive,
+                      ]}
+                    >
+                      <Text style={styles.quizOptionEmoji}>🐱</Text>
+                      <Text
+                        style={[
+                          styles.quizOptionLabel,
+                          guestSpecies === 'cat' && styles.quizOptionLabelActive,
+                        ]}
+                      >
+                        Gatos
+                      </Text>
+                      <Text style={styles.quizOptionSub}>
+                        {guestSpecies === 'cat'
+                          ? '✓ Catálogo activo'
+                          : 'Ver línea felina'}
                       </Text>
                     </Pressable>
                   </View>
-                </View>
+                </LinearGradient>
 
-                <Pressable
-                  onPress={() => {
-                    if (!newPetName.trim()) {
-                      Haptics.notificationAsync(
-                        Haptics.NotificationFeedbackType.Warning
-                      );
-                      return;
-                    }
-                    Haptics.notificationAsync(
-                      Haptics.NotificationFeedbackType.Success
-                    );
-                    addPet({
-                      name: newPetName.trim(),
-                      species: newPetSpecies,
-                      breed:
-                        newPetBreed.trim() ||
-                        (newPetSpecies === 'cat'
-                          ? 'Felino Consentido'
-                          : 'Canino Consentido'),
-                      ageStage: newPetStage,
-                      weightKg: parseFloat(newPetWeight) || 15,
-                      activityLevel: 'moderate',
-                      sensitivity: 'none',
-                      recommendedProductId:
-                        newPetSpecies === 'cat' ? 'prod_9580' : 'prod_123',
-                    });
-                    setNewPetName('');
-                    setNewPetBreed('');
-                    setIsAddingPet(false);
-                  }}
-                  style={styles.quizPrimaryAddBtn}
-                >
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color="#050508"
-                  />
-                  <Text style={styles.quizPrimaryAddBtnText}>
-                    Guardar y activar esta mascota
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-
-            {/* Lista de mascotas registradas */}
-            <View style={{ gap: 12, marginTop: 14 }}>
-              {pets.map((petItem) => {
-                const isCurrent = petItem.id === activePet.id;
-                const isConfirmingDel = confirmDeletePetId === petItem.id;
-                const recBag =
-                  CATALOG_BAGS.find(
-                    (b) => b.id === petItem.recommendedProductId
-                  ) ||
-                  CATALOG_BAGS.find((b) => b.petType === petItem.species) ||
-                  CATALOG_BAGS[0];
-
-                return (
+                {/* Tarjeta para invitar a iniciar sesión y registrar sus propias mascotas */}
+                <View style={styles.newPetFormCard}>
                   <View
-                    key={petItem.id}
-                    style={[
-                      styles.petProfileCard,
-                      isCurrent && styles.petProfileCardActive,
-                    ]}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                      marginBottom: 10,
+                    }}
                   >
-                    <Pressable
-                      onPress={() => {
-                        Haptics.notificationAsync(
-                          Haptics.NotificationFeedbackType.Success
-                        );
-                        selectPet(petItem.id);
-                      }}
-                      style={styles.petCardHeaderRow}
-                    >
-                      <View
-                        style={[
-                          styles.petAvatarCircle,
-                          isCurrent && styles.petAvatarCircleActive,
-                        ]}
+                    <View style={styles.petAvatarCircleActive}>
+                      <Ionicons
+                        name="paw"
+                        size={22}
+                        color={colors.primary.light}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.newPetFormTitle}>
+                        Guarda el perfil de tu mascota
+                      </Text>
+                      <Text style={styles.petCardMeta}>
+                        Registra su nombre, raza, peso exacto y recordatorios de
+                        alimento.
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      openAuthModal('login');
+                    }}
+                    style={styles.quizPrimaryAddBtn}
+                  >
+                    <Ionicons
+                      name="person-circle-outline"
+                      size={19}
+                      color="#050508"
+                    />
+                    <Text style={styles.quizPrimaryAddBtnText}>
+                      Iniciar sesión para registrar mis mascotas
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <>
+                {/* Botón de primeras: Agregar otra mascota */}
+                {!isAddingPet ? (
+                  <Pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setIsAddingPet(true);
+                    }}
+                    style={styles.addNewPetTopBtn}
+                  >
+                    <View style={styles.addNewPetPlusCircle}>
+                      <Ionicons name="add" size={20} color="#050508" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.addNewPetTitle}>
+                        Agregar otra mascota (Perro o Gato)
+                      </Text>
+                      <Text style={styles.addNewPetSub}>
+                        Personaliza la Tienda y el Quiz Biológico para cada una
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={colors.primary.light}
+                    />
+                  </Pressable>
+                ) : (
+                  /* Formulario interno para crear una nueva mascota */
+                  <View style={styles.newPetFormCard}>
+                    <View style={styles.newPetFormHeader}>
+                      <Text style={styles.newPetFormTitle}>
+                        Registrar nueva mascota
+                      </Text>
+                      <Pressable
+                        onPress={() => setIsAddingPet(false)}
+                        hitSlop={8}
                       >
-                        <Text style={{ fontSize: 26 }}>
-                          {petItem.species === 'cat' ? '🐱' : '🐶'}
-                        </Text>
-                      </View>
+                        <Ionicons name="close" size={20} color="#9CA3AF" />
+                      </Pressable>
+                    </View>
 
-                      <View style={{ flex: 1 }}>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 8,
-                          }}
-                        >
-                          <Text style={styles.petCardName}>{petItem.name}</Text>
-                          {isCurrent && (
-                            <View style={styles.petActiveBadge}>
-                              <Text style={styles.petActiveBadgeText}>
-                                Mascota Activa
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                        <Text style={styles.petCardMeta}>
-                          {petItem.breed} · {petItem.weightKg} kg ·{' '}
-                          {petItem.ageStage === 'puppy'
-                            ? 'Cachorro'
-                            : petItem.ageStage === 'senior'
-                            ? 'Senior'
-                            : 'Adulto'}
-                        </Text>
-                        <Text style={styles.petExclusiveNote}>
-                          ✓ Tienda filtrada 100% para{' '}
-                          {petItem.species === 'cat' ? 'Gatos' : 'Perros'}
-                        </Text>
-                      </View>
-
-                      <View style={{ alignItems: 'center', gap: 12 }}>
-                        <View
-                          style={[
-                            styles.petRadioCircle,
-                            isCurrent && styles.petRadioCircleActive,
-                          ]}
-                        >
-                          {isCurrent && (
-                            <Ionicons
-                              name="checkmark"
-                              size={14}
-                              color="#050508"
-                            />
-                          )}
-                        </View>
-
-                        {pets.length > 1 && !isCurrent && (
-                          <Pressable
-                            onPress={() => {
-                              Haptics.notificationAsync(
-                                Haptics.NotificationFeedbackType.Warning
-                              );
-                              setConfirmDeletePetId((prev) =>
-                                prev === petItem.id ? null : petItem.id
-                              );
-                            }}
-                            hitSlop={8}
-                          >
-                            <Ionicons
-                              name="trash-outline"
-                              size={16}
-                              color={isConfirmingDel ? '#F87171' : '#6B7280'}
-                            />
-                          </Pressable>
-                        )}
-                      </View>
-                    </Pressable>
-
-                    {/* Confirmación interna si toca la papelera de esta mascota */}
-                    {isConfirmingDel && (
-                      <View style={styles.petInlineDeleteBox}>
-                        <Text style={styles.petInlineDeleteText}>
-                          ¿Seguro que deseas eliminar el perfil de "
-                          {petItem.name}"?
-                        </Text>
-                        <View style={{ flexDirection: 'row', gap: 10 }}>
-                          <Pressable
-                            onPress={() => setConfirmDeletePetId(null)}
-                            style={styles.petCancelDelBtn}
-                          >
-                            <Text style={styles.petCancelDelText}>
-                              No, conservar
-                            </Text>
-                          </Pressable>
-                          <Pressable
-                            onPress={() => {
-                              Haptics.notificationAsync(
-                                Haptics.NotificationFeedbackType.Success
-                              );
-                              setConfirmDeletePetId(null);
-                              deletePet(petItem.id);
-                            }}
-                            style={styles.petConfirmDelBtn}
-                          >
-                            <Text style={styles.petConfirmDelText}>
-                              Sí, eliminar
-                            </Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    )}
-
-                    {/* Bulto recomendado y accesos rápidos */}
-                    <View style={styles.petCardFooterActions}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.petRecLabel}>
-                          Fórmula recomendada:
-                        </Text>
-                        <Text style={styles.petRecName} numberOfLines={1}>
-                          {recBag.name} ({recBag.weightLb} LB)
-                        </Text>
-                      </View>
-
+                    <Text style={styles.quizStepTitle}>1. ¿Es Perro o Gato?</Text>
+                    <View style={styles.quizOptionRow}>
                       <Pressable
                         onPress={() => {
                           Haptics.selectionAsync();
-                          selectPet(petItem.id);
-                          setQuizStage(petItem.ageStage);
-                          setQuizActivity(petItem.activityLevel);
-                          setQuizSensitivity(petItem.sensitivity);
-                          setQuizWeightKg(petItem.weightKg);
-                          setMainTopTab('quiz');
+                          setNewPetSpecies('dog');
+                          setNewPetWeight('20');
                         }}
-                        style={styles.petQuizShortcutBtn}
+                        style={[
+                          styles.quizOptionCard,
+                          newPetSpecies === 'dog' && styles.quizOptionCardActive,
+                        ]}
                       >
-                        <Text style={styles.petQuizShortcutText}>
-                          🧬 Quiz
+                        <Text style={styles.quizOptionEmoji}>🐶</Text>
+                        <Text
+                          style={[
+                            styles.quizOptionLabel,
+                            newPetSpecies === 'dog' &&
+                              styles.quizOptionLabelActive,
+                          ]}
+                        >
+                          Perro
+                        </Text>
+                        <Text style={styles.quizOptionSub}>
+                          Solo catálogo canino
                         </Text>
                       </Pressable>
 
                       <Pressable
                         onPress={() => {
                           Haptics.selectionAsync();
-                          selectPet(petItem.id);
-                          setMainTopTab('store');
+                          setNewPetSpecies('cat');
+                          setNewPetWeight('4.5');
                         }}
-                        style={styles.petStoreShortcutBtn}
+                        style={[
+                          styles.quizOptionCard,
+                          newPetSpecies === 'cat' && styles.quizOptionCardActive,
+                        ]}
                       >
-                        <Text style={styles.petStoreShortcutText}>
-                          Ir a Tienda ›
+                        <Text style={styles.quizOptionEmoji}>🐱</Text>
+                        <Text
+                          style={[
+                            styles.quizOptionLabel,
+                            newPetSpecies === 'cat' &&
+                              styles.quizOptionLabelActive,
+                          ]}
+                        >
+                          Gato
+                        </Text>
+                        <Text style={styles.quizOptionSub}>
+                          Solo catálogo felino
                         </Text>
                       </Pressable>
                     </View>
+
+                    <Text style={styles.quizStepTitle}>2. Nombre y Raza</Text>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <TextInput
+                        value={newPetName}
+                        onChangeText={setNewPetName}
+                        placeholder={
+                          newPetSpecies === 'cat'
+                            ? 'Ej. Luna, Michi'
+                            : 'Ej. Bruno, Max'
+                        }
+                        placeholderTextColor="#6B7280"
+                        style={[styles.petFormInput, { flex: 1 }]}
+                      />
+                      <TextInput
+                        value={newPetBreed}
+                        onChangeText={setNewPetBreed}
+                        placeholder={
+                          newPetSpecies === 'cat'
+                            ? 'Ej. Siamés / Criollo'
+                            : 'Ej. Labrador / Bulldog'
+                        }
+                        placeholderTextColor="#6B7280"
+                        style={[styles.petFormInput, { flex: 1 }]}
+                      />
+                    </View>
+
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        gap: 10,
+                        marginTop: 8,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.quizStepTitle}>3. Peso (kg)</Text>
+                        <TextInput
+                          value={newPetWeight}
+                          onChangeText={setNewPetWeight}
+                          keyboardType="numeric"
+                          placeholder="Ej. 22"
+                          placeholderTextColor="#6B7280"
+                          style={styles.petFormInput}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.quizStepTitle}>Etapa</Text>
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            const stages: PetStageType[] = [
+                              'puppy',
+                              'adult',
+                              'senior',
+                            ];
+                            setNewPetStage(
+                              stages[(stages.indexOf(newPetStage) + 1) % 3]
+                            );
+                          }}
+                          style={styles.petFormInput}
+                        >
+                          <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                            {newPetStage === 'puppy'
+                              ? '🐣 Cachorro / Gatito'
+                              : newPetStage === 'adult'
+                              ? '🐕 Adulto (1-7 años)'
+                              : '🦮 Senior (+7 años)'}{' '}
+                            ⌄
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+
+                    <Pressable
+                      onPress={() => {
+                        if (!newPetName.trim()) {
+                          Haptics.notificationAsync(
+                            Haptics.NotificationFeedbackType.Warning
+                          );
+                          return;
+                        }
+                        Haptics.notificationAsync(
+                          Haptics.NotificationFeedbackType.Success
+                        );
+                        addPet({
+                          name: newPetName.trim(),
+                          species: newPetSpecies,
+                          breed:
+                            newPetBreed.trim() ||
+                            (newPetSpecies === 'cat'
+                              ? 'Felino Consentido'
+                              : 'Canino Consentido'),
+                          ageStage: newPetStage,
+                          weightKg: parseFloat(newPetWeight) || 15,
+                          activityLevel: 'moderate',
+                          sensitivity: 'none',
+                          recommendedProductId:
+                            newPetSpecies === 'cat' ? 'prod_9580' : 'prod_123',
+                        });
+                        setNewPetName('');
+                        setNewPetBreed('');
+                        setIsAddingPet(false);
+                      }}
+                      style={styles.quizPrimaryAddBtn}
+                    >
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color="#050508"
+                      />
+                      <Text style={styles.quizPrimaryAddBtnText}>
+                        Guardar y activar esta mascota
+                      </Text>
+                    </Pressable>
                   </View>
-                );
-              })}
-            </View>
+                )}
+
+                {/* Lista de mascotas registradas */}
+                <View style={{ gap: 12, marginTop: 14 }}>
+                  {pets.map((petItem) => {
+                    const isCurrent = petItem.id === activePet.id;
+                    const isConfirmingDel = confirmDeletePetId === petItem.id;
+                    const recBag =
+                      CATALOG_BAGS.find(
+                        (b) => b.id === petItem.recommendedProductId
+                      ) ||
+                      CATALOG_BAGS.find((b) => b.petType === petItem.species) ||
+                      CATALOG_BAGS[0];
+
+                    return (
+                      <View
+                        key={petItem.id}
+                        style={[
+                          styles.petProfileCard,
+                          isCurrent && styles.petProfileCardActive,
+                        ]}
+                      >
+                        <Pressable
+                          onPress={() => {
+                            Haptics.notificationAsync(
+                              Haptics.NotificationFeedbackType.Success
+                            );
+                            selectPet(petItem.id);
+                          }}
+                          style={styles.petCardHeaderRow}
+                        >
+                          <View
+                            style={[
+                              styles.petAvatarCircle,
+                              isCurrent && styles.petAvatarCircleActive,
+                            ]}
+                          >
+                            <Text style={{ fontSize: 26 }}>
+                              {petItem.species === 'cat' ? '🐱' : '🐶'}
+                            </Text>
+                          </View>
+
+                          <View style={{ flex: 1 }}>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 8,
+                              }}
+                            >
+                              <Text style={styles.petCardName}>
+                                {petItem.name}
+                              </Text>
+                              {isCurrent && (
+                                <View style={styles.petActiveBadge}>
+                                  <Text style={styles.petActiveBadgeText}>
+                                    Mascota Activa
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text style={styles.petCardMeta}>
+                              {petItem.breed} · {petItem.weightKg} kg ·{' '}
+                              {petItem.ageStage === 'puppy'
+                                ? 'Cachorro'
+                                : petItem.ageStage === 'senior'
+                                ? 'Senior'
+                                : 'Adulto'}
+                            </Text>
+                            <Text style={styles.petExclusiveNote}>
+                              ✓ Tienda filtrada 100% para{' '}
+                              {petItem.species === 'cat' ? 'Gatos' : 'Perros'}
+                            </Text>
+                          </View>
+
+                          <View style={{ alignItems: 'center', gap: 12 }}>
+                            <View
+                              style={[
+                                styles.petRadioCircle,
+                                isCurrent && styles.petRadioCircleActive,
+                              ]}
+                            >
+                              {isCurrent && (
+                                <Ionicons
+                                  name="checkmark"
+                                  size={14}
+                                  color="#050508"
+                                />
+                              )}
+                            </View>
+
+                            {pets.length > 1 && !isCurrent && (
+                              <Pressable
+                                onPress={() => {
+                                  Haptics.notificationAsync(
+                                    Haptics.NotificationFeedbackType.Warning
+                                  );
+                                  setConfirmDeletePetId((prev) =>
+                                    prev === petItem.id ? null : petItem.id
+                                  );
+                                }}
+                                hitSlop={8}
+                              >
+                                <Ionicons
+                                  name="trash-outline"
+                                  size={16}
+                                  color={
+                                    isConfirmingDel ? '#F87171' : '#6B7280'
+                                  }
+                                />
+                              </Pressable>
+                            )}
+                          </View>
+                        </Pressable>
+
+                        {/* Confirmación interna si toca la papelera de esta mascota */}
+                        {isConfirmingDel && (
+                          <View style={styles.petInlineDeleteBox}>
+                            <Text style={styles.petInlineDeleteText}>
+                              ¿Seguro que deseas eliminar el perfil de "
+                              {petItem.name}"?
+                            </Text>
+                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                              <Pressable
+                                onPress={() => setConfirmDeletePetId(null)}
+                                style={styles.petCancelDelBtn}
+                              >
+                                <Text style={styles.petCancelDelText}>
+                                  No, conservar
+                                </Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={() => {
+                                  Haptics.notificationAsync(
+                                    Haptics.NotificationFeedbackType.Success
+                                  );
+                                  setConfirmDeletePetId(null);
+                                  deletePet(petItem.id);
+                                }}
+                                style={styles.petConfirmDelBtn}
+                              >
+                                <Text style={styles.petConfirmDelText}>
+                                  Sí, eliminar
+                                </Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Bulto recomendado y accesos rápidos */}
+                        <View style={styles.petCardFooterActions}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.petRecLabel}>
+                              Fórmula recomendada:
+                            </Text>
+                            <Text style={styles.petRecName} numberOfLines={1}>
+                              {recBag.name} ({recBag.weightLb} LB)
+                            </Text>
+                          </View>
+
+                          <Pressable
+                            onPress={() => {
+                              Haptics.selectionAsync();
+                              selectPet(petItem.id);
+                              setQuizStage(petItem.ageStage);
+                              setQuizActivity(petItem.activityLevel);
+                              setQuizSensitivity(petItem.sensitivity);
+                              setQuizWeightKg(petItem.weightKg);
+                              setMainTopTab('quiz');
+                            }}
+                            style={styles.petQuizShortcutBtn}
+                          >
+                            <Text style={styles.petQuizShortcutText}>
+                              🧬 Quiz
+                            </Text>
+                          </Pressable>
+
+                          <Pressable
+                            onPress={() => {
+                              Haptics.selectionAsync();
+                              selectPet(petItem.id);
+                              setMainTopTab('store');
+                            }}
+                            style={styles.petStoreShortcutBtn}
+                          >
+                            <Text style={styles.petStoreShortcutText}>
+                              Ir a Tienda ›
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            )}
           </View>
         )}
       </ScrollView>
@@ -2834,7 +3021,8 @@ export const HomeScreen: React.FC = () => {
             >
               <View style={styles.miniCartDrawerHeader}>
                 <Text style={styles.miniCartDrawerTitle}>
-                  🛒 Carrito de {activePet.name} ({cartSummary.totalItems})
+                  🛒 {user ? `Carrito de ${activePet.name}` : 'Tu Carrito'} (
+                  {cartSummary.totalItems})
                 </Text>
                 <Pressable
                   onPress={() => {
@@ -3212,12 +3400,16 @@ export const HomeScreen: React.FC = () => {
                 </View>
               ) : (
                 <>
-                  {/* Dirección seleccionada dentro del carrito (abre el selector de todas las direcciones) */}
+                  {/* Dirección seleccionada dentro del carrito (o aviso en modo invitado) */}
                   <Pressable
                     onPress={() => {
                       Haptics.selectionAsync();
                       setCartModalVisible(false);
-                      setTimeout(() => setAddressSheetVisible(true), 200);
+                      if (user) {
+                        setTimeout(() => setAddressSheetVisible(true), 200);
+                      } else {
+                        setTimeout(() => openAuthModal('login'), 200);
+                      }
                     }}
                     style={styles.cartZoneBox}
                   >
@@ -3229,30 +3421,51 @@ export const HomeScreen: React.FC = () => {
                       }}
                     >
                       <View style={{ flex: 1, paddingRight: 10 }}>
-                        <Text style={styles.cartZoneLabel}>
-                          Entregar en ({selectedAddress.label} · {selectedAddress.city}):
-                        </Text>
-                        <Text
-                          style={{
-                            color: '#FFFFFF',
-                            fontSize: 14,
-                            fontWeight: '800',
-                            marginTop: 2,
-                          }}
-                        >
-                          {selectedAddress.address1}
-                        </Text>
-                        {selectedAddress.address2 ? (
-                          <Text
-                            style={{
-                              color: '#9CA3AF',
-                              fontSize: 12,
-                              marginTop: 2,
-                            }}
-                          >
-                            {selectedAddress.address2}
-                          </Text>
-                        ) : null}
+                        {user ? (
+                          <>
+                            <Text style={styles.cartZoneLabel}>
+                              Entregar en ({selectedAddress.label} ·{' '}
+                              {selectedAddress.city}):
+                            </Text>
+                            <Text
+                              style={{
+                                color: '#FFFFFF',
+                                fontSize: 14,
+                                fontWeight: '800',
+                                marginTop: 2,
+                              }}
+                            >
+                              {selectedAddress.address1}
+                            </Text>
+                            {selectedAddress.address2 ? (
+                              <Text
+                                style={{
+                                  color: '#9CA3AF',
+                                  fontSize: 12,
+                                  marginTop: 2,
+                                }}
+                              >
+                                {selectedAddress.address2}
+                              </Text>
+                            ) : null}
+                          </>
+                        ) : (
+                          <>
+                            <Text style={styles.cartZoneLabel}>
+                              📍 Dirección de entrega pendiente (Modo invitado)
+                            </Text>
+                            <Text
+                              style={{
+                                color: '#FFFFFF',
+                                fontSize: 13.5,
+                                fontWeight: '800',
+                                marginTop: 2,
+                              }}
+                            >
+                              Inicia sesión para elegir tu dirección y cobertura
+                            </Text>
+                          </>
+                        )}
                       </View>
                       <View
                         style={{
@@ -3274,7 +3487,7 @@ export const HomeScreen: React.FC = () => {
                             fontWeight: '800',
                           }}
                         >
-                          Cambiar ({addresses.length})
+                          {user ? `Cambiar (${addresses.length})` : 'Ingresar'}
                         </Text>
                         <Ionicons
                           name="chevron-forward"
@@ -3376,6 +3589,12 @@ export const HomeScreen: React.FC = () => {
                   ) : (
                     <Pressable
                       onPress={() => {
+                        if (!user) {
+                          Haptics.selectionAsync();
+                          setCartModalVisible(false);
+                          setTimeout(() => openAuthModal('login'), 200);
+                          return;
+                        }
                         Haptics.notificationAsync(
                           Haptics.NotificationFeedbackType.Success
                         );
@@ -3389,7 +3608,9 @@ export const HomeScreen: React.FC = () => {
                       style={styles.checkoutGoldBtn}
                     >
                       <Text style={styles.checkoutGoldBtnText}>
-                        Confirmar Pedido ({formatCOP(cartSummary.totalWithShipping)})
+                        {user
+                          ? `Confirmar Pedido (${formatCOP(cartSummary.totalWithShipping)})`
+                          : `Iniciar sesión para pedir (${formatCOP(cartSummary.totalWithShipping)})`}
                       </Text>
                     </Pressable>
                   )}
