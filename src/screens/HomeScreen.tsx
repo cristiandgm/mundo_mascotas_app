@@ -662,6 +662,46 @@ export const HomeScreen: React.FC = () => {
   const [addressSheetVisible, setAddressSheetVisible] = useState(false);
   const [inboxVisible, setInboxVisible] = useState(false);
 
+  // Product detail card modal
+  const [selectedProduct, setSelectedProduct] = useState<ProductBag | null>(null);
+  const [productDetailVisible, setProductDetailVisible] = useState(false);
+  const productDetailAnim = useRef(new Animated.Value(0)).current;
+  const productDetailScale = useRef(new Animated.Value(0.85)).current;
+  const productDetailTransY = useRef(new Animated.Value(60)).current;
+
+  const openProductDetail = (product: ProductBag) => {
+    setSelectedProduct(product);
+    setProductDetailVisible(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    productDetailAnim.setValue(0);
+    productDetailScale.setValue(0.85);
+    productDetailTransY.setValue(60);
+    Animated.parallel([
+      Animated.spring(productDetailAnim, { toValue: 1, useNativeDriver: true, damping: 18, stiffness: 220 }),
+      Animated.spring(productDetailScale, { toValue: 1, useNativeDriver: true, damping: 18, stiffness: 220 }),
+      Animated.spring(productDetailTransY, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 220 }),
+    ]).start();
+  };
+
+  const closeProductDetail = () => {
+    Haptics.selectionAsync();
+    // "Pop & vanish" exit: micro-bounce up then disappear
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(productDetailScale, { toValue: 1.06, duration: 90, useNativeDriver: true }),
+        Animated.timing(productDetailTransY, { toValue: -12, duration: 90, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(productDetailAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+        Animated.timing(productDetailScale, { toValue: 0.7, duration: 220, useNativeDriver: true }),
+        Animated.timing(productDetailTransY, { toValue: -80, duration: 220, useNativeDriver: true }),
+      ]),
+    ]).start(() => {
+      setProductDetailVisible(false);
+      setSelectedProduct(null);
+    });
+  };
+
   // Zona derivada automáticamente de la dirección seleccionada por el cliente
   const deliveryZone: DeliveryZoneType = selectedAddress.isBogota
     ? 'bogota'
@@ -1489,10 +1529,7 @@ export const HomeScreen: React.FC = () => {
                       <React.Fragment key={item.id}>
                         {idx > 0 && <View style={styles.uberRecentDivider} />}
                         <Pressable
-                          onPress={() => {
-                            Haptics.selectionAsync();
-                            handleAddToCart(item.id);
-                          }}
+                          onPress={() => openProductDetail(item)}
                           style={({ pressed }) => [
                             styles.searchResultRow,
                             pressed && { backgroundColor: 'rgba(255,255,255,0.04)' },
@@ -3389,6 +3426,230 @@ export const HomeScreen: React.FC = () => {
           setTimeout(() => setAddressSheetVisible(true), 220);
         }}
       />
+
+      {/* ==================== MODAL DETALLE DE PRODUCTO ==================== */}
+      {productDetailVisible && selectedProduct && (
+        <Modal
+          visible={productDetailVisible}
+          transparent
+          animationType="none"
+          onRequestClose={closeProductDetail}
+          statusBarTranslucent
+        >
+          {/* Backdrop — tap to dismiss */}
+          <Pressable
+            style={styles.productDetailBackdrop}
+            onPress={closeProductDetail}
+          >
+            {/* Stop propagation so taps on the card don't dismiss */}
+            <Animated.View
+              style={[
+                styles.productDetailCard,
+                {
+                  opacity: productDetailAnim,
+                  transform: [
+                    { scale: productDetailScale },
+                    { translateY: productDetailTransY },
+                  ],
+                },
+              ]}
+            >
+              <Pressable onPress={() => {}}>
+                {/* Top accent gradient */}
+                <LinearGradient
+                  colors={[
+                    (selectedProduct.accentColor ?? '#D4AF37') + 'CC',
+                    (selectedProduct.accentColor ?? '#D4AF37') + '33',
+                    'transparent',
+                  ]}
+                  style={styles.productDetailGradientTop}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+
+                {/* Close button */}
+                <Pressable
+                  onPress={closeProductDetail}
+                  style={styles.productDetailCloseBtn}
+                  hitSlop={12}
+                >
+                  <Ionicons name="close" size={18} color="#FFFFFF" />
+                </Pressable>
+
+                {/* Brand + emoji */}
+                <View style={styles.productDetailBrandRow}>
+                  <Text style={{ fontSize: 46 }}>
+                    {selectedProduct.brand === 'Diamond Naturals'
+                      ? '💎'
+                      : selectedProduct.brand === 'Taste of the Wild'
+                        ? '🌿'
+                        : selectedProduct.brand === 'Acana'
+                          ? '🦅'
+                          : selectedProduct.brand === 'Orijen'
+                            ? '🐾'
+                            : '🛍️'}
+                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.productDetailBrand}>
+                      {selectedProduct.brand}
+                    </Text>
+                    <View
+                      style={[
+                        styles.productDetailStagePill,
+                        {
+                          backgroundColor:
+                            (selectedProduct.accentColor ?? '#D4AF37') + '22',
+                          borderColor:
+                            (selectedProduct.accentColor ?? '#D4AF37') + '55',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.productDetailStageText,
+                          {
+                            color: selectedProduct.accentColor ?? '#D4AF37',
+                          },
+                        ]}
+                      >
+                        {selectedProduct.stage}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Product name */}
+                <Text style={styles.productDetailName}>
+                  {selectedProduct.name}
+                </Text>
+
+                {/* Protein / description */}
+                <Text style={styles.productDetailProtein}>
+                  🧬 {selectedProduct.protein}
+                </Text>
+
+                {/* Specs row */}
+                <View style={styles.productDetailSpecsRow}>
+                  <View style={styles.productDetailSpecBox}>
+                    <Text style={styles.productDetailSpecValue}>
+                      {selectedProduct.unitLabel ??
+                        `${selectedProduct.weightLb} LB`}
+                    </Text>
+                    <Text style={styles.productDetailSpecLabel}>Peso</Text>
+                  </View>
+                  <View style={styles.productDetailSpecDivider} />
+                  <View style={styles.productDetailSpecBox}>
+                    <Text style={styles.productDetailSpecValue}>
+                      {selectedProduct.petType === 'dog' ? '🐶' : '🐱'}
+                    </Text>
+                    <Text style={styles.productDetailSpecLabel}>Para</Text>
+                  </View>
+                  <View style={styles.productDetailSpecDivider} />
+                  <View style={styles.productDetailSpecBox}>
+                    <Text style={styles.productDetailSpecValue}>
+                      {selectedProduct.coins} 🪙
+                    </Text>
+                    <Text style={styles.productDetailSpecLabel}>
+                      Consenticoins
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Delivery info */}
+                <View style={styles.productDetailDeliveryRow}>
+                  <Ionicons
+                    name="car-outline"
+                    size={15}
+                    color={deliveryZone === 'bogota' ? '#34D399' : '#FBBF24'}
+                  />
+                  <Text
+                    style={[
+                      styles.productDetailDeliveryText,
+                      {
+                        color:
+                          deliveryZone === 'bogota' ? '#34D399' : '#FBBF24',
+                      },
+                    ]}
+                  >
+                    {deliveryZone === 'bogota'
+                      ? 'Domicilio Gratis en Bogotá'
+                      : '+ Flete transportadora'}
+                  </Text>
+                  {selectedProduct.tag ? (
+                    <View
+                      style={[
+                        styles.productDetailTagPill,
+                        {
+                          backgroundColor:
+                            (selectedProduct.accentColor ?? '#D4AF37') + '22',
+                          borderColor:
+                            (selectedProduct.accentColor ?? '#D4AF37') + '55',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.productDetailTagText,
+                          { color: selectedProduct.accentColor ?? '#D4AF37' },
+                        ]}
+                      >
+                        {selectedProduct.tag}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Price + Add button */}
+                <View style={styles.productDetailFooter}>
+                  <View>
+                    <Text style={styles.productDetailPriceLabel}>Precio</Text>
+                    <Text style={styles.productDetailPrice}>
+                      {formatCOP(selectedProduct.price)}
+                    </Text>
+                  </View>
+
+                  {(() => {
+                    const inCart = cart[selectedProduct.id] ?? 0;
+                    return inCart > 0 ? (
+                      <View style={styles.productDetailQtyRow}>
+                        <Pressable
+                          onPress={() => handleDecrementCart(selectedProduct.id)}
+                          style={styles.productDetailQtyBtn}
+                          hitSlop={8}
+                        >
+                          <Ionicons name="remove" size={18} color="#FFFFFF" />
+                        </Pressable>
+                        <Text style={styles.productDetailQtyText}>{inCart}</Text>
+                        <Pressable
+                          onPress={() => handleAddToCart(selectedProduct.id)}
+                          style={[
+                            styles.productDetailQtyBtn,
+                            { backgroundColor: '#D4AF37' },
+                          ]}
+                          hitSlop={8}
+                        >
+                          <Ionicons name="add" size={18} color="#050508" />
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={() => handleAddToCart(selectedProduct.id)}
+                        style={styles.productDetailAddBtn}
+                      >
+                        <Ionicons name="cart-outline" size={18} color="#050508" />
+                        <Text style={styles.productDetailAddText}>
+                          Agregar al carrito
+                        </Text>
+                      </Pressable>
+                    );
+                  })()}
+                </View>
+              </Pressable>
+            </Animated.View>
+          </Pressable>
+        </Modal>
+      )}
+
     </SafeAreaView>
   );
 };
@@ -4920,5 +5181,188 @@ const styles = StyleSheet.create({
     color: '#D4AF37',
     fontSize: 14,
     fontWeight: '700',
+  },
+
+  // ===== PRODUCT DETAIL MODAL =====
+  productDetailBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  productDetailCard: {
+    width: '100%',
+    backgroundColor: '#13161F',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    overflow: 'hidden',
+  },
+  productDetailGradientTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 160,
+    borderRadius: 28,
+  },
+  productDetailCloseBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  productDetailBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 22,
+    paddingTop: 24,
+    paddingBottom: 10,
+  },
+  productDetailBrand: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  productDetailStagePill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  productDetailStageText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  productDetailName: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '900',
+    paddingHorizontal: 22,
+    marginBottom: 6,
+    lineHeight: 26,
+  },
+  productDetailProtein: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    paddingHorizontal: 22,
+    marginBottom: 18,
+  },
+  productDetailSpecsRow: {
+    flexDirection: 'row',
+    marginHorizontal: 22,
+    marginBottom: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    paddingVertical: 14,
+  },
+  productDetailSpecBox: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  productDetailSpecValue: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  productDetailSpecLabel: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  productDetailSpecDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginVertical: 4,
+  },
+  productDetailDeliveryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 22,
+    marginBottom: 20,
+    flexWrap: 'wrap',
+  },
+  productDetailDeliveryText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  productDetailTagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 7,
+    borderWidth: 1,
+  },
+  productDetailTagText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  productDetailFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  productDetailPriceLabel: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  productDetailPrice: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  productDetailAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#D4AF37',
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    borderRadius: 16,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  productDetailAddText: {
+    color: '#050508',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  productDetailQtyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  productDetailQtyBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#1E212B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  productDetailQtyText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    minWidth: 24,
+    textAlign: 'center',
   },
 });
