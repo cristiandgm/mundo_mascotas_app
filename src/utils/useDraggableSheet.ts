@@ -34,10 +34,75 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
       toValue: SCREEN_HEIGHT,
       duration: 220,
       useNativeDriver: true,
-    }).start(() => {
-      onCloseRef.current();
-      translateY.setValue(0);
+    }).start(({ finished }) => {
+      if (finished) {
+        onCloseRef.current();
+      }
     });
+  };
+
+  const handleReleaseGesture = (dy: number, vy: number) => {
+    setIsDragging(false);
+
+    // 1. Deslizar hacia ARRIBA -> Expandir ventana al máximo
+    if (dy < -40 || vy < -0.5) {
+      if (!isExpandedRef.current) {
+        setIsExpanded(true);
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch {
+          // ignore
+        }
+      }
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 6,
+      }).start();
+      return;
+    }
+
+    // 2. Si estaba expandida y desliza un poco hacia abajo -> volver a altura normal
+    if (isExpandedRef.current && dy > 45 && dy < 160 && vy < 1.1) {
+      setIsExpanded(false);
+      try {
+        Haptics.selectionAsync();
+      } catch {
+        // ignore
+      }
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 6,
+      }).start();
+      return;
+    }
+
+    // 3. Deslizar hacia ABAJO fuerte -> Cerrar ventana flotante (se queda abajo en SCREEN_HEIGHT mientras cierra)
+    if (dy > 95 || vy > 0.65) {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {
+        // ignore
+      }
+      Animated.timing(translateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 210,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          onCloseRef.current();
+        }
+      });
+      return;
+    }
+
+    // 4. Si soltó antes del límite -> Rebote elástico a su posición
+    Animated.spring(translateY, {
+      toValue: 0,
+      useNativeDriver: true,
+      bounciness: 7,
+    }).start();
   };
 
   const panResponder = useRef(
@@ -50,6 +115,7 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
         );
       },
       onPanResponderGrant: () => {
+        translateY.stopAnimation();
         setIsDragging(true);
         try {
           Haptics.selectionAsync();
@@ -66,71 +132,7 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        setIsDragging(false);
-
-        // 1. Deslizar hacia ARRIBA -> Expandir ventana al máximo
-        if (gestureState.dy < -40 || gestureState.vy < -0.5) {
-          if (!isExpandedRef.current) {
-            setIsExpanded(true);
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch {
-              // ignore
-            }
-          }
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 6,
-          }).start();
-          return;
-        }
-
-        // 2. Si estaba expandida y desliza un poco hacia abajo -> volver a altura normal
-        if (
-          isExpandedRef.current &&
-          gestureState.dy > 50 &&
-          gestureState.dy < 165 &&
-          gestureState.vy < 1.1
-        ) {
-          setIsExpanded(false);
-          try {
-            Haptics.selectionAsync();
-          } catch {
-            // ignore
-          }
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 6,
-          }).start();
-          return;
-        }
-
-        // 3. Deslizar hacia ABAJO fuerte -> Cerrar ventana flotante (Modo Invitado / Cerrar)
-        if (gestureState.dy > 105 || gestureState.vy > 0.75) {
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {
-            // ignore
-          }
-          Animated.timing(translateY, {
-            toValue: SCREEN_HEIGHT,
-            duration: 210,
-            useNativeDriver: true,
-          }).start(() => {
-            onCloseRef.current();
-            translateY.setValue(0);
-          });
-          return;
-        }
-
-        // 4. Si soltó antes del límite -> Rebote elástico a su posición
-        Animated.spring(translateY, {
-          toValue: 0,
-          useNativeDriver: true,
-          bounciness: 7,
-        }).start();
+        handleReleaseGesture(gestureState.dy, gestureState.vy);
       },
       onPanResponderTerminate: () => {
         setIsDragging(false);
@@ -148,6 +150,7 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
+        translateY.stopAnimation();
         setIsDragging(true);
         try {
           Haptics.selectionAsync();
@@ -163,61 +166,13 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        // Delega la misma lógica de soltado
-        panResponder.panHandlers.onResponderRelease?.({} as any);
+        handleReleaseGesture(gestureState.dy, gestureState.vy);
+      },
+      onPanResponderTerminate: () => {
         setIsDragging(false);
-
-        if (gestureState.dy < -35 || gestureState.vy < -0.45) {
-          setIsExpanded(true);
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {
-            // ignore
-          }
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 6,
-          }).start();
-          return;
-        }
-
-        if (
-          isExpandedRef.current &&
-          gestureState.dy > 45 &&
-          gestureState.dy < 160 &&
-          gestureState.vy < 1.1
-        ) {
-          setIsExpanded(false);
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 6,
-          }).start();
-          return;
-        }
-
-        if (gestureState.dy > 95 || gestureState.vy > 0.65) {
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {
-            // ignore
-          }
-          Animated.timing(translateY, {
-            toValue: SCREEN_HEIGHT,
-            duration: 210,
-            useNativeDriver: true,
-          }).start(() => {
-            onCloseRef.current();
-            translateY.setValue(0);
-          });
-          return;
-        }
-
         Animated.spring(translateY, {
           toValue: 0,
           useNativeDriver: true,
-          bounciness: 7,
         }).start();
       },
     })
@@ -232,3 +187,4 @@ export const useDraggableSheet = ({ visible, onClose }: UseDraggableSheetOptions
     animateClose,
   };
 };
+
