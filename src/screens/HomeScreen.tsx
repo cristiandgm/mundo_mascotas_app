@@ -1059,8 +1059,15 @@ export const HomeScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* ==================== 1. UBER HEADER: LOCATION + INBOX/BOLSA ==================== */}
       <View style={styles.uberTopHeader}>
+        {/* LEFT: Address (logged in) or Guest prompt */}
         <Pressable
-          onPress={handleToggleZone}
+          onPress={() => {
+            if (user) {
+              handleToggleZone();
+            } else {
+              openAuthModal('login');
+            }
+          }}
           style={styles.locationSelectorRow}
           hitSlop={8}
         >
@@ -1068,56 +1075,87 @@ export const HomeScreen: React.FC = () => {
             style={[
               styles.locationDot,
               {
-                backgroundColor:
-                  deliveryZone === 'bogota' ? '#3B82F6' : '#F59E0B',
+                backgroundColor: user
+                  ? deliveryZone === 'bogota'
+                    ? '#3B82F6'
+                    : '#F59E0B'
+                  : '#6B7280',
               },
             ]}
           />
           <View style={styles.locationTextCol}>
-            <View style={styles.locationTopLineRow}>
-              <Text style={styles.locationLabelEyebrow} numberOfLines={1}>
-                Entregar en {selectedAddress.label}
-              </Text>
-              <Text
-                style={[
-                  styles.locationZoneTagText,
-                  {
-                    color: deliveryZone === 'bogota' ? '#34D399' : '#FBBF24',
-                  },
-                ]}
-              >
-                ·{' '}
-                {deliveryZone === 'bogota'
-                  ? 'Domicilio Gratis'
-                  : '+ Flete transportadora'}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={14}
-                color={colors.primary.light}
-              />
-            </View>
-
-            <Text style={styles.locationText} numberOfLines={1}>
-              {selectedAddress.address1}
-              {selectedAddress.locality
-                ? ` · ${selectedAddress.locality}`
-                : ''}, {selectedAddress.city}
-            </Text>
+            {user ? (
+              <>
+                <View style={styles.locationTopLineRow}>
+                  <Text style={styles.locationLabelEyebrow} numberOfLines={1}>
+                    Entregar en {selectedAddress.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.locationZoneTagText,
+                      {
+                        color:
+                          deliveryZone === 'bogota' ? '#34D399' : '#FBBF24',
+                      },
+                    ]}
+                  >
+                    ·{' '}
+                    {deliveryZone === 'bogota'
+                      ? 'Domicilio Gratis'
+                      : '+ Flete transportadora'}
+                  </Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={14}
+                    color={colors.primary.light}
+                  />
+                </View>
+                <Text style={styles.locationText} numberOfLines={1}>
+                  {selectedAddress.address1}
+                  {selectedAddress.locality
+                    ? ` · ${selectedAddress.locality}`
+                    : ''}, {selectedAddress.city}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text
+                  style={[styles.locationLabelEyebrow, { color: '#9CA3AF' }]}
+                  numberOfLines={1}
+                >
+                  Modo invitado · Toca para ingresar
+                </Text>
+                <Text
+                  style={[styles.locationText, { color: '#6B7280' }]}
+                  numberOfLines={1}
+                >
+                  🐾 Explorar Mundo Mascotas
+                </Text>
+              </>
+            )}
           </View>
         </Pressable>
 
+        {/* RIGHT: Inbox (logged in) or Login button (guest) */}
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            setInboxVisible(true);
+            if (user) {
+              setInboxVisible(true);
+            } else {
+              openAuthModal('login');
+            }
           }}
           style={styles.inboxBagPill}
           hitSlop={8}
         >
-          <Ionicons name="notifications-outline" size={17} color="#FFFFFF" />
-          <Text style={styles.inboxBagText}>Inbox</Text>
-          <View style={styles.activeGoldDot} />
+          <Ionicons
+            name={user ? 'notifications-outline' : 'person-outline'}
+            size={17}
+            color="#FFFFFF"
+          />
+          <Text style={styles.inboxBagText}>{user ? 'Inbox' : 'Ingresar'}</Text>
+          {user && <View style={styles.activeGoldDot} />}
         </Pressable>
       </View>
 
