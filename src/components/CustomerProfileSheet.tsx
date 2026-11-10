@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Modal,
   Pressable,
+  TouchableOpacity,
   ScrollView,
   TextInput,
   Animated,
@@ -18,7 +19,6 @@ import { UserAvatar } from './ui/UserAvatar';
 import {
   useAuth,
   DEFAULT_VIP_CUSTOMER,
-  CustomerOrder,
 } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
 
@@ -26,12 +26,14 @@ interface CustomerProfileSheetProps {
   visible: boolean;
   onClose: () => void;
   onManageAddresses?: () => void;
+  onOpenOrders?: () => void;
 }
 
 export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
   visible,
   onClose,
   onManageAddresses,
+  onOpenOrders,
 }) => {
   const insets = useSafeAreaInsets();
   const {
@@ -57,8 +59,6 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 
   const profileData = user || DEFAULT_VIP_CUSTOMER;
 
-  const [showAllOrders, setShowAllOrders] = useState(false);
-  const [reorderedId, setReorderedId] = useState<string | null>(null);
   const [editingPet, setEditingPet] = useState(false);
   const [petNameInput, setPetNameInput] = useState(profileData.petName || '');
 
@@ -76,14 +76,6 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
     updateBillingInfo({ requiresInvoice: val });
   };
 
-  const handleReorder = (orderNumber: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setReorderedId(orderNumber);
-    setTimeout(() => {
-      setReorderedId(null);
-    }, 2500);
-  };
-
   const handleSavePet = () => {
     if (petNameInput.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -92,8 +84,6 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
     setEditingPet(false);
   };
 
-  const orders = profileData.orders || DEFAULT_VIP_CUSTOMER.orders || [];
-  const latestOrder: CustomerOrder | undefined = orders[0];
   const requiresInvoice = profileData.billingInfo?.requiresInvoice ?? false;
 
   return (
@@ -114,12 +104,13 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
           ]}
         >
           <LinearGradient
+            pointerEvents="none"
             colors={['#0F121C', '#07080C', '#050508']}
             style={StyleSheet.absoluteFill}
           />
 
           {/* Top Drag Handle & Close Bar */}
-          <View style={styles.sheetHeaderBar} {...headerPanHandlers}>
+          <View style={styles.sheetHeaderBar}>
             <View style={styles.dragIndicatorHitZone} {...grabberPanHandlers}>
               <View
                 style={[
@@ -128,14 +119,19 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 ]}
               />
             </View>
-            <View style={styles.sheetTitleRow}>
+            <View style={styles.sheetTitleRow} {...headerPanHandlers}>
               <View style={styles.brandBadge}>
                 <Ionicons name="paw" size={13} color={colors.primary.DEFAULT} />
                 <Text style={styles.brandBadgeText}>MI CUENTA MUNDO MASCOTAS</Text>
               </View>
-              <Pressable onPress={animateClose} style={styles.closeBtn} hitSlop={10}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={animateClose}
+                style={styles.closeBtn}
+                hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+              >
                 <Ionicons name="close" size={20} color={colors.dark.textSecondary} />
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -183,10 +179,20 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                   </Text>
                 </View>
                 <View style={styles.statDivider} />
-                <View style={styles.statBoxSmall}>
-                  <Text style={styles.statLabel}>Pedidos</Text>
-                  <Text style={styles.statValue}>{profileData.ordersCount ?? 23}</Text>
-                </View>
+                <Pressable
+                  onPress={() => {
+                    if (onOpenOrders) {
+                      Haptics.selectionAsync();
+                      onOpenOrders();
+                    }
+                  }}
+                  style={styles.statBoxSmall}
+                >
+                  <Text style={styles.statLabel}>Pedidos ›</Text>
+                  <Text style={[styles.statValue, { color: colors.primary.light }]}>
+                    {profileData.ordersCount ?? 23}
+                  </Text>
+                </Pressable>
                 <View style={styles.statDivider} />
                 <View style={styles.statBox}>
                   <Text style={styles.statLabel}>Miembro desde</Text>
@@ -196,192 +202,6 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 </View>
               </View>
             </View>
-
-            {/* SECCIÓN: ÚLTIMO PEDIDO REALIZADO */}
-            {latestOrder && (
-              <View style={styles.sectionCard}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>Último pedido realizado</Text>
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setShowAllOrders(!showAllOrders);
-                    }}
-                  >
-                    <Text style={styles.linkGoldText}>
-                      {showAllOrders
-                        ? 'Ocultar historial'
-                        : `Ver mis pedidos (${profileData.ordersCount ?? 23})`}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                {/* Tarjeta del Último Pedido */}
-                <View style={styles.orderBox}>
-                  <View style={styles.orderTopBar}>
-                    <View style={styles.orderBadgesWrap}>
-                      <Text style={styles.orderIdText}>Pedido #{latestOrder.orderNumber}</Text>
-
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          latestOrder.financialStatus === 'pending'
-                            ? styles.badgePendingPayment
-                            : styles.badgePaid,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.badgeDot,
-                            {
-                              backgroundColor:
-                                latestOrder.financialStatus === 'pending'
-                                  ? '#F97316'
-                                  : '#10B981',
-                            },
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.statusBadgeText,
-                            {
-                              color:
-                                latestOrder.financialStatus === 'pending'
-                                  ? '#FDBA74'
-                                  : '#6EE7B7',
-                            },
-                          ]}
-                        >
-                          {latestOrder.financialStatus === 'pending'
-                            ? 'Pago pendiente'
-                            : 'Pagado'}
-                        </Text>
-                      </View>
-
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          latestOrder.fulfillmentStatus === 'unfulfilled'
-                            ? styles.badgeUnfulfilled
-                            : styles.badgeFulfilled,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.statusBadgeText,
-                            {
-                              color:
-                                latestOrder.fulfillmentStatus === 'unfulfilled'
-                                  ? '#FDE047'
-                                  : '#93C5FD',
-                            },
-                          ]}
-                        >
-                          {latestOrder.fulfillmentStatus === 'unfulfilled'
-                            ? 'En alistamiento'
-                            : 'Entregado'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <Text style={styles.orderTotalText}>
-                      {formatCOP(latestOrder.total)}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.orderDateText}>
-                    {latestOrder.createdAt} · {latestOrder.shippingMethod}
-                  </Text>
-
-                  <View style={styles.orderItemsDivider} />
-
-                  {latestOrder.items.map((item, idx) => (
-                    <View key={idx} style={styles.lineItemRow}>
-                      <View style={styles.productThumb}>
-                        <Ionicons name="nutrition" size={20} color={colors.primary.DEFAULT} />
-                      </View>
-                      <View style={styles.lineItemInfo}>
-                        <Text style={styles.lineItemName}>{item.name}</Text>
-                        <Text style={styles.lineItemSku}>Ref: {item.sku}</Text>
-                      </View>
-                      <Text style={styles.lineItemQty}>x {item.quantity}</Text>
-                      <Text style={styles.lineItemPrice}>{formatCOP(item.price)}</Text>
-                    </View>
-                  ))}
-
-                  {/* Botón Volver a Pedir */}
-                  <Pressable
-                    onPress={() => handleReorder(latestOrder.orderNumber)}
-                    style={[
-                      styles.reorderButton,
-                      reorderedId === latestOrder.orderNumber && styles.reorderButtonSuccess,
-                    ]}
-                  >
-                    <Ionicons
-                      name={
-                        reorderedId === latestOrder.orderNumber
-                          ? 'checkmark-circle'
-                          : 'repeat-outline'
-                      }
-                      size={17}
-                      color={
-                        reorderedId === latestOrder.orderNumber ? '#10B981' : '#050508'
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.reorderButtonText,
-                        reorderedId === latestOrder.orderNumber && { color: '#10B981' },
-                      ]}
-                    >
-                      {reorderedId === latestOrder.orderNumber
-                        ? '¡Agregado a tu carrito de recompra!'
-                        : 'Volver a pedir en 1 toque'}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                {/* Historial desplegable de pedidos anteriores */}
-                {showAllOrders && orders.length > 1 && (
-                  <View style={styles.previousOrdersContainer}>
-                    <Text style={styles.previousOrdersHeading}>
-                      HISTORIAL DE MIS PEDIDOS RECIENTES
-                    </Text>
-                    {orders.slice(1).map((ord) => (
-                      <View key={ord.orderNumber} style={styles.prevOrderRow}>
-                        <View style={styles.prevOrderLeft}>
-                          <View style={styles.prevOrderHeader}>
-                            <Text style={styles.prevOrderId}>Pedido #{ord.orderNumber}</Text>
-                            <Text style={styles.prevOrderStatus}>
-                              {ord.fulfillmentStatus === 'fulfilled'
-                                ? '✓ Entregado'
-                                : '⏳ En proceso'}
-                            </Text>
-                          </View>
-                          <Text style={styles.prevOrderDate}>{ord.createdAt}</Text>
-                          {ord.items.map((it, i) => (
-                            <Text key={i} style={styles.prevOrderItemText} numberOfLines={1}>
-                              • {it.quantity}x {it.name}
-                            </Text>
-                          ))}
-                        </View>
-                        <View style={styles.prevOrderRight}>
-                          <Text style={styles.prevOrderTotal}>{formatCOP(ord.total)}</Text>
-                          <Pressable
-                            onPress={() => handleReorder(ord.orderNumber)}
-                            style={styles.miniRepeatBtn}
-                          >
-                            <Text style={styles.miniRepeatBtnText}>
-                              {reorderedId === ord.orderNumber ? '¡Listo!' : 'Repetir'}
-                            </Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
 
             {/* SECCIÓN: DATOS DE FACTURACIÓN Y MASCOTA */}
             <View style={styles.sectionCard}>

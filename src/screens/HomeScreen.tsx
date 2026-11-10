@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
+import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { InboxModal } from '../components/InboxModal';
 import {
@@ -658,6 +659,7 @@ export const HomeScreen: React.FC = () => {
   } = useAuth();
   const insets = useSafeAreaInsets();
   const [profileVisible, setProfileVisible] = useState(false);
+  const [ordersVisible, setOrdersVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
   const [addressSheetVisible, setAddressSheetVisible] = useState(false);
   const [inboxVisible, setInboxVisible] = useState(false);
@@ -870,6 +872,15 @@ export const HomeScreen: React.FC = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (user) {
       setProfileVisible(true);
+    } else {
+      openAuthModal('login');
+    }
+  };
+
+  const handleOrdersAccess = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (user) {
+      setOrdersVisible(true);
     } else {
       openAuthModal('login');
     }
@@ -3277,7 +3288,7 @@ export const HomeScreen: React.FC = () => {
             onPress={() => {
               Haptics.selectionAsync();
               setActiveBottomTab('activity');
-              handleAccountAccess();
+              handleOrdersAccess();
             }}
             style={[
               styles.uberDockTab,
@@ -3638,6 +3649,20 @@ export const HomeScreen: React.FC = () => {
         onClose={() => setAddressSheetVisible(false)}
       />
 
+      {/* Panel Deslizable exclusivo de Pedidos del Cliente */}
+      <CustomerOrdersSheet
+        visible={ordersVisible}
+        onClose={() => setOrdersVisible(false)}
+        onReorderItems={(skus) => {
+          skus.forEach((sku) => {
+            const matched = CATALOG_BAGS.find((b) => b.sku === sku);
+            if (matched) {
+              handleAddToCart(matched.id);
+            }
+          });
+        }}
+      />
+
       {/* Panel Deslizable de Cuenta del Cliente */}
       <CustomerProfileSheet
         visible={profileVisible}
@@ -3645,6 +3670,10 @@ export const HomeScreen: React.FC = () => {
         onManageAddresses={() => {
           setProfileVisible(false);
           setTimeout(() => setAddressSheetVisible(true), 220);
+        }}
+        onOpenOrders={() => {
+          setProfileVisible(false);
+          setTimeout(() => setOrdersVisible(true), 220);
         }}
       />
 
