@@ -67,9 +67,9 @@ const INITIAL_MESSAGES: InboxMessage[] = [
     actionType: 'open_profile',
     unreadCount: 1,
     iconName: 'headset-outline',
-    iconBgColor: '#7F1D1D',
-    iconColor: '#FCA5A5',
-    badgeColor: '#F87171',
+    iconBgColor: '#181B22',
+    iconColor: '#FFFFFF',
+    badgeColor: '#D4AF37',
   },
   {
     id: 'msg_offer_1',
@@ -83,8 +83,8 @@ const INITIAL_MESSAGES: InboxMessage[] = [
     actionType: 'apply_promo',
     unreadCount: 1,
     iconName: 'pricetag-outline',
-    iconBgColor: '#3B2F0C',
-    iconColor: '#FDE047',
+    iconBgColor: '#181B22',
+    iconColor: '#F5D061',
     badgeColor: '#D4AF37',
   },
   {
@@ -99,9 +99,9 @@ const INITIAL_MESSAGES: InboxMessage[] = [
     actionType: 'reorder_diamond',
     unreadCount: 1,
     iconName: 'paw-outline',
-    iconBgColor: '#1E3A8A',
-    iconColor: '#93C5FD',
-    badgeColor: '#60A5FA',
+    iconBgColor: '#181B22',
+    iconColor: '#FFFFFF',
+    badgeColor: '#D4AF37',
   },
   {
     id: 'msg_priority_1',
@@ -115,9 +115,9 @@ const INITIAL_MESSAGES: InboxMessage[] = [
     actionType: 'open_profile',
     unreadCount: 0,
     iconName: 'trophy-outline',
-    iconBgColor: '#064E3B',
-    iconColor: '#6EE7B7',
-    badgeColor: '#34D399',
+    iconBgColor: '#181B22',
+    iconColor: '#F5D061',
+    badgeColor: '#D4AF37',
   },
 ];
 
@@ -536,7 +536,7 @@ export const InboxModal: React.FC<InboxModalProps> = ({
                       }
                       size={17}
                       color={
-                        promoFeedback.type === 'success' ? '#34D399' : '#F87171'
+                        promoFeedback.type === 'success' ? colors.primary.light : '#F87171'
                       }
                     />
                     <Text
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
   },
   inboxContainer: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0A0B0E',
     paddingHorizontal: 18,
   },
   headerBlock: {
@@ -712,27 +712,28 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   closeBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'flex-start',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
+    alignItems: 'center',
     justifyContent: 'center',
   },
   markAllReadPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    paddingHorizontal: 11,
+    backgroundColor: '#181B22',
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   markAllReadText: {
-    color: colors.primary.light,
+    color: '#D1D5DB',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   titleRow: {
     flexDirection: 'row',
@@ -742,33 +743,33 @@ const styles = StyleSheet.create({
   },
   inboxBigTitle: {
     color: '#FFFFFF',
-    fontSize: 34,
-    fontWeight: '900',
+    fontSize: 32,
+    fontWeight: '800',
     letterSpacing: -0.6,
   },
 
   /* Píldoras de filtro idénticas a Uber Inbox */
   filterPillsScroll: {
-    gap: 10,
+    gap: 8,
     paddingBottom: 10,
   },
   filterPill: {
-    backgroundColor: '#222225',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 24,
+    backgroundColor: '#181B22',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 20,
   },
   filterPillActive: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
   filterPillText: {
-    color: '#E5E7EB',
-    fontSize: 14,
-    fontWeight: '700',
+    color: '#D1D5DB',
+    fontSize: 13.5,
+    fontWeight: '600',
   },
   filterPillTextActive: {
     color: '#0A0B0E',
-    fontWeight: '800',
+    fontWeight: '700',
   },
 
   scrollContent: {
@@ -780,11 +781,13 @@ const styles = StyleSheet.create({
   offerCodeBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#222225',
+    backgroundColor: '#12151C',
     borderRadius: 14,
     paddingHorizontal: 16,
-    height: 54,
+    height: 52,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   offerCodeInput: {
     flex: 1,
@@ -807,19 +810,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    backgroundColor: '#12151C',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.35)',
+    borderColor: 'rgba(212, 175, 55, 0.35)',
     borderRadius: 12,
     padding: 12,
     marginBottom: 14,
   },
   promoFeedbackError: {
-    backgroundColor: 'rgba(248, 113, 113, 0.12)',
-    borderColor: 'rgba(248, 113, 113, 0.35)',
+    backgroundColor: 'rgba(248, 113, 113, 0.1)',
+    borderColor: 'rgba(248, 113, 113, 0.3)',
   },
   promoFeedbackText: {
-    color: '#6EE7B7',
+    color: colors.primary.light,
     fontSize: 12,
     fontWeight: '700',
     flex: 1,
@@ -841,10 +844,12 @@ const styles = StyleSheet.create({
   messageIconCircle: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   messageContentCol: {
     flex: 1,
@@ -935,3 +940,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+

@@ -124,16 +124,16 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.cardElevated,
+    backgroundColor: '#12151C',
     borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: colors.dark.border,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
     paddingHorizontal: 14,
     minHeight: 52,
   },
   inputWrapperFocused: {
     borderColor: colors.primary.DEFAULT,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    backgroundColor: '#161A24',
   },
   inputWrapperError: {
     borderColor: colors.error,

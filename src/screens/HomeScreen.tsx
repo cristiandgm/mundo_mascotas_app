@@ -5,6 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  TouchableOpacity,
+  Image,
   TextInput,
   Modal,
   Animated,
@@ -1122,9 +1124,9 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      {/* ==================== 1. UBER HEADER: LOCATION + INBOX/BOLSA ==================== */}
+      {/* ==================== 1. UBER HEADER × LOGO MUNDO MASCOTAS ==================== */}
       <View style={styles.uberTopHeader}>
-        {/* LEFT: Address (logged in) or Guest prompt */}
+        {/* LEFT: Mundo Mascotas Logo Emblem + Address (logged in) or Guest prompt */}
         <Pressable
           onPress={() => {
             if (user) {
@@ -1136,18 +1138,13 @@ export const HomeScreen: React.FC = () => {
           style={styles.locationSelectorRow}
           hitSlop={8}
         >
-          <View
-            style={[
-              styles.locationDot,
-              {
-                backgroundColor: user
-                  ? deliveryZone === 'bogota'
-                    ? '#3B82F6'
-                    : '#F59E0B'
-                  : '#6B7280',
-              },
-            ]}
-          />
+          <View style={styles.headerLogoCircle}>
+            <Image
+              source={require('../../assets/logo.jpg')}
+              style={styles.headerLogoImg}
+              resizeMode="cover"
+            />
+          </View>
           <View style={styles.locationTextCol}>
             {user ? (
               <>
@@ -1160,7 +1157,9 @@ export const HomeScreen: React.FC = () => {
                       styles.locationZoneTagText,
                       {
                         color:
-                          deliveryZone === 'bogota' ? '#34D399' : '#FBBF24',
+                          deliveryZone === 'bogota'
+                            ? colors.primary.light
+                            : '#D1D5DB',
                       },
                     ]}
                   >
@@ -1171,7 +1170,7 @@ export const HomeScreen: React.FC = () => {
                   </Text>
                   <Ionicons
                     name="chevron-down"
-                    size={14}
+                    size={13}
                     color={colors.primary.light}
                   />
                 </View>
@@ -1191,10 +1190,10 @@ export const HomeScreen: React.FC = () => {
                   Modo invitado · Toca para ingresar
                 </Text>
                 <Text
-                  style={[styles.locationText, { color: '#6B7280' }]}
+                  style={[styles.locationText, { color: '#FFFFFF' }]}
                   numberOfLines={1}
                 >
-                  🐾 Explorar Mundo Mascotas
+                  Explorar Mundo Mascotas
                 </Text>
               </>
             )}
@@ -1216,7 +1215,7 @@ export const HomeScreen: React.FC = () => {
         >
           <Ionicons
             name={user ? 'notifications-outline' : 'person-outline'}
-            size={17}
+            size={16}
             color="#FFFFFF"
           />
           <Text style={styles.inboxBagText}>{user ? 'Inbox' : 'Ingresar'}</Text>
@@ -1563,12 +1562,7 @@ export const HomeScreen: React.FC = () => {
                           ]}
                         >
                           {/* Brand emoji icon */}
-                          <View
-                            style={[
-                              styles.searchResultIconBox,
-                              { borderColor: item.accentColor ?? '#D4AF37' },
-                            ]}
-                          >
+                          <View style={styles.searchResultIconBox}>
                             <Text style={{ fontSize: 20 }}>{brandEmoji}</Text>
                           </View>
 
@@ -1591,23 +1585,8 @@ export const HomeScreen: React.FC = () => {
                                 {formatCOP(item.price)}
                               </Text>
                               {item.tag ? (
-                                <View
-                                  style={[
-                                    styles.searchResultTag,
-                                    {
-                                      backgroundColor:
-                                        (item.accentColor ?? '#D4AF37') + '22',
-                                      borderColor:
-                                        (item.accentColor ?? '#D4AF37') + '55',
-                                    },
-                                  ]}
-                                >
-                                  <Text
-                                    style={[
-                                      styles.searchResultTagText,
-                                      { color: item.accentColor ?? '#D4AF37' },
-                                    ]}
-                                  >
+                                <View style={styles.searchResultTag}>
+                                  <Text style={styles.searchResultTagText}>
                                     {item.tag}
                                   </Text>
                                 </View>
@@ -1839,7 +1818,7 @@ export const HomeScreen: React.FC = () => {
                   <View key={product.id} style={styles.uberFeatureCard}>
                     <Pressable onPress={() => openProductDetail(product)}>
                       <LinearGradient
-                        colors={['#1A1E2E', '#10131C']}
+                        colors={['#161922', '#0F1117']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.uberCardGraphicArea}
@@ -1858,12 +1837,7 @@ export const HomeScreen: React.FC = () => {
                         </View>
 
                         <View style={styles.uberCardVisualCenter}>
-                          <View
-                            style={[
-                              styles.bagIllustrationCircle,
-                              { borderColor: `${product.accentColor}55` },
-                            ]}
-                          >
+                          <View style={styles.bagIllustrationCircle}>
                             <Text style={{ fontSize: 34 }}>
                               {product.subFilter === 'medicamentos'
                                 ? '💊'
@@ -1883,8 +1857,8 @@ export const HomeScreen: React.FC = () => {
                         <View style={styles.uberCardBottomTag}>
                           <Text style={styles.uberCardBottomTagText}>
                             {deliveryZone === 'bogota'
-                              ? '🚚 Domicilio Gratis Bogotá'
-                              : '📦 + Recargo transportadora'}
+                              ? 'Domicilio Gratis Bogotá'
+                              : '+ Flete transportadora'}
                           </Text>
                         </View>
                       </LinearGradient>
@@ -1964,7 +1938,7 @@ export const HomeScreen: React.FC = () => {
                   <View key={product.id} style={styles.uberFeatureCard}>
                     <Pressable onPress={() => openProductDetail(product)}>
                       <LinearGradient
-                        colors={['#171F2C', '#0F141D']}
+                        colors={['#161922', '#0F1117']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.uberCardGraphicArea}
@@ -1983,12 +1957,7 @@ export const HomeScreen: React.FC = () => {
                         </View>
 
                         <View style={styles.uberCardVisualCenter}>
-                          <View
-                            style={[
-                              styles.bagIllustrationCircle,
-                              { borderColor: `${product.accentColor}55` },
-                            ]}
-                          >
+                          <View style={styles.bagIllustrationCircle}>
                             <Text style={{ fontSize: 32 }}>
                               {product.subFilter === 'humedos'
                                 ? '🥫'
@@ -3363,12 +3332,7 @@ export const HomeScreen: React.FC = () => {
               { transform: [{ translateY: cartTranslateY }] },
             ]}
           >
-            <LinearGradient
-              colors={['#0F121C', '#07080D', '#050508']}
-              style={StyleSheet.absoluteFill}
-            />
-
-            <View style={styles.cartSheetHeader} {...cartHeaderPanHandlers}>
+            <View style={styles.cartSheetHeader}>
               <View style={styles.dragHandleHitZone} {...cartGrabberPanHandlers}>
                 <View
                   style={[
@@ -3377,16 +3341,23 @@ export const HomeScreen: React.FC = () => {
                   ]}
                 />
               </View>
-              <View style={styles.cartSheetTitleRow}>
-                <Text style={styles.cartSheetTitle}>
-                  Tu Bolsa de Concentrados ({cartSummary.totalItems})
-                </Text>
-                <Pressable
+              <View style={styles.cartSheetTitleRow} {...cartHeaderPanHandlers}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Text style={styles.cartSheetTitle}>Bolsa</Text>
+                  <View style={styles.cartCountHeaderPill}>
+                    <Text style={styles.cartCountHeaderPillText}>
+                      {cartSummary.totalItems} {cartSummary.totalItems === 1 ? 'ítem' : 'ítems'}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
                   onPress={animateCloseCart}
                   style={styles.closeModalBtn}
+                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 >
-                  <Ionicons name="close" size={20} color={colors.dark.textSecondary} />
-                </Pressable>
+                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -3553,19 +3524,21 @@ export const HomeScreen: React.FC = () => {
                       <Text style={styles.costLabel}>
                         {deliveryZone === 'bogota'
                           ? 'Domicilio en Bogotá D.C.'
-                          : `Recargo Transportadora (${cartSummary.totalWeightLb} LB)`}
+                          : `Flete Transportadora (${cartSummary.totalWeightLb} LB)`}
                       </Text>
                       <Text
                         style={[
                           styles.costValue,
                           {
                             color:
-                              deliveryZone === 'bogota' ? '#10B981' : '#F59E0B',
+                              deliveryZone === 'bogota'
+                                ? colors.primary.light
+                                : '#D1D5DB',
                           },
                         ]}
                       >
                         {deliveryZone === 'bogota'
-                          ? 'GRATIS ($ 0)'
+                          ? 'Gratis ($ 0)'
                           : `+ ${formatCOP(cartSummary.estimatedCarrierFee)}`}
                       </Text>
                     </View>
@@ -3589,7 +3562,11 @@ export const HomeScreen: React.FC = () => {
 
                   {orderSuccessToast ? (
                     <View style={styles.orderConfirmedBanner}>
-                      <Ionicons name="checkmark-circle" size={22} color="#10B981" />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color={colors.primary.light}
+                      />
                       <Text style={styles.orderConfirmedText}>
                         ¡Pedido listo!{' '}
                         {deliveryZone === 'bogota'
@@ -3705,11 +3682,11 @@ export const HomeScreen: React.FC = () => {
               ]}
             >
               <Pressable onPress={() => {}}>
-                {/* Top accent gradient */}
+                {/* Top luxury gold subtle glow */}
                 <LinearGradient
                   colors={[
-                    (selectedProduct.accentColor ?? '#D4AF37') + 'CC',
-                    (selectedProduct.accentColor ?? '#D4AF37') + '33',
+                    'rgba(212, 175, 55, 0.16)',
+                    'rgba(212, 175, 55, 0.03)',
                     'transparent',
                   ]}
                   style={styles.productDetailGradientTop}
@@ -3718,50 +3695,36 @@ export const HomeScreen: React.FC = () => {
                 />
 
                 {/* Close button */}
-                <Pressable
+                <TouchableOpacity
+                  activeOpacity={0.7}
                   onPress={closeProductDetail}
                   style={styles.productDetailCloseBtn}
-                  hitSlop={12}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   <Ionicons name="close" size={18} color="#FFFFFF" />
-                </Pressable>
+                </TouchableOpacity>
 
                 {/* Brand + emoji */}
                 <View style={styles.productDetailBrandRow}>
-                  <Text style={{ fontSize: 46 }}>
-                    {selectedProduct.brand === 'Diamond Naturals'
-                      ? '💎'
-                      : selectedProduct.brand === 'Taste of the Wild'
-                        ? '🌿'
-                        : selectedProduct.brand === 'Acana'
-                          ? '🦅'
-                          : selectedProduct.brand === 'Orijen'
-                            ? '🐾'
-                            : '🛍️'}
-                  </Text>
+                  <View style={styles.productDetailEmojiBox}>
+                    <Text style={{ fontSize: 34 }}>
+                      {selectedProduct.brand === 'Diamond Naturals'
+                        ? '💎'
+                        : selectedProduct.brand === 'Taste of the Wild'
+                          ? '🌿'
+                          : selectedProduct.brand === 'Acana'
+                            ? '🦅'
+                            : selectedProduct.brand === 'Orijen'
+                              ? '🐾'
+                              : '🛍️'}
+                    </Text>
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.productDetailBrand}>
                       {selectedProduct.brand}
                     </Text>
-                    <View
-                      style={[
-                        styles.productDetailStagePill,
-                        {
-                          backgroundColor:
-                            (selectedProduct.accentColor ?? '#D4AF37') + '22',
-                          borderColor:
-                            (selectedProduct.accentColor ?? '#D4AF37') + '55',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.productDetailStageText,
-                          {
-                            color: selectedProduct.accentColor ?? '#D4AF37',
-                          },
-                        ]}
-                      >
+                    <View style={styles.productDetailStagePill}>
+                      <Text style={styles.productDetailStageText}>
                         {selectedProduct.stage}
                       </Text>
                     </View>
@@ -3775,7 +3738,7 @@ export const HomeScreen: React.FC = () => {
 
                 {/* Protein / description */}
                 <Text style={styles.productDetailProtein}>
-                  🧬 {selectedProduct.protein}
+                  {selectedProduct.protein}
                 </Text>
 
                 {/* Specs row */}
@@ -3785,19 +3748,24 @@ export const HomeScreen: React.FC = () => {
                       {selectedProduct.unitLabel ??
                         `${selectedProduct.weightLb} LB`}
                     </Text>
-                    <Text style={styles.productDetailSpecLabel}>Peso</Text>
+                    <Text style={styles.productDetailSpecLabel}>Presentación</Text>
                   </View>
                   <View style={styles.productDetailSpecDivider} />
                   <View style={styles.productDetailSpecBox}>
                     <Text style={styles.productDetailSpecValue}>
-                      {selectedProduct.petType === 'dog' ? '🐶' : '🐱'}
+                      {selectedProduct.petType === 'dog' ? '🐶 Perro' : '🐱 Gato'}
                     </Text>
-                    <Text style={styles.productDetailSpecLabel}>Para</Text>
+                    <Text style={styles.productDetailSpecLabel}>Especie</Text>
                   </View>
                   <View style={styles.productDetailSpecDivider} />
                   <View style={styles.productDetailSpecBox}>
-                    <Text style={styles.productDetailSpecValue}>
-                      {selectedProduct.coins} 🪙
+                    <Text
+                      style={[
+                        styles.productDetailSpecValue,
+                        { color: colors.primary.light },
+                      ]}
+                    >
+                      +{selectedProduct.coins} 🪙
                     </Text>
                     <Text style={styles.productDetailSpecLabel}>
                       Consenticoins
@@ -3809,15 +3777,21 @@ export const HomeScreen: React.FC = () => {
                 <View style={styles.productDetailDeliveryRow}>
                   <Ionicons
                     name="car-outline"
-                    size={15}
-                    color={deliveryZone === 'bogota' ? '#34D399' : '#FBBF24'}
+                    size={16}
+                    color={
+                      deliveryZone === 'bogota'
+                        ? colors.primary.light
+                        : '#9CA3AF'
+                    }
                   />
                   <Text
                     style={[
                       styles.productDetailDeliveryText,
                       {
                         color:
-                          deliveryZone === 'bogota' ? '#34D399' : '#FBBF24',
+                          deliveryZone === 'bogota'
+                            ? '#FFFFFF'
+                            : '#9CA3AF',
                       },
                     ]}
                   >
@@ -3826,23 +3800,8 @@ export const HomeScreen: React.FC = () => {
                       : '+ Flete transportadora'}
                   </Text>
                   {selectedProduct.tag ? (
-                    <View
-                      style={[
-                        styles.productDetailTagPill,
-                        {
-                          backgroundColor:
-                            (selectedProduct.accentColor ?? '#D4AF37') + '22',
-                          borderColor:
-                            (selectedProduct.accentColor ?? '#D4AF37') + '55',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.productDetailTagText,
-                          { color: selectedProduct.accentColor ?? '#D4AF37' },
-                        ]}
-                      >
+                    <View style={styles.productDetailTagPill}>
+                      <Text style={styles.productDetailTagText}>
                         {selectedProduct.tag}
                       </Text>
                     </View>
@@ -3921,14 +3880,22 @@ const styles = StyleSheet.create({
   locationSelectorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 11,
     flex: 1,
     paddingRight: 12,
   },
-  locationDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  headerLogoCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#050508',
+    borderWidth: 1.5,
+    borderColor: colors.primary.DEFAULT,
+    overflow: 'hidden',
+  },
+  headerLogoImg: {
+    width: '100%',
+    height: '100%',
   },
   locationTextCol: {
     flex: 1,
@@ -3960,9 +3927,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
+    backgroundColor: '#181B22',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   inboxBagText: {
     color: '#E5E7EB',
@@ -4319,7 +4289,8 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 29,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -4444,21 +4415,21 @@ const styles = StyleSheet.create({
     minWidth: 23,
     height: 23,
     borderRadius: 12,
-    backgroundColor: '#EF4444',
+    backgroundColor: '#0A0B0E',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
-    borderWidth: 2,
-    borderColor: '#0A0B0E',
+    borderWidth: 1.5,
+    borderColor: colors.primary.DEFAULT,
     zIndex: 10,
     elevation: 22,
   },
   draggableCartBadgeEmpty: {
-    backgroundColor: '#1E2230',
-    borderColor: 'rgba(212, 175, 55, 0.45)',
+    backgroundColor: '#181B22',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   draggableCartBadgeText: {
-    color: '#FFFFFF',
+    color: colors.primary.light,
     fontSize: 11,
     fontWeight: '900',
     includeFontPadding: false,
@@ -4466,12 +4437,12 @@ const styles = StyleSheet.create({
   },
   draggableCartPricePill: {
     marginTop: 4,
-    backgroundColor: 'rgba(10, 11, 14, 0.92)',
+    backgroundColor: 'rgba(10, 11, 14, 0.94)',
     paddingHorizontal: 8,
     paddingVertical: 2.5,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.55)',
+    borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   draggableCartPriceText: {
     color: colors.primary.light,
@@ -4483,10 +4454,10 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     zIndex: 88,
-    backgroundColor: '#131620',
+    backgroundColor: '#12151C',
     borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(212, 175, 55, 0.45)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 15,
     paddingVertical: 12,
     shadowColor: '#000',
@@ -4505,8 +4476,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   miniCartDrawerTitle: {
-    color: colors.primary.light,
-    fontSize: 13,
+    color: '#FFFFFF',
+    fontSize: 13.5,
     fontWeight: '800',
   },
   miniCartItemRow: {
@@ -4539,12 +4510,12 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   miniCartFooterTotal: {
-    color: colors.primary.light,
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '900',
   },
   miniCartFooterShip: {
-    color: '#34D399',
+    color: colors.primary.light,
     fontSize: 11,
     fontWeight: '700',
     marginTop: 1,
@@ -4636,16 +4607,16 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.76)',
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
     justifyContent: 'flex-end',
   },
   cartSheetContainer: {
-    maxHeight: '84%',
-    backgroundColor: '#07080D',
+    maxHeight: '86%',
+    backgroundColor: '#0A0B0E',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    borderTopWidth: 1.5,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
+    borderTopWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
   cartSheetContainerExpanded: {
@@ -4653,44 +4624,63 @@ const styles = StyleSheet.create({
     height: '95%',
   },
   cartSheetHeader: {
-    paddingTop: 6,
+    paddingTop: 8,
     paddingHorizontal: 20,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#0A0B0E',
+    zIndex: 30,
+    elevation: 30,
   },
   dragHandleHitZone: {
-    paddingVertical: 10,
+    width: '100%',
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dragHandle: {
-    width: 44,
-    height: 5,
+    width: 40,
+    height: 4.5,
     borderRadius: 3,
-    backgroundColor: 'rgba(212, 175, 55, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   dragHandleActive: {
-    width: 56,
-    backgroundColor: colors.primary.light,
+    width: 52,
+    backgroundColor: '#FFFFFF',
   },
   cartSheetTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4,
   },
   cartSheetTitle: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 28,
     fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  cartCountHeaderPill: {
+    backgroundColor: '#181B22',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  cartCountHeaderPillText: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    fontWeight: '700',
   },
   closeModalBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 35,
+    elevation: 35,
   },
   cartSheetScroll: {
     padding: 20,
@@ -4714,21 +4704,21 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   cartZoneBox: {
-    backgroundColor: '#0E1017',
-    borderRadius: 14,
-    padding: 12,
+    backgroundColor: '#12151C',
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   cartZoneLabel: {
-    color: colors.dark.textSecondary,
-    fontSize: 11,
+    color: '#9CA3AF',
+    fontSize: 11.5,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   logisticsSwitchRow: {
     flexDirection: 'row',
-    backgroundColor: '#050508',
+    backgroundColor: '#0A0B0E',
     borderRadius: 12,
     padding: 3,
     borderWidth: 1,
@@ -4745,44 +4735,44 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary.DEFAULT,
   },
   zonePillNacionalActive: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#181B22',
   },
   zonePillText: {
-    color: colors.dark.textSecondary,
+    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '700',
   },
   zonePillTextActive: {
-    color: '#050508',
+    color: '#0A0B0E',
     fontWeight: '800',
   },
   cartItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0E1017',
+    backgroundColor: '#12151C',
     padding: 14,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     gap: 10,
   },
   cartItemName: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   cartItemSub: {
-    color: colors.dark.textSecondary,
-    fontSize: 11,
+    color: '#9CA3AF',
+    fontSize: 12,
     marginTop: 2,
   },
   costBreakdownCard: {
-    backgroundColor: '#0E1017',
-    borderRadius: 16,
+    backgroundColor: '#12151C',
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     gap: 10,
   },
   costRow: {
@@ -4791,22 +4781,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   costLabel: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
+    color: '#9CA3AF',
+    fontSize: 13,
   },
   costValue: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '700',
   },
   costDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
     marginVertical: 4,
   },
   costTotalLabel: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
   },
   costTotalValue: {
@@ -4817,27 +4807,27 @@ const styles = StyleSheet.create({
   checkoutGoldBtn: {
     backgroundColor: colors.primary.DEFAULT,
     paddingVertical: 15,
-    borderRadius: 14,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 4,
   },
   checkoutGoldBtnText: {
     color: '#050508',
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '900',
   },
   orderConfirmedBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: '#12151C',
     borderWidth: 1,
-    borderColor: '#10B981',
+    borderColor: colors.primary.DEFAULT,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: 16,
   },
   orderConfirmedText: {
-    color: '#6EE7B7',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
     flex: 1,
@@ -4993,15 +4983,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   quizMatchPill: {
-    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    backgroundColor: '#1C202B',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.35)',
+    borderColor: 'rgba(212, 175, 55, 0.35)',
   },
   quizMatchPillText: {
-    color: '#34D399',
+    color: colors.primary.light,
     fontSize: 11,
     fontWeight: '800',
   },
@@ -5190,7 +5180,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   petExclusiveNote: {
-    color: '#34D399',
+    color: colors.primary.light,
     fontSize: 11,
     fontWeight: '700',
     marginTop: 4,
@@ -5287,9 +5277,8 @@ const styles = StyleSheet.create({
 
   // ===== SEARCH RESULTS PANEL =====
   searchResultsPanel: {
-    marginHorizontal: 16,
     marginBottom: 20,
-    backgroundColor: '#13161F',
+    backgroundColor: '#12151C',
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
@@ -5316,7 +5305,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   searchResultsClearText: {
-    color: '#D4AF37',
+    color: colors.primary.light,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -5331,10 +5320,11 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 14,
-    backgroundColor: '#1E212B',
+    backgroundColor: '#1C202B',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   searchResultName: {
     color: '#FFFFFF',
@@ -5364,20 +5354,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   searchResultTag: {
+    backgroundColor: '#1C202B',
     paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingVertical: 2.5,
     borderRadius: 6,
     borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
   },
   searchResultTagText: {
+    color: colors.primary.light,
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   searchResultAddBtn: {
     width: 34,
     height: 34,
-    borderRadius: 10,
-    backgroundColor: '#D4AF37',
+    borderRadius: 17,
+    backgroundColor: colors.primary.DEFAULT,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -5389,8 +5382,8 @@ const styles = StyleSheet.create({
   searchResultQtyBtn: {
     width: 30,
     height: 30,
-    borderRadius: 9,
-    backgroundColor: '#1E212B',
+    borderRadius: 15,
+    backgroundColor: '#1C202B',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -5420,16 +5413,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   searchEmptyResetBtn: {
-    backgroundColor: 'rgba(212,175,55,0.15)',
+    backgroundColor: '#1C202B',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.4)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   searchEmptyResetText: {
-    color: '#D4AF37',
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 13.5,
     fontWeight: '700',
   },
 
@@ -5443,7 +5436,7 @@ const styles = StyleSheet.create({
   },
   productDetailCard: {
     width: '100%',
-    backgroundColor: '#13161F',
+    backgroundColor: '#12151C',
     borderRadius: 28,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
@@ -5454,20 +5447,21 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 160,
+    height: 150,
     borderRadius: 28,
   },
   productDetailCloseBtn: {
     position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    top: 16,
+    right: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 20,
+    elevation: 20,
   },
   productDetailBrandRow: {
     flexDirection: 'row',
@@ -5475,38 +5469,52 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingHorizontal: 22,
     paddingTop: 24,
-    paddingBottom: 10,
+    paddingBottom: 12,
+  },
+  productDetailEmojiBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: '#1C202B',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   productDetailBrand: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     marginBottom: 6,
   },
   productDetailStagePill: {
     alignSelf: 'flex-start',
+    backgroundColor: '#1C202B',
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 3.5,
     borderRadius: 8,
     borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   productDetailStageText: {
+    color: '#E5E7EB',
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   productDetailName: {
     color: '#FFFFFF',
     fontSize: 20,
-    fontWeight: '900',
+    fontWeight: '800',
     paddingHorizontal: 22,
     marginBottom: 6,
     lineHeight: 26,
+    letterSpacing: -0.3,
   },
   productDetailProtein: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 13.5,
     paddingHorizontal: 22,
     marginBottom: 18,
   },
@@ -5514,9 +5522,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 22,
     marginBottom: 18,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#0A0B0E',
     borderRadius: 16,
     paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   productDetailSpecBox: {
     flex: 1,
@@ -5525,8 +5535,8 @@ const styles = StyleSheet.create({
   },
   productDetailSpecValue: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
   },
   productDetailSpecLabel: {
     color: '#6B7280',
@@ -5535,7 +5545,7 @@ const styles = StyleSheet.create({
   },
   productDetailSpecDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.07)',
     marginVertical: 4,
   },
   productDetailDeliveryRow: {
@@ -5551,14 +5561,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   productDetailTagPill: {
+    backgroundColor: '#1C202B',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 7,
     borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
   },
   productDetailTagText: {
+    color: colors.primary.light,
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   productDetailFooter: {
     flexDirection: 'row',

@@ -13,7 +13,6 @@ import {
   PanResponder,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -303,11 +302,6 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
             },
           ]}
         >
-          <LinearGradient
-            colors={['#0A0B0F', '#11141E', '#0D0F17']}
-            style={StyleSheet.absoluteFill}
-          />
-
           {/* ==================== CABECERA ALINEADA CON LA ESQUINA SUPERIOR ==================== */}
           <View style={styles.sheetTopHeader}>
             <View style={styles.headerRow}>
@@ -486,10 +480,10 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                                       <Ionicons
                                         name="checkmark-circle"
                                         size={13}
-                                        color="#10B981"
+                                        color={colors.primary.light}
                                       />
                                       <Text style={styles.freeBogotaTagText}>
-                                        Domicilio GRATIS ($ 0) · Contraentrega
+                                        Domicilio Gratis · Contraentrega
                                       </Text>
                                     </View>
                                   ) : (
@@ -497,10 +491,10 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                                       <Ionicons
                                         name="cube-outline"
                                         size={13}
-                                        color="#F59E0B"
+                                        color="#D1D5DB"
                                       />
                                       <Text style={styles.carrierFeeTagText}>
-                                        + Recargo Transportadora (según LB)
+                                        + Flete transportadora (según LB)
                                       </Text>
                                     </View>
                                   )}
@@ -890,11 +884,11 @@ const styles = StyleSheet.create({
   },
   topDropdownSheet: {
     maxHeight: '78%',
-    backgroundColor: '#0A0B0F',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    borderBottomWidth: 1.5,
-    borderColor: 'rgba(212, 175, 55, 0.28)',
+    backgroundColor: '#0A0B0E',
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 14 },
@@ -909,7 +903,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     paddingHorizontal: 18,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.07)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   headerRow: {
     flexDirection: 'row',
@@ -919,25 +913,26 @@ const styles = StyleSheet.create({
   headerLocationIconBox: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(212, 175, 55, 0.14)',
+    borderRadius: 12,
+    backgroundColor: '#181B22',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   backIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sheetTitle: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
+    letterSpacing: -0.3,
   },
   sheetSubtitle: {
     color: '#9CA3AF',
@@ -945,10 +940,10 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   closeIconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -962,20 +957,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 8,
     paddingBottom: 10,
-    backgroundColor: '#0D0F16',
+    backgroundColor: '#0A0B0E',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.06)',
     gap: 4,
   },
   grabberPill: {
-    width: 44,
-    height: 5,
+    width: 40,
+    height: 4.5,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.28)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   grabberPillActive: {
-    width: 58,
-    backgroundColor: colors.primary.DEFAULT,
+    width: 52,
+    backgroundColor: '#FFFFFF',
   },
   grabberHintText: {
     color: '#6B7280',
@@ -1035,15 +1030,15 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   addressCard: {
-    backgroundColor: '#151821',
+    backgroundColor: '#12151C',
     borderRadius: 18,
-    padding: 13,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   addressCardSelected: {
-    backgroundColor: '#191D28',
-    borderColor: colors.primary.DEFAULT,
+    backgroundColor: '#161A24',
+    borderColor: 'rgba(212, 175, 55, 0.45)',
   },
   addressCardDanger: {
     borderColor: 'rgba(248, 113, 113, 0.45)',
@@ -1063,16 +1058,16 @@ const styles = StyleSheet.create({
   addressIconCircle: {
     width: 42,
     height: 42,
-    borderRadius: 21,
-    backgroundColor: '#222632',
+    borderRadius: 12,
+    backgroundColor: '#1C202B',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
   addressIconCircleSelected: {
-    backgroundColor: 'rgba(212, 175, 55, 0.18)',
+    backgroundColor: '#1C202B',
     borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
+    borderColor: 'rgba(212, 175, 55, 0.45)',
   },
   addressEmoji: {
     fontSize: 19,
@@ -1089,72 +1084,72 @@ const styles = StyleSheet.create({
   addressLabelTitle: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   addressCityTag: {
     color: '#9CA3AF',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   activeNowPill: {
-    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    backgroundColor: '#1C202B',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.45)',
+    borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   activeNowPillText: {
     color: colors.primary.light,
     fontSize: 10,
-    fontWeight: '800',
-  },
-  addressLine1: {
-    color: '#F3F4F6',
-    fontSize: 14,
     fontWeight: '700',
   },
+  addressLine1: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   addressLine2: {
-    color: '#D1D5DB',
+    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
   addressMetaText: {
-    color: '#9CA3AF',
-    fontSize: 11,
+    color: '#6B7280',
+    fontSize: 11.5,
     marginTop: 3,
   },
   shippingTagRow: {
-    marginTop: 7,
+    marginTop: 8,
     flexDirection: 'row',
   },
   freeBogotaTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 8,
+    backgroundColor: '#1C202B',
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 8,
   },
   freeBogotaTagText: {
-    color: '#34D399',
+    color: '#D1D5DB',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   carrierFeeTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    paddingHorizontal: 8,
+    backgroundColor: '#1C202B',
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 8,
   },
   carrierFeeTagText: {
-    color: '#FBBF24',
+    color: '#9CA3AF',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   addressRightActions: {
     alignItems: 'center',
@@ -1239,11 +1234,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: 'rgba(212, 175, 55, 0.08)',
+    backgroundColor: '#12151C',
     borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   addNewPlusCircle: {
     width: 36,
@@ -1256,7 +1251,7 @@ const styles = StyleSheet.create({
   addNewAddressTitle: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   addNewAddressSub: {
     color: '#9CA3AF',
@@ -1302,14 +1297,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#161922',
+    backgroundColor: '#12151C',
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   labelOptionPillActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.16)',
+    backgroundColor: '#181B22',
     borderColor: colors.primary.DEFAULT,
   },
   labelOptionEmoji: {
@@ -1318,10 +1313,11 @@ const styles = StyleSheet.create({
   labelOptionText: {
     color: '#9CA3AF',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   labelOptionTextActive: {
     color: '#FFFFFF',
+    fontWeight: '700',
   },
   zoneSelectorRow: {
     flexDirection: 'row',
@@ -1329,35 +1325,35 @@ const styles = StyleSheet.create({
   },
   zoneChoiceCard: {
     flex: 1,
-    backgroundColor: '#161922',
+    backgroundColor: '#12151C',
     borderRadius: 14,
     padding: 12,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   zoneChoiceCardBogotaActive: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderColor: '#10B981',
+    backgroundColor: '#181B22',
+    borderColor: colors.primary.DEFAULT,
   },
   zoneChoiceCardNacionalActive: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    borderColor: '#F59E0B',
+    backgroundColor: '#181B22',
+    borderColor: colors.primary.DEFAULT,
   },
   zoneChoiceTitle: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   zoneChoiceSubFree: {
-    color: '#34D399',
+    color: colors.primary.light,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 3,
   },
   zoneChoiceSubCarrier: {
-    color: '#FBBF24',
+    color: '#9CA3AF',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 3,
   },
   outsideCitySection: {

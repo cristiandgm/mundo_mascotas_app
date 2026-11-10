@@ -10,7 +10,6 @@ import {
   TextInput,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -103,13 +102,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
             { transform: [{ translateY }] },
           ]}
         >
-          <LinearGradient
-            pointerEvents="none"
-            colors={['#0F121C', '#07080C', '#050508']}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {/* Top Drag Handle & Close Bar */}
+          {/* Barra superior minimalista estilo Uber */}
           <View style={styles.sheetHeaderBar}>
             <View style={styles.dragIndicatorHitZone} {...grabberPanHandlers}>
               <View
@@ -120,17 +113,14 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
               />
             </View>
             <View style={styles.sheetTitleRow} {...headerPanHandlers}>
-              <View style={styles.brandBadge}>
-                <Ionicons name="paw" size={13} color={colors.primary.DEFAULT} />
-                <Text style={styles.brandBadgeText}>MI CUENTA MUNDO MASCOTAS</Text>
-              </View>
+              <Text style={styles.uberMainHeaderTitle}>Cuenta</Text>
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={animateClose}
                 style={styles.closeBtn}
                 hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
               >
-                <Ionicons name="close" size={20} color={colors.dark.textSecondary} />
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           </View>
@@ -143,76 +133,162 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {/* Cabecera del Cliente */}
-            <View style={styles.customerHeaderCard}>
-              <View style={styles.customerIdentityRow}>
-                <UserAvatar
-                  name={profileData.name}
-                  avatarUrl={profileData.avatarUrl}
-                  size={60}
-                />
-                <View style={styles.customerNameCol}>
-                  <View style={styles.nameAndGroupRow}>
-                    <Text style={styles.customerName}>{profileData.name}</Text>
-                    <View style={styles.groupPill}>
-                      <Text style={styles.groupPillText}>
-                        🏆 {profileData.customerGroup || 'Champions VIP'}
+            {/* Cabecera de Identidad estilo Uber Account + Mundo Mascotas Gold */}
+            <View style={styles.uberIdentitySection}>
+              <View style={styles.uberIdentityLeft}>
+                <Text style={styles.customerName}>{profileData.name}</Text>
+                <View style={styles.groupPillRow}>
+                  <View style={styles.groupPill}>
+                    <Ionicons name="star" size={11} color={colors.primary.DEFAULT} />
+                    <Text style={styles.groupPillText}>
+                      {profileData.customerGroup || 'Champions VIP'}
+                    </Text>
+                  </View>
+                  <Text style={styles.memberSinceText}>
+                    · {profileData.customerSince || 'Más de 1 año'}
+                  </Text>
+                </View>
+                <Text style={styles.customerEmailText}>{profileData.email}</Text>
+              </View>
+
+              <UserAvatar
+                name={profileData.name}
+                avatarUrl={profileData.avatarUrl}
+                size={62}
+              />
+            </View>
+
+            {/* 3 Azulejos de Acceso Rápido estilo Uber ("Pedidos", "Entregas", "Coins") */}
+            <View style={styles.uberQuickTilesRow}>
+              <Pressable
+                onPress={() => {
+                  if (onOpenOrders) {
+                    Haptics.selectionAsync();
+                    onOpenOrders();
+                  }
+                }}
+                style={({ pressed }) => [
+                  styles.uberQuickTile,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Ionicons name="receipt-outline" size={22} color="#FFFFFF" />
+                <Text style={styles.uberQuickTileTitle}>Pedidos</Text>
+                <Text style={styles.uberQuickTileSub}>
+                  {profileData.ordersCount ?? 23} realizados
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  if (onManageAddresses) {
+                    Haptics.selectionAsync();
+                    onManageAddresses();
+                  }
+                }}
+                style={({ pressed }) => [
+                  styles.uberQuickTile,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Ionicons name="location-outline" size={22} color="#FFFFFF" />
+                <Text style={styles.uberQuickTileTitle}>Direcciones</Text>
+                <Text style={styles.uberQuickTileSub}>
+                  {addresses.length} guardadas
+                </Text>
+              </Pressable>
+
+              <View style={styles.uberQuickTileGold}>
+                <Ionicons name="sparkles-outline" size={22} color={colors.primary.light} />
+                <Text style={styles.uberQuickTileTitle}>
+                  {profileData.points} Coins
+                </Text>
+                <Text style={styles.uberQuickTileSubGold}>
+                  {formatCOP(profileData.totalSpent ?? 8721100)}
+                </Text>
+              </View>
+            </View>
+
+            {/* SECCIÓN: CONTACTO Y DIRECCIÓN DE ENTREGA */}
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Entrega y contacto</Text>
+
+              {/* Dirección activa */}
+              <View style={styles.infoBlock}>
+                <View style={styles.infoIconBox}>
+                  <Ionicons name="location-outline" size={18} color="#FFFFFF" />
+                </View>
+                <View style={styles.infoTextCol}>
+                  <View style={styles.addressHeaderRow}>
+                    <Text style={styles.infoBlockPrimary}>
+                      {selectedAddress.label} · {selectedAddress.city}
+                    </Text>
+                    <View style={styles.coveragePill}>
+                      <View style={styles.coverageDot} />
+                      <Text style={styles.coveragePillText}>
+                        {selectedAddress.isBogota
+                          ? 'Domicilio Gratis'
+                          : 'Transportadora'}
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.customerEmailText}>{profileData.email}</Text>
-                  <View style={styles.sessionStatusRow}>
-                    <View style={styles.onlineDot} />
-                    <Text style={styles.sessionStatusText}>
-                      Cuenta activa · Notificaciones en Español
-                    </Text>
-                  </View>
+                  <Text style={styles.infoBlockSecondary}>
+                    {selectedAddress.address1}
+                    {selectedAddress.address2 ? ` · ${selectedAddress.address2}` : ''}
+                  </Text>
+                  <Text style={styles.infoBlockMuted}>
+                    Recibe: {selectedAddress.recipient || 'Alejandra P.'}
+                  </Text>
+
+                  {onManageAddresses && (
+                    <Pressable
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        onManageAddresses();
+                      }}
+                      style={styles.uberActionPillBtn}
+                    >
+                      <Text style={styles.uberActionPillText}>
+                        Cambiar dirección ({addresses.length})
+                      </Text>
+                      <Ionicons name="chevron-forward" size={13} color="#FFFFFF" />
+                    </Pressable>
+                  )}
                 </View>
               </View>
 
-              {/* Resumen de Fidelidad */}
-              <View style={styles.statsGrid}>
-                <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>Total en compras</Text>
-                  <Text style={styles.statValueGold}>
-                    {formatCOP(profileData.totalSpent ?? 8721100)}
-                  </Text>
+              <View style={styles.blockSeparator} />
+
+              {/* Contacto */}
+              <View style={styles.infoBlock}>
+                <View style={styles.infoIconBox}>
+                  <Ionicons name="call-outline" size={18} color="#FFFFFF" />
                 </View>
-                <View style={styles.statDivider} />
-                <Pressable
-                  onPress={() => {
-                    if (onOpenOrders) {
-                      Haptics.selectionAsync();
-                      onOpenOrders();
-                    }
-                  }}
-                  style={styles.statBoxSmall}
-                >
-                  <Text style={styles.statLabel}>Pedidos ›</Text>
-                  <Text style={[styles.statValue, { color: colors.primary.light }]}>
-                    {profileData.ordersCount ?? 23}
+                <View style={styles.infoTextCol}>
+                  <Text style={styles.infoBlockPrimary}>
+                    {profileData.phone || '+57 300 3918279'}
                   </Text>
-                </Pressable>
-                <View style={styles.statDivider} />
-                <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>Miembro desde</Text>
-                  <Text style={styles.statValue}>
-                    {profileData.customerSince || 'Más de 1 año'}
+                  <Text style={styles.infoBlockSecondary}>
+                    {profileData.email}
+                  </Text>
+                  <Text style={styles.infoBlockMuted}>
+                    Alertas vía:{' '}
+                    {(profileData.marketingSubscriptions || ['Correo electrónico', 'SMS']).join(', ')}
                   </Text>
                 </View>
               </View>
             </View>
 
-            {/* SECCIÓN: DATOS DE FACTURACIÓN Y MASCOTA */}
+            {/* SECCIÓN: PREFERENCIAS DE FACTURACIÓN Y MASCOTA */}
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Datos de Facturación y Mascota</Text>
-                <Text style={styles.sectionSubtitleBadge}>Perfil Verificado</Text>
+                <Text style={styles.sectionTitle}>Facturación y mascota</Text>
+                <Text style={styles.sectionSubtitleBadge}>Verificado</Text>
               </View>
 
               {/* Requiere Factura */}
               <View style={styles.billingFieldRow}>
-                <Text style={styles.billingFieldLabel}>Requiere Factura Electrónica</Text>
+                <Text style={styles.billingFieldLabel}>Factura electrónica</Text>
                 <View style={styles.booleanToggleGroup}>
                   <Pressable
                     onPress={() => handleToggleInvoice(false)}
@@ -249,33 +325,19 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 </View>
               </View>
 
-              {/* Tipo de Documento */}
+              {/* Documento */}
               <View style={styles.billingFieldRow}>
-                <Text style={styles.billingFieldLabel}>Tipo de Documento</Text>
+                <Text style={styles.billingFieldLabel}>Documento registrado</Text>
                 <View style={styles.billingValuePill}>
-                  <Ionicons name="card-outline" size={14} color={colors.primary.DEFAULT} />
                   <Text style={styles.billingValueText}>
-                    {profileData.billingInfo?.documentType || 'Cédula de Ciudadanía (CC)'}
+                    CC · {profileData.billingInfo?.documentNumber || '1030631037'}
                   </Text>
                 </View>
               </View>
 
-              {/* Número de Identificación */}
+              {/* Especie */}
               <View style={styles.billingFieldRow}>
-                <Text style={styles.billingFieldLabel}>Número de Identificación</Text>
-                <View style={styles.billingValuePill}>
-                  <Ionicons name="id-card-outline" size={14} color={colors.primary.DEFAULT} />
-                  <Text style={styles.billingValueText}>
-                    {profileData.billingInfo?.documentNumber || '1030631037'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Tipo de Mascota (Personaliza el catálogo de la App) */}
-              <View style={styles.billingFieldRow}>
-                <Text style={styles.billingFieldLabel}>
-                  Especie de mi mascota
-                </Text>
+                <Text style={styles.billingFieldLabel}>Especie principal</Text>
                 <View style={styles.booleanToggleGroup}>
                   {[
                     { id: 'dog' as const, label: '🐶 Perro' },
@@ -309,21 +371,21 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                 </View>
               </View>
 
-              {/* Mascota */}
-              <View style={[styles.billingFieldRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.billingFieldLabel}>Nombre de mi mascota</Text>
+              {/* Nombre de mascota */}
+              <View style={[styles.billingFieldRow, { borderBottomWidth: 0, paddingBottom: 2 }]}>
+                <Text style={styles.billingFieldLabel}>Nombre de mascota</Text>
                 {editingPet ? (
                   <View style={styles.petEditRow}>
                     <TextInput
                       value={petNameInput}
                       onChangeText={setPetNameInput}
-                      placeholder="Nombre de tu mascota"
-                      placeholderTextColor={colors.dark.textMuted}
+                      placeholder="Nombre"
+                      placeholderTextColor="#6B7280"
                       style={styles.petEditInput}
                       autoFocus
                     />
                     <Pressable onPress={handleSavePet} style={styles.petSaveBtn}>
-                      <Ionicons name="checkmark" size={16} color="#050508" />
+                      <Ionicons name="checkmark" size={16} color="#0A0B0E" />
                     </Pressable>
                   </View>
                 ) : (
@@ -332,150 +394,32 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                       setPetNameInput(profileData.petName || '');
                       setEditingPet(true);
                     }}
-                    style={styles.billingActionPill}
+                    style={styles.uberActionPillBtn}
                   >
-                    <Text style={styles.billingActionText}>
+                    <Text style={styles.uberActionPillText}>
                       {profileData.petName
-                        ? `🐾 ${profileData.petName} (Editar)`
-                        : '+ Agregar nombre'}
+                        ? `${profileData.petName} · Editar`
+                        : '+ Agregar'}
                     </Text>
                   </Pressable>
                 )}
               </View>
             </View>
 
-            {/* SECCIÓN: INFORMACIÓN DE CONTACTO Y DIRECCIÓN DE ENTREGA */}
-            <View style={styles.sectionCard}>
-              <Text style={[styles.sectionTitle, { marginBottom: 14 }]}>
-                Contacto y Dirección de Entrega
-              </Text>
-
-              {/* Contacto */}
-              <View style={styles.infoBlock}>
-                <View style={styles.infoIconBox}>
-                  <Ionicons name="call-outline" size={18} color={colors.primary.DEFAULT} />
-                </View>
-                <View style={styles.infoTextCol}>
-                  <Text style={styles.infoBlockLabel}>Datos de contacto</Text>
-                  <Text style={styles.infoBlockPrimary}>{profileData.email}</Text>
-                  <Text style={styles.infoBlockSecondary}>
-                    {profileData.phone || '+57 300 3918279'}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.blockSeparator} />
-
-              {/* Dirección activa y gestor de múltiples direcciones */}
-              <View style={styles.infoBlock}>
-                <View style={styles.infoIconBox}>
-                  <Ionicons name="location-outline" size={18} color={colors.primary.DEFAULT} />
-                </View>
-                <View style={styles.infoTextCol}>
-                  <View style={styles.addressHeaderRow}>
-                    <Text style={styles.infoBlockLabel}>
-                      Dirección activa ({selectedAddress.label})
-                    </Text>
-                    {selectedAddress.verifiedCoverage && (
-                      <View style={styles.verifiedTag}>
-                        <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                        <Text style={styles.verifiedTagText}>Cobertura verificada</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.infoBlockPrimary}>
-                    {selectedAddress.recipient || 'Alejandra P.'}
-                  </Text>
-                  <Text style={styles.infoBlockSecondary}>
-                    {selectedAddress.address1}
-                  </Text>
-                  {selectedAddress.address2 && (
-                    <Text style={styles.infoBlockSecondary}>
-                      {selectedAddress.address2}
-                    </Text>
-                  )}
-                  <Text style={styles.infoBlockSecondary}>
-                    {selectedAddress.locality
-                      ? `${selectedAddress.locality} · `
-                      : ''}
-                    {selectedAddress.city}, {selectedAddress.country}
-                  </Text>
-                  {selectedAddress.deliveryZone && (
-                    <Text style={styles.zoneHighlightText}>
-                      🚚 Zona de cobertura: {selectedAddress.deliveryZone}
-                    </Text>
-                  )}
-                  {onManageAddresses && (
-                    <Pressable
-                      onPress={() => {
-                        Haptics.selectionAsync();
-                        onManageAddresses();
-                      }}
-                      style={{
-                        marginTop: 10,
-                        alignSelf: 'flex-start',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                        backgroundColor: 'rgba(212, 175, 55, 0.12)',
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: 'rgba(212, 175, 55, 0.35)',
-                      }}
-                    >
-                      <Ionicons
-                        name="map-outline"
-                        size={14}
-                        color={colors.primary.light}
-                      />
-                      <Text
-                        style={{
-                          color: colors.primary.light,
-                          fontSize: 12,
-                          fontWeight: '700',
-                        }}
-                      >
-                        Ver o cambiar mis direcciones ({addresses.length})
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-
-              <View style={styles.blockSeparator} />
-
-              {/* Beneficios y Notificaciones */}
-              <View style={styles.footerMetaGrid}>
-                <View style={styles.footerMetaItem}>
-                  <Text style={styles.footerMetaLabel}>Alertas de mis pedidos</Text>
-                  <Text style={styles.footerMetaValue}>
-                    {(profileData.marketingSubscriptions || ['Correo electrónico', 'SMS']).join(
-                      ', '
-                    )}
-                  </Text>
-                </View>
-                <View style={styles.footerMetaItem}>
-                  <Text style={styles.footerMetaLabel}>Saldo Consenticoins</Text>
-                  <Text style={[styles.footerMetaValue, { color: colors.primary.light }]}>
-                    {profileData.points} Coins disponibles
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Botón Cerrar Sesión */}
+            {/* Botón Cerrar Sesión estilo Uber */}
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onClose();
                 logout();
               }}
-              style={styles.logoutRowBtn}
+              style={({ pressed }) => [
+                styles.logoutRowBtn,
+                pressed && { opacity: 0.8 },
+              ]}
             >
-              <Ionicons name="log-out-outline" size={18} color="#F87171" />
-              <Text style={styles.logoutRowText}>Cerrar Sesión de mi Cuenta</Text>
+              <Ionicons name="log-out-outline" size={18} color="#9CA3AF" />
+              <Text style={styles.logoutRowText}>Cerrar sesión</Text>
             </Pressable>
           </ScrollView>
         </Animated.View>
@@ -487,243 +431,168 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.78)',
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
     justifyContent: 'flex-end',
   },
   backdropTouch: {
     flex: 1,
   },
   sheetContainer: {
-    height: '86%',
-    backgroundColor: '#07080C',
+    height: '88%',
+    backgroundColor: '#0A0B0E',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    borderTopWidth: 1.5,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
+    borderTopWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
   sheetContainerExpanded: {
-    height: '95%',
+    height: '96%',
   },
   sheetHeaderBar: {
-    paddingTop: 6,
+    paddingTop: 8,
+    paddingBottom: 14,
     paddingHorizontal: 20,
-    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.07)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#0A0B0E',
+    zIndex: 30,
+    elevation: 30,
   },
   dragIndicatorHitZone: {
-    paddingVertical: 10,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 6,
   },
   dragIndicator: {
-    width: 44,
-    height: 5,
+    width: 40,
+    height: 4.5,
     borderRadius: 3,
-    backgroundColor: 'rgba(212, 175, 55, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   dragIndicatorActive: {
-    width: 56,
-    backgroundColor: colors.primary.light,
+    width: 52,
+    backgroundColor: '#FFFFFF',
   },
   sheetTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
-  brandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
-  },
-  brandBadgeText: {
-    color: colors.primary.light,
-    fontSize: 10,
+  uberMainHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: 0.8,
+    letterSpacing: -0.5,
   },
   closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 35,
+    elevation: 35,
   },
   scrollArea: {
     flex: 1,
   },
   scrollContent: {
-    padding: 18,
-    paddingBottom: 44,
+    paddingHorizontal: 20,
+    paddingTop: 18,
     gap: 16,
   },
-  guestNoticeCard: {
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.4)',
-    borderRadius: 16,
-    padding: 14,
-  },
-  guestNoticeTop: {
+  uberIdentitySection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    gap: 16,
   },
-  guestNoticeTitle: {
-    color: colors.primary.light,
-    fontSize: 13,
-    fontWeight: '700',
+  uberIdentityLeft: {
     flex: 1,
-  },
-  guestNoticeSub: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    marginBottom: 12,
-    lineHeight: 17,
-  },
-  guestActionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  activateDemoBtn: {
-    flex: 1.4,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  activateDemoBtnText: {
-    color: '#050508',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  goToLoginBtn: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-  },
-  goToLoginBtnText: {
-    color: colors.dark.textPrimary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  customerHeaderCard: {
-    backgroundColor: '#0E1017',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.22)',
-  },
-  customerIdentityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 16,
-  },
-  customerNameCol: {
-    flex: 1,
-  },
-  nameAndGroupRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 3,
+    gap: 5,
   },
   customerName: {
     color: '#FFFFFF',
-    fontSize: 19,
+    fontSize: 24,
     fontWeight: '800',
+    letterSpacing: -0.4,
   },
-  groupPill: {
-    backgroundColor: 'rgba(212, 175, 55, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.45)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  groupPillText: {
-    color: colors.primary.light,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  customerEmailText: {
-    color: colors.dark.textSecondary,
-    fontSize: 13,
-    marginBottom: 5,
-  },
-  sessionStatusRow: {
+  groupPillRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  onlineDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#10B981',
-  },
-  sessionStatusText: {
-    color: colors.dark.textMuted,
-    fontSize: 11,
-  },
-  statsGrid: {
+  groupPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(5, 5, 8, 0.65)',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+    gap: 4,
+    backgroundColor: '#181B22',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
   },
-  statBox: {
-    flex: 1.3,
-    alignItems: 'center',
-  },
-  statBoxSmall: {
-    flex: 0.7,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  statLabel: {
-    color: colors.dark.textMuted,
-    fontSize: 10,
-    marginBottom: 4,
-  },
-  statValueGold: {
+  groupPillText: {
     color: colors.primary.light,
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
-  statValue: {
-    color: '#FFFFFF',
+  memberSinceText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  customerEmailText: {
+    color: '#9CA3AF',
     fontSize: 13,
+  },
+  uberQuickTilesRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  uberQuickTile: {
+    flex: 1,
+    backgroundColor: '#12151C',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 4,
+  },
+  uberQuickTileGold: {
+    flex: 1,
+    backgroundColor: '#12151C',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.28)',
+    gap: 4,
+  },
+  uberQuickTileTitle: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  uberQuickTileSub: {
+    color: '#9CA3AF',
+    fontSize: 11.5,
+  },
+  uberQuickTileSubGold: {
+    color: colors.primary.light,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   sectionCard: {
-    backgroundColor: '#0E1017',
-    borderRadius: 20,
+    backgroundColor: '#12151C',
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -732,234 +601,101 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
+    marginBottom: 12,
+    letterSpacing: -0.2,
   },
   sectionSubtitleBadge: {
-    color: colors.dark.textMuted,
-    fontSize: 11,
-  },
-  linkGoldText: {
-    color: colors.primary.light,
+    color: '#6B7280',
     fontSize: 12,
     fontWeight: '600',
+    marginBottom: 12,
   },
-  orderBox: {
-    backgroundColor: 'rgba(5, 5, 8, 0.6)',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.18)',
-  },
-  orderTopBar: {
+  infoBlock: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  infoIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#1C202B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoTextCol: {
+    flex: 1,
+  },
+  addressHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 6,
+    marginBottom: 2,
   },
-  orderBadgesWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  orderIdText: {
+  infoBlockPrimary: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    marginRight: 2,
+    fontSize: 14.5,
+    fontWeight: '700',
   },
-  statusBadge: {
+  infoBlockSecondary: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  infoBlockMuted: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 3,
+  },
+  coveragePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#1C202B',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
-    gap: 5,
-  },
-  badgePendingPayment: {
-    backgroundColor: 'rgba(249, 115, 22, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(249, 115, 22, 0.35)',
-  },
-  badgePaid: {
-    backgroundColor: 'rgba(16, 185, 129, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.35)',
-  },
-  badgeUnfulfilled: {
-    backgroundColor: 'rgba(234, 179, 8, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.35)',
-  },
-  badgeFulfilled: {
-    backgroundColor: 'rgba(59, 130, 246, 0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.35)',
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  orderTotalText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  orderDateText: {
-    color: colors.dark.textMuted,
-    fontSize: 11,
-    marginBottom: 12,
-  },
-  orderItemsDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    marginBottom: 12,
-  },
-  lineItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
-  productThumb: {
-    width: 38,
-    height: 38,
     borderRadius: 10,
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  lineItemInfo: {
-    flex: 1,
-  },
-  lineItemName: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  lineItemSku: {
-    color: colors.dark.textMuted,
-    fontSize: 10,
-    marginTop: 2,
-  },
-  lineItemQty: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  lineItemPrice: {
-    color: colors.primary.light,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  reorderButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+  coverageDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 2,
   },
-  reorderButtonSuccess: {
-    backgroundColor: 'rgba(16, 185, 129, 0.18)',
-    borderWidth: 1,
-    borderColor: '#10B981',
-  },
-  reorderButtonText: {
-    color: '#050508',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  previousOrdersContainer: {
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 10,
-  },
-  previousOrdersHeading: {
-    color: colors.dark.textMuted,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 2,
-  },
-  prevOrderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  prevOrderLeft: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  prevOrderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 2,
-  },
-  prevOrderId: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  prevOrderStatus: {
-    color: '#10B981',
+  coveragePillText: {
+    color: '#D1D5DB',
     fontSize: 11,
     fontWeight: '600',
   },
-  prevOrderDate: {
-    color: colors.dark.textMuted,
-    fontSize: 10,
-    marginBottom: 4,
+  uberActionPillBtn: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#1E222D',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
   },
-  prevOrderItemText: {
-    color: colors.dark.textSecondary,
-    fontSize: 11,
-  },
-  prevOrderRight: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  prevOrderTotal: {
-    color: colors.primary.light,
+  uberActionPillText: {
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
   },
-  miniRepeatBtn: {
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  miniRepeatBtnText: {
-    color: colors.primary.light,
-    fontSize: 11,
-    fontWeight: '700',
+  blockSeparator: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    marginVertical: 14,
   },
   billingFieldRow: {
     flexDirection: 'row',
@@ -971,63 +707,45 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   billingFieldLabel: {
-    color: colors.dark.textSecondary,
-    fontSize: 13,
+    color: '#9CA3AF',
+    fontSize: 13.5,
     flex: 1,
   },
   booleanToggleGroup: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(5, 5, 8, 0.8)',
-    borderRadius: 10,
+    backgroundColor: '#0A0B0E',
+    borderRadius: 18,
     padding: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   booleanPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
   },
   booleanPillActive: {
-    backgroundColor: colors.primary.DEFAULT,
+    backgroundColor: '#FFFFFF',
   },
   booleanPillText: {
-    color: colors.dark.textMuted,
+    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
   },
   booleanPillTextActive: {
-    color: '#050508',
-    fontWeight: '800',
+    color: '#0A0B0E',
+    fontWeight: '700',
   },
   billingValuePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingHorizontal: 10,
+    backgroundColor: '#1C202B',
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.09)',
-    gap: 6,
+    borderRadius: 14,
   },
   billingValueText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
-  },
-  billingActionPill: {
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
-  },
-  billingActionText: {
-    color: colors.primary.light,
-    fontSize: 12,
-    fontWeight: '700',
   },
   petEditRow: {
     flexDirection: 'row',
@@ -1035,122 +753,38 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   petEditInput: {
-    backgroundColor: '#050508',
+    backgroundColor: '#0A0B0E',
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 12.5,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
-    minWidth: 130,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    minWidth: 120,
   },
   petSaveBtn: {
-    backgroundColor: colors.primary.DEFAULT,
+    backgroundColor: '#FFFFFF',
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  infoBlock: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  infoIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  infoTextCol: {
-    flex: 1,
-  },
-  addressHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 3,
-  },
-  infoBlockLabel: {
-    color: colors.dark.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  infoBlockPrimary: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  infoBlockSecondary: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  verifiedTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  verifiedTagText: {
-    color: '#10B981',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  zoneHighlightText: {
-    color: colors.primary.light,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  blockSeparator: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    marginVertical: 14,
-  },
-  footerMetaGrid: {
-    gap: 8,
-  },
-  footerMetaItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  footerMetaLabel: {
-    color: colors.dark.textMuted,
-    fontSize: 12,
-  },
-  footerMetaValue: {
-    color: colors.dark.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
   },
   logoutRowBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: 'rgba(248, 113, 113, 0.08)',
+    paddingVertical: 15,
+    borderRadius: 16,
+    backgroundColor: '#12151C',
     borderWidth: 1,
-    borderColor: 'rgba(248, 113, 113, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   logoutRowText: {
-    color: '#F87171',
-    fontSize: 13,
+    color: '#D1D5DB',
+    fontSize: 14,
     fontWeight: '700',
   },
 });

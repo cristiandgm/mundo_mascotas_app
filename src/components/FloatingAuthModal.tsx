@@ -12,7 +12,6 @@ import {
   Platform,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -138,16 +137,7 @@ export const FloatingAuthModal: React.FC = () => {
         {/* Tocar el fondo superior también permite explorar como invitado */}
         <Pressable style={styles.backdropDismissArea} onPress={animateClose} />
 
-        {/* Pestaña trasera apilada estilo Airbnb */}
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.stackedBackCard,
-            { transform: [{ translateY }] },
-          ]}
-        />
-
-        {/* Hoja flotante principal deslizable */}
+        {/* Hoja flotante principal deslizable estilo Uber × Mundo Mascotas */}
         <Animated.View
           style={[
             styles.sheetContainer,
@@ -155,12 +145,6 @@ export const FloatingAuthModal: React.FC = () => {
             { transform: [{ translateY }] },
           ]}
         >
-          <LinearGradient
-            pointerEvents="none"
-            colors={['#0E1018', '#07080D', '#050508']}
-            style={StyleSheet.absoluteFill}
-          />
-
           {/* Barra superior con botón Atrás, Grabber central deslizable y botón X libre de colisiones */}
           <View style={styles.topNavigationRow}>
             {authModalView !== 'login' ? (
@@ -292,7 +276,7 @@ export const FloatingAuthModal: React.FC = () => {
                     <View style={styles.orDividerLine} />
                   </View>
 
-                  {/* Botones cuadrados sociales estilo Airbnb */}
+                  {/* Botones cuadrados sociales monocromáticos estilo Uber */}
                   <View style={styles.socialSquaresRow}>
                     <Pressable
                       onPress={() => handleSocialAuth('google')}
@@ -301,7 +285,7 @@ export const FloatingAuthModal: React.FC = () => {
                         pressed && styles.socialSquarePressed,
                       ]}
                     >
-                      <Ionicons name="logo-google" size={24} color="#EA4335" />
+                      <Ionicons name="logo-google" size={22} color="#FFFFFF" />
                     </Pressable>
 
                     <Pressable
@@ -311,7 +295,7 @@ export const FloatingAuthModal: React.FC = () => {
                         pressed && styles.socialSquarePressed,
                       ]}
                     >
-                      <Ionicons name="logo-apple" size={26} color="#FFFFFF" />
+                      <Ionicons name="logo-apple" size={24} color="#FFFFFF" />
                     </Pressable>
 
                     <Pressable
@@ -321,7 +305,7 @@ export const FloatingAuthModal: React.FC = () => {
                         pressed && styles.socialSquarePressed,
                       ]}
                     >
-                      <Ionicons name="logo-whatsapp" size={25} color="#25D366" />
+                      <Ionicons name="logo-whatsapp" size={23} color="#FFFFFF" />
                     </Pressable>
                   </View>
 
@@ -445,7 +429,7 @@ export const FloatingAuthModal: React.FC = () => {
 
                   {resetSent ? (
                     <View style={styles.successResetBox}>
-                      <Ionicons name="checkmark-circle" size={28} color="#10B981" />
+                      <Ionicons name="checkmark-circle" size={28} color={colors.primary.light} />
                       <Text style={styles.successResetTitle}>
                         ¡Enlace enviado a tu correo!
                       </Text>
@@ -496,27 +480,19 @@ export const FloatingAuthModal: React.FC = () => {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
     justifyContent: 'flex-end',
   },
   backdropDismissArea: {
     flex: 1,
   },
-  stackedBackCard: {
-    height: 12,
-    marginHorizontal: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.14)',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginBottom: -4,
-  },
   sheetContainer: {
     height: '88%',
-    backgroundColor: '#07080D',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    borderTopWidth: 1.5,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
+    backgroundColor: '#0A0B0E',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
   sheetContainerExpanded: {
@@ -533,14 +509,14 @@ const styles = StyleSheet.create({
     elevation: 30,
   },
   iconPlaceholder: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
   },
   iconCircleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 35,
@@ -553,20 +529,20 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   topDragPill: {
-    width: 44,
-    height: 5,
+    width: 40,
+    height: 4.5,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   topDragPillActive: {
-    width: 56,
-    backgroundColor: colors.primary.light,
+    width: 52,
+    backgroundColor: '#FFFFFF',
   },
   closeXButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#181B22',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 35,
@@ -671,16 +647,16 @@ const styles = StyleSheet.create({
   },
   socialSquareCard: {
     width: 68,
-    height: 60,
+    height: 58,
     borderRadius: 16,
-    backgroundColor: '#12151F',
+    backgroundColor: '#12151C',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   socialSquarePressed: {
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    backgroundColor: '#181B22',
     borderColor: colors.primary.DEFAULT,
     transform: [{ scale: 0.96 }],
   },
@@ -727,9 +703,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   successResetBox: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: '#12151C',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.35)',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
