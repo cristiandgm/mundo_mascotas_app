@@ -28,6 +28,11 @@ import { InboxModal } from '../components/InboxModal';
 import { BrandDnaModal, FoodBrandName } from '../components/BrandDnaModal';
 import { ConsenticoinsWalletModal } from '../components/ConsenticoinsWalletModal';
 import {
+  BreedSelectorSheet,
+  PetBreedOption,
+  PET_BREEDS_CATALOG,
+} from '../components/BreedSelectorSheet';
+import {
   useAuth,
   COIN_VALUE_COP,
   PetStageType,
@@ -773,12 +778,57 @@ export const HomeScreen: React.FC = () => {
   const [isAddingPet, setIsAddingPet] = useState(false);
   const [newPetName, setNewPetName] = useState('');
   const [newPetSpecies, setNewPetSpecies] = useState<'dog' | 'cat'>('dog');
-  const [newPetBreed, setNewPetBreed] = useState('');
-  const [newPetWeight, setNewPetWeight] = useState('15');
+  const [newPetBreed, setNewPetBreed] = useState('Golden Retriever');
+  const [newPetWeight, setNewPetWeight] = useState('29');
   const [newPetStage, setNewPetStage] = useState<PetStageType>('adult');
+  const [newPetActivity, setNewPetActivity] =
+    useState<PetActivityType>('moderate');
+  const [newPetSensitivity, setNewPetSensitivity] =
+    useState<PetSensitivityType>('skin');
+  const [newPetBioTrait, setNewPetBioTrait] = useState<string>(
+    'Manto dorado y articulaciones · Cordero o Salmón'
+  );
+  const [breedSheetVisible, setBreedSheetVisible] = useState(false);
+  const [editingBreedPetId, setEditingBreedPetId] = useState<string | null>(
+    null
+  );
   const [confirmDeletePetId, setConfirmDeletePetId] = useState<string | null>(
     null
   );
+
+  const getRecommendedBagIdForBreed = (
+    species: 'dog' | 'cat',
+    stage: PetStageType,
+    sensitivity: PetSensitivityType,
+    activity: PetActivityType
+  ): string => {
+    if (species === 'dog') {
+      if (stage === 'puppy') return 'prod_9571';
+      if (sensitivity === 'weight' || activity === 'low') return 'prod_1773';
+      if (sensitivity === 'skin') return 'prod_9423';
+      if (sensitivity === 'grain_free' || activity === 'high') return 'prod_9567';
+      return 'prod_123';
+    }
+    if (sensitivity === 'skin') return 'prod_1910';
+    if (sensitivity === 'grain_free' || activity === 'high') return 'prod_7790';
+    return 'prod_9580';
+  };
+
+  const applyBreedSelectionToNewPet = (
+    breed: PetBreedOption,
+    stageOverride?: PetStageType
+  ) => {
+    const targetStage = stageOverride || newPetStage;
+    setNewPetBreed(breed.name);
+    setNewPetWeight(
+      String(
+        targetStage === 'puppy' ? breed.puppyWeightKg : breed.avgWeightKg
+      )
+    );
+    setNewPetActivity(breed.defaultActivity);
+    setNewPetSensitivity(breed.defaultSensitivity);
+    setNewPetBioTrait(breed.bioTrait);
+  };
 
   // Carrito: { [productId]: quantity }
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -2721,7 +2771,15 @@ export const HomeScreen: React.FC = () => {
                         onPress={() => {
                           Haptics.selectionAsync();
                           setNewPetSpecies('dog');
-                          setNewPetWeight('20');
+                          const defaultDogBreed = PET_BREEDS_CATALOG.find(
+                            (b) => b.id === 'dog_golden_retriever'
+                          );
+                          if (defaultDogBreed) {
+                            applyBreedSelectionToNewPet(defaultDogBreed);
+                          } else {
+                            setNewPetBreed('Golden Retriever');
+                            setNewPetWeight('29');
+                          }
                         }}
                         style={[
                           styles.quizOptionCard,
@@ -2747,7 +2805,15 @@ export const HomeScreen: React.FC = () => {
                         onPress={() => {
                           Haptics.selectionAsync();
                           setNewPetSpecies('cat');
-                          setNewPetWeight('4.5');
+                          const defaultCatBreed = PET_BREEDS_CATALOG.find(
+                            (b) => b.id === 'cat_criollo_corto'
+                          );
+                          if (defaultCatBreed) {
+                            applyBreedSelectionToNewPet(defaultCatBreed);
+                          } else {
+                            setNewPetBreed('Criollo / Doméstico Pelo Corto');
+                            setNewPetWeight('4.5');
+                          }
                         }}
                         style={[
                           styles.quizOptionCard,
@@ -2781,20 +2847,184 @@ export const HomeScreen: React.FC = () => {
                             : 'Ej. Bruno, Max'
                         }
                         placeholderTextColor="#6B7280"
-                        style={[styles.petFormInput, { flex: 1 }]}
+                        style={[styles.petFormInput, { flex: 0.95 }]}
                       />
-                      <TextInput
-                        value={newPetBreed}
-                        onChangeText={setNewPetBreed}
-                        placeholder={
-                          newPetSpecies === 'cat'
-                            ? 'Ej. Siamés / Criollo'
-                            : 'Ej. Labrador / Bulldog'
-                        }
-                        placeholderTextColor="#6B7280"
-                        style={[styles.petFormInput, { flex: 1 }]}
-                      />
+
+                      {/* Selector de Raza con catálogo precargado */}
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setEditingBreedPetId(null);
+                          setBreedSheetVisible(true);
+                        }}
+                        style={[
+                          styles.petFormInput,
+                          {
+                            flex: 1.25,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            borderColor: 'rgba(212, 175, 55, 0.45)',
+                            backgroundColor: '#151924',
+                          },
+                        ]}
+                      >
+                        <View style={{ flex: 1, paddingRight: 6 }}>
+                          <Text
+                            style={{
+                              color: colors.primary.light,
+                              fontSize: 9.5,
+                              fontWeight: '800',
+                              letterSpacing: 0.3,
+                            }}
+                          >
+                            RAZA PRECARGADA
+                          </Text>
+                          <Text
+                            style={{
+                              color: '#FFFFFF',
+                              fontSize: 13,
+                              fontWeight: '800',
+                            }}
+                            numberOfLines={1}
+                          >
+                            {newPetBreed || 'Elegir raza'}
+                          </Text>
+                        </View>
+                        <Ionicons
+                          name="chevron-down"
+                          size={16}
+                          color={colors.primary.light}
+                        />
+                      </Pressable>
                     </View>
+
+                    {/* Chips rápidos de razas populares + botón Ver Todas */}
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{
+                        gap: 7,
+                        paddingTop: 8,
+                        paddingBottom: 2,
+                      }}
+                    >
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setEditingBreedPetId(null);
+                          setBreedSheetVisible(true);
+                        }}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 4,
+                          backgroundColor: 'rgba(212, 175, 55, 0.16)',
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: colors.primary.DEFAULT,
+                        }}
+                      >
+                        <Ionicons
+                          name="search"
+                          size={12}
+                          color={colors.primary.light}
+                        />
+                        <Text
+                          style={{
+                            color: colors.primary.light,
+                            fontSize: 11.5,
+                            fontWeight: '800',
+                          }}
+                        >
+                          Buscar todas (
+                          {
+                            PET_BREEDS_CATALOG.filter(
+                              (b) => b.species === newPetSpecies
+                            ).length
+                          }
+                          ) ›
+                        </Text>
+                      </Pressable>
+
+                      {PET_BREEDS_CATALOG.filter(
+                        (b) => b.species === newPetSpecies
+                      )
+                        .slice(0, 8)
+                        .map((quickBreed) => {
+                          const isSelected =
+                            newPetBreed.toLowerCase() ===
+                            quickBreed.name.toLowerCase();
+                          return (
+                            <Pressable
+                              key={quickBreed.id}
+                              onPress={() => {
+                                Haptics.selectionAsync();
+                                applyBreedSelectionToNewPet(quickBreed);
+                              }}
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 5,
+                                backgroundColor: isSelected
+                                  ? colors.primary.DEFAULT
+                                  : '#161922',
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 12,
+                                borderWidth: 1,
+                                borderColor: isSelected
+                                  ? colors.primary.light
+                                  : 'rgba(255, 255, 255, 0.08)',
+                              }}
+                            >
+                              <Text style={{ fontSize: 12 }}>
+                                {quickBreed.emoji}
+                              </Text>
+                              <Text
+                                style={{
+                                  color: isSelected ? '#050508' : '#D1D5DB',
+                                  fontSize: 11.5,
+                                  fontWeight: isSelected ? '900' : '700',
+                                }}
+                              >
+                                {quickBreed.name}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                    </ScrollView>
+
+                    {/* Nota de calibración biológica según la raza elegida */}
+                    {newPetBioTrait ? (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 6,
+                          backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 10,
+                          marginTop: 6,
+                        }}
+                      >
+                        <Text style={{ fontSize: 12 }}>🧬</Text>
+                        <Text
+                          style={{
+                            color: '#9CA3AF',
+                            fontSize: 11.5,
+                            fontWeight: '600',
+                            flex: 1,
+                          }}
+                          numberOfLines={1}
+                        >
+                          ADN {newPetBreed}: {newPetBioTrait}
+                        </Text>
+                      </View>
+                    ) : null}
 
                     <View
                       style={{
@@ -2804,7 +3034,7 @@ export const HomeScreen: React.FC = () => {
                         alignItems: 'center',
                       }}
                     >
-                      <View style={{ flex: 1 }}>
+                      <View style={{ flex: 0.9 }}>
                         <Text style={styles.quizStepTitle}>3. Peso (kg)</Text>
                         <TextInput
                           value={newPetWeight}
@@ -2815,7 +3045,7 @@ export const HomeScreen: React.FC = () => {
                           style={styles.petFormInput}
                         />
                       </View>
-                      <View style={{ flex: 1 }}>
+                      <View style={{ flex: 1.3 }}>
                         <Text style={styles.quizStepTitle}>Etapa</Text>
                         <Pressable
                           onPress={() => {
@@ -2825,20 +3055,56 @@ export const HomeScreen: React.FC = () => {
                               'adult',
                               'senior',
                             ];
-                            setNewPetStage(
-                              stages[(stages.indexOf(newPetStage) + 1) % 3]
+                            const nextStage =
+                              stages[(stages.indexOf(newPetStage) + 1) % 3];
+                            setNewPetStage(nextStage);
+                            const matchedBreed = PET_BREEDS_CATALOG.find(
+                              (b) =>
+                                b.species === newPetSpecies &&
+                                b.name.toLowerCase() ===
+                                  newPetBreed.toLowerCase()
                             );
+                            if (matchedBreed) {
+                              setNewPetWeight(
+                                String(
+                                  nextStage === 'puppy'
+                                    ? matchedBreed.puppyWeightKg
+                                    : matchedBreed.avgWeightKg
+                                )
+                              );
+                            }
                           }}
-                          style={styles.petFormInput}
+                          style={[
+                            styles.petFormInput,
+                            {
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                            },
+                          ]}
                         >
-                          <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                          <Text
+                            style={{
+                              color: '#FFFFFF',
+                              fontWeight: '700',
+                              fontSize: 13,
+                              flex: 1,
+                            }}
+                            numberOfLines={1}
+                          >
                             {newPetStage === 'puppy'
-                              ? '🐣 Cachorro / Gatito'
+                              ? newPetSpecies === 'cat'
+                                ? '🐣 Gatito (<1 año)'
+                                : '🐣 Cachorro (<1 año)'
                               : newPetStage === 'adult'
                               ? '🐕 Adulto (1-7 años)'
-                              : '🦮 Senior (+7 años)'}{' '}
-                            ⌄
+                              : '🦮 Senior (+7 años)'}
                           </Text>
+                          <Ionicons
+                            name="chevron-down"
+                            size={15}
+                            color="#9CA3AF"
+                          />
                         </Pressable>
                       </View>
                     </View>
@@ -2854,23 +3120,27 @@ export const HomeScreen: React.FC = () => {
                         Haptics.notificationAsync(
                           Haptics.NotificationFeedbackType.Success
                         );
+                        const recProdId = getRecommendedBagIdForBreed(
+                          newPetSpecies,
+                          newPetStage,
+                          newPetSensitivity,
+                          newPetActivity
+                        );
                         addPet({
                           name: newPetName.trim(),
                           species: newPetSpecies,
                           breed:
                             newPetBreed.trim() ||
                             (newPetSpecies === 'cat'
-                              ? 'Felino Consentido'
-                              : 'Canino Consentido'),
+                              ? 'Criollo / Doméstico Pelo Corto'
+                              : 'Criollo / Mestizo Mediano'),
                           ageStage: newPetStage,
                           weightKg: parseFloat(newPetWeight) || 15,
-                          activityLevel: 'moderate',
-                          sensitivity: 'none',
-                          recommendedProductId:
-                            newPetSpecies === 'cat' ? 'prod_9580' : 'prod_123',
+                          activityLevel: newPetActivity,
+                          sensitivity: newPetSensitivity,
+                          recommendedProductId: recProdId,
                         });
                         setNewPetName('');
-                        setNewPetBreed('');
                         setIsAddingPet(false);
                       }}
                       style={styles.quizPrimaryAddBtn}
@@ -2946,14 +3216,57 @@ export const HomeScreen: React.FC = () => {
                                 </View>
                               )}
                             </View>
-                            <Text style={styles.petCardMeta}>
-                              {petItem.breed} · {petItem.weightKg} kg ·{' '}
-                              {petItem.ageStage === 'puppy'
-                                ? 'Cachorro'
-                                : petItem.ageStage === 'senior'
-                                ? 'Senior'
-                                : 'Adulto'}
-                            </Text>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 6,
+                                flexWrap: 'wrap',
+                                marginTop: 2,
+                              }}
+                            >
+                              <Pressable
+                                onPress={() => {
+                                  Haptics.selectionAsync();
+                                  setEditingBreedPetId(petItem.id);
+                                  setBreedSheetVisible(true);
+                                }}
+                                style={{
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 2.5,
+                                  borderRadius: 8,
+                                  borderWidth: 1,
+                                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: '#E5E7EB',
+                                    fontSize: 11.5,
+                                    fontWeight: '700',
+                                  }}
+                                >
+                                  {petItem.breed}
+                                </Text>
+                                <Ionicons
+                                  name="chevron-down"
+                                  size={11}
+                                  color={colors.primary.light}
+                                />
+                              </Pressable>
+                              <Text style={styles.petCardMeta}>
+                                · {petItem.weightKg} kg ·{' '}
+                                {petItem.ageStage === 'puppy'
+                                  ? 'Cachorro'
+                                  : petItem.ageStage === 'senior'
+                                  ? 'Senior'
+                                  : 'Adulto'}
+                              </Text>
+                            </View>
                             <Text style={styles.petExclusiveNote}>
                               ✓ Tienda filtrada 100% para{' '}
                               {petItem.species === 'cat' ? 'Gatos' : 'Perros'}
@@ -3903,6 +4216,51 @@ export const HomeScreen: React.FC = () => {
         }}
         onRedeemFreeProduct={(prodId) => {
           handleAddToCart(prodId);
+        }}
+      />
+
+      {/* Selector Inteligente de Raza Precargada (Perros y Gatos) */}
+      <BreedSelectorSheet
+        visible={breedSheetVisible}
+        species={
+          editingBreedPetId
+            ? pets.find((p) => p.id === editingBreedPetId)?.species ||
+              newPetSpecies
+            : newPetSpecies
+        }
+        selectedBreedName={
+          editingBreedPetId
+            ? pets.find((p) => p.id === editingBreedPetId)?.breed || ''
+            : newPetBreed
+        }
+        onClose={() => {
+          setBreedSheetVisible(false);
+          setEditingBreedPetId(null);
+        }}
+        onSelectBreed={(chosenBreed) => {
+          if (editingBreedPetId) {
+            const targetPet = pets.find((p) => p.id === editingBreedPetId);
+            const targetStage = targetPet?.ageStage || 'adult';
+            const nextRecId = getRecommendedBagIdForBreed(
+              chosenBreed.species,
+              targetStage,
+              chosenBreed.defaultSensitivity,
+              chosenBreed.defaultActivity
+            );
+            updatePet(editingBreedPetId, {
+              breed: chosenBreed.name,
+              weightKg:
+                targetStage === 'puppy'
+                  ? chosenBreed.puppyWeightKg
+                  : chosenBreed.avgWeightKg,
+              activityLevel: chosenBreed.defaultActivity,
+              sensitivity: chosenBreed.defaultSensitivity,
+              recommendedProductId: nextRecId,
+            });
+            setEditingBreedPetId(null);
+          } else {
+            applyBreedSelectionToNewPet(chosenBreed);
+          }
         }}
       />
 
