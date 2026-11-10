@@ -25,6 +25,7 @@ import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { InboxModal } from '../components/InboxModal';
+import { BrandDnaModal, FoodBrandName } from '../components/BrandDnaModal';
 import {
   useAuth,
   PetStageType,
@@ -630,12 +631,17 @@ const CATALOG_BAGS: ProductBag[] = [
   },
 ];
 
-// Los 4 círculos estilo "For you" de Uber para la pestaña Bultos
-const FOR_YOU_BULTOS_CIRCLES = [
-  { id: 'Todas', label: 'Todos', emoji: '🐾', sub: 'Ver todo' },
-  { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'Super Premium' },
-  { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: 'Grain-Free' },
-  { id: 'Acana', label: 'Acana & +', emoji: '🥩', sub: 'Biológico' },
+// Los 4 círculos de Marcas Insignia (al tocar cualquiera abre la vista especializada con el ADN de la marca y sus productos)
+const FOR_YOU_BULTOS_CIRCLES: {
+  id: FoodBrandName;
+  label: string;
+  emoji: string;
+  sub: string;
+}[] = [
+  { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'K9 Strain®' },
+  { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: 'Ancestral' },
+  { id: 'Acana', label: 'Acana', emoji: '🍁', sub: '70% Animal' },
+  { id: 'Orijen', label: 'Orijen', emoji: '👑', sub: '85-90% Carne' },
 ];
 
 // Los 4 círculos estilo "For you" de Uber para la pestaña Snacks & Cuidado
@@ -665,6 +671,18 @@ export const HomeScreen: React.FC = () => {
   const [cartModalVisible, setCartModalVisible] = useState(false);
   const [addressSheetVisible, setAddressSheetVisible] = useState(false);
   const [inboxVisible, setInboxVisible] = useState(false);
+
+  // Vista especializada de ADN de Marca (Diamond Naturals, Taste of the Wild, Acana, Orijen)
+  const [activeBrandDna, setActiveBrandDna] = useState<FoodBrandName | null>(
+    null
+  );
+  const [brandDnaModalVisible, setBrandDnaModalVisible] = useState(false);
+
+  const openBrandDna = (brandName: FoodBrandName) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActiveBrandDna(brandName);
+    setBrandDnaModalVisible(true);
+  };
 
   // Product detail card modal
   const [selectedProduct, setSelectedProduct] = useState<ProductBag | null>(null);
@@ -1741,15 +1759,16 @@ export const HomeScreen: React.FC = () => {
 
             <View style={styles.uberCirclesRow}>
               {FOR_YOU_BULTOS_CIRCLES.map((item) => {
-                const isSelected = selectedBrand === item.id;
+                const isSelected =
+                  brandDnaModalVisible && activeBrandDna === item.id;
                 return (
                   <Pressable
                     key={item.id}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setSelectedBrand(item.id);
-                    }}
-                    style={styles.uberCircleItem}
+                    onPress={() => openBrandDna(item.id)}
+                    style={({ pressed }) => [
+                      styles.uberCircleItem,
+                      pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
+                    ]}
                   >
                     <View
                       style={[
@@ -1770,6 +1789,9 @@ export const HomeScreen: React.FC = () => {
                       numberOfLines={1}
                     >
                       {item.label}
+                    </Text>
+                    <Text style={styles.uberCircleSubLabel} numberOfLines={1}>
+                      {item.sub} ›
                     </Text>
                   </Pressable>
                 );
@@ -1824,11 +1846,22 @@ export const HomeScreen: React.FC = () => {
                         style={styles.uberCardGraphicArea}
                       >
                         <View style={styles.uberCardTopBadges}>
-                          <View style={styles.uberBrandBadge}>
+                          <Pressable
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              if (product.brand !== 'Salud Vet') {
+                                openBrandDna(product.brand as FoodBrandName);
+                              } else {
+                                openProductDetail(product);
+                              }
+                            }}
+                            style={styles.uberBrandBadge}
+                          >
                             <Text style={styles.uberBrandBadgeText}>
                               {product.brand}
+                              {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
                             </Text>
-                          </View>
+                          </Pressable>
                           <View style={styles.uberWeightPill}>
                             <Text style={styles.uberWeightPillText}>
                               {product.unitLabel || `${product.weightLb} LB`}
@@ -1944,11 +1977,22 @@ export const HomeScreen: React.FC = () => {
                         style={styles.uberCardGraphicArea}
                       >
                         <View style={styles.uberCardTopBadges}>
-                          <View style={styles.uberBrandBadge}>
+                          <Pressable
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              if (product.brand !== 'Salud Vet') {
+                                openBrandDna(product.brand as FoodBrandName);
+                              } else {
+                                openProductDetail(product);
+                              }
+                            }}
+                            style={styles.uberBrandBadge}
+                          >
                             <Text style={styles.uberBrandBadgeText}>
                               {product.brand}
+                              {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
                             </Text>
-                          </View>
+                          </Pressable>
                           <View style={styles.uberWeightPill}>
                             <Text style={styles.uberWeightPillText}>
                               {product.unitLabel || `${product.weightLb} LB`}
@@ -3654,6 +3698,26 @@ export const HomeScreen: React.FC = () => {
         }}
       />
 
+      {/* Vista Especializada del ADN de cada Marca Insignia y su Catálogo Completo */}
+      <BrandDnaModal
+        visible={brandDnaModalVisible}
+        brand={activeBrandDna}
+        activeSpecies={activeSpecies}
+        petName={displayPetName}
+        deliveryZone={deliveryZone}
+        products={CATALOG_BAGS}
+        cart={cart}
+        onClose={() => setBrandDnaModalVisible(false)}
+        onSelectBrand={(newBrand) => setActiveBrandDna(newBrand)}
+        onAddToCart={handleAddToCart}
+        onDecrementCart={handleDecrementCart}
+        onInspectProduct={(prod) => openProductDetail(prod as ProductBag)}
+        onOpenCart={() => {
+          setBrandDnaModalVisible(false);
+          setTimeout(() => setCartModalVisible(true), 180);
+        }}
+      />
+
       {/* ==================== MODAL DETALLE DE PRODUCTO ==================== */}
       {productDetailVisible && selectedProduct && (
         <Modal
@@ -3704,24 +3768,37 @@ export const HomeScreen: React.FC = () => {
                   <Ionicons name="close" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
 
-                {/* Brand + emoji */}
-                <View style={styles.productDetailBrandRow}>
+                {/* Brand + emoji (clicable para abrir el ADN de la marca) */}
+                <Pressable
+                  onPress={() => {
+                    if (selectedProduct.brand !== 'Salud Vet') {
+                      const targetBrand =
+                        selectedProduct.brand as FoodBrandName;
+                      closeProductDetail();
+                      setTimeout(() => openBrandDna(targetBrand), 180);
+                    }
+                  }}
+                  style={styles.productDetailBrandRow}
+                >
                   <View style={styles.productDetailEmojiBox}>
                     <Text style={{ fontSize: 34 }}>
                       {selectedProduct.brand === 'Diamond Naturals'
                         ? '💎'
                         : selectedProduct.brand === 'Taste of the Wild'
-                          ? '🌿'
+                          ? '🐺'
                           : selectedProduct.brand === 'Acana'
-                            ? '🦅'
+                            ? '🍁'
                             : selectedProduct.brand === 'Orijen'
-                              ? '🐾'
+                              ? '👑'
                               : '🛍️'}
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.productDetailBrand}>
                       {selectedProduct.brand}
+                      {selectedProduct.brand !== 'Salud Vet'
+                        ? ' · Ver ADN ›'
+                        : ''}
                     </Text>
                     <View style={styles.productDetailStagePill}>
                       <Text style={styles.productDetailStageText}>
@@ -3729,7 +3806,7 @@ export const HomeScreen: React.FC = () => {
                       </Text>
                     </View>
                   </View>
-                </View>
+                </Pressable>
 
                 {/* Product name */}
                 <Text style={styles.productDetailName}>
@@ -4232,8 +4309,15 @@ const styles = StyleSheet.create({
   uberCircleLabel: {
     color: '#E5E7EB',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
+  },
+  uberCircleSubLabel: {
+    color: colors.primary.light,
+    fontSize: 10.5,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: -4,
   },
 
   /* ==================== 6. UBER HORIZONTAL CARDS ==================== */
