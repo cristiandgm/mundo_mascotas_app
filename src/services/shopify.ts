@@ -269,5 +269,25 @@ export async function fetchShopifyCatalog(): Promise<ProductBag[]> {
     after = json.data.products.pageInfo.endCursor;
   }
 
-  return products;
+  // El SKU es la llave única de la app (id = prod_<SKU>). Si en Shopify hay productos
+  // con el mismo SKU, conservamos uno (prefiriendo el disponible) y avisamos en consola.
+  const bySku = new Map<string, ProductBag>();
+  const duplicates: string[] = [];
+  products.forEach((p) => {
+    const existing = bySku.get(p.id);
+    if (!existing) {
+      bySku.set(p.id, p);
+      return;
+    }
+    duplicates.push(`${p.sku} → "${existing.name}" / "${p.name}"`);
+    if (!existing.available && p.available) bySku.set(p.id, p);
+  });
+  if (duplicates.length > 0) {
+    console.warn(
+      `[Shopify] SKUs duplicados (corrígelos en el admin para evitar productos ocultos):\n${duplicates.join('\n')}`
+    );
+  }
+
+  return Array.from(bySku.values());
 }
+
