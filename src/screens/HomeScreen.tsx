@@ -1271,20 +1271,12 @@ export const HomeScreen: React.FC = () => {
                 </Text>
               </>
             ) : (
-              <>
-                <Text
-                  style={[styles.locationLabelEyebrow, { color: '#9CA3AF' }]}
-                  numberOfLines={1}
-                >
-                  Modo invitado · Toca para ingresar
-                </Text>
-                <Text
-                  style={[styles.locationText, { color: '#FFFFFF' }]}
-                  numberOfLines={1}
-                >
-                  Explorar Mundo Mascotas
-                </Text>
-              </>
+              <Text
+                style={[styles.locationText, { color: '#FFFFFF' }]}
+                numberOfLines={1}
+              >
+                Modo Invitado
+              </Text>
             )}
           </View>
         </Pressable>
