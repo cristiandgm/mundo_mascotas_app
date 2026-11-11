@@ -1215,7 +1215,7 @@ export const HomeScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* ==================== 1. UBER HEADER × LOGO MUNDO MASCOTAS ==================== */}
       <View style={styles.uberTopHeader}>
-        {/* LEFT: Mundo Mascotas Logo Emblem + Address (logged in) or Guest prompt */}
+        {/* LEFT: Address (logged in) or Guest mode label */}
         <Pressable
           onPress={() => {
             if (user) {
@@ -1227,13 +1227,6 @@ export const HomeScreen: React.FC = () => {
           style={styles.locationSelectorRow}
           hitSlop={8}
         >
-          <View style={styles.headerLogoCircle}>
-            <Image
-              source={require('../../assets/logo.jpg')}
-              style={styles.headerLogoImg}
-              resizeMode="cover"
-            />
-          </View>
           <View style={styles.locationTextCol}>
             {user ? (
               <>
