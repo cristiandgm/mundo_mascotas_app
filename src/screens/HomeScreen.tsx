@@ -2300,9 +2300,9 @@ export const HomeScreen: React.FC = () => {
                 style={styles.quizHeroCard}
               >
                 <View style={styles.quizHeroTopRow}>
-                  <View style={styles.quizHeroBadge}>
-                    <Text style={styles.quizHeroBadgeText}>
-                      🧬 ESTACIÓN {quizJourneyStep} DE 4 · VIAJE BIOLÓGICO
+                  <View style={[styles.quizHeroBadge, { flexShrink: 1 }]}>
+                    <Text style={styles.quizHeroBadgeText} numberOfLines={1}>
+                      🧬 PASO {quizJourneyStep} DE 4 · VIAJE BIOLÓGICO
                     </Text>
                   </View>
 
@@ -2472,20 +2472,20 @@ export const HomeScreen: React.FC = () => {
                         <Pressable
                           key={st.id}
                           onPress={() => {
+                            Haptics.selectionAsync();
                             setQuizStage(st.id);
-                            setTimeout(() => animateToQuizStep(2), 180);
                           }}
                           style={[
                             styles.quizSensCard,
                             active && styles.quizOptionCardActive,
-                            { padding: 15 },
+                            { padding: 14 },
                           ]}
                         >
                           <View
                             style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 24,
+                              width: 46,
+                              height: 46,
+                              borderRadius: 23,
                               backgroundColor: active
                                 ? 'rgba(212, 175, 55, 0.2)'
                                 : '#1A1E29',
@@ -2493,21 +2493,22 @@ export const HomeScreen: React.FC = () => {
                               justifyContent: 'center',
                             }}
                           >
-                            <Text style={{ fontSize: 24 }}>{st.emoji}</Text>
+                            <Text style={{ fontSize: 23 }}>{st.emoji}</Text>
                           </View>
 
-                          <View style={{ flex: 1, gap: 2 }}>
+                          <View style={{ flex: 1, gap: 4, paddingRight: 4 }}>
                             <View
                               style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
-                                gap: 8,
+                                flexWrap: 'wrap',
+                                gap: 6,
                               }}
                             >
                               <Text
                                 style={[
                                   styles.quizSensTitle,
-                                  { fontSize: 15 },
+                                  { fontSize: 15, flexShrink: 1 },
                                   active && { color: colors.primary.light },
                                 ]}
                               >
@@ -2515,32 +2516,45 @@ export const HomeScreen: React.FC = () => {
                               </Text>
                               <View
                                 style={{
-                                  backgroundColor: 'rgba(255, 255, 255, 0.07)',
-                                  paddingHorizontal: 7,
-                                  paddingVertical: 2,
+                                  backgroundColor: active
+                                    ? 'rgba(212, 175, 55, 0.2)'
+                                    : 'rgba(255, 255, 255, 0.08)',
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 2.5,
                                   borderRadius: 6,
                                 }}
                               >
                                 <Text
                                   style={{
-                                    color: '#D1D5DB',
-                                    fontSize: 10,
-                                    fontWeight: '700',
+                                    color: active
+                                      ? colors.primary.light
+                                      : '#D1D5DB',
+                                    fontSize: 10.5,
+                                    fontWeight: '800',
                                   }}
                                 >
                                   {st.ageTag}
                                 </Text>
                               </View>
                             </View>
-                            <Text style={styles.quizSensSub}>{st.desc}</Text>
+                            <Text
+                              style={[
+                                styles.quizSensSub,
+                                { lineHeight: 16, marginTop: 0 },
+                              ]}
+                            >
+                              {st.desc}
+                            </Text>
                           </View>
 
                           <Ionicons
                             name={
-                              active ? 'checkmark-circle' : 'chevron-forward'
+                              active ? 'checkmark-circle' : 'ellipse-outline'
                             }
-                            size={20}
-                            color={active ? colors.primary.DEFAULT : '#6B7280'}
+                            size={22}
+                            color={
+                              active ? colors.primary.DEFAULT : '#4B5563'
+                            }
                           />
                         </Pressable>
                       );
@@ -2549,16 +2563,41 @@ export const HomeScreen: React.FC = () => {
 
                   <Pressable
                     onPress={() => animateToQuizStep(2)}
-                    style={styles.quizPrimaryAddBtn}
+                    style={[
+                      styles.quizPrimaryAddBtn,
+                      {
+                        paddingVertical: 13,
+                        paddingHorizontal: 18,
+                        borderRadius: 16,
+                        justifyContent: 'space-between',
+                      },
+                    ]}
                   >
-                    <Text style={styles.quizPrimaryAddBtnText}>
-                      Continuar al Paso 2: Peso y Talla
+                    <View style={{ width: 32 }} />
+                    <Text
+                      style={[
+                        styles.quizPrimaryAddBtnText,
+                        { fontSize: 14.5 },
+                      ]}
+                    >
+                      Siguiente: Peso y Talla
                     </Text>
-                    <Ionicons
-                      name="arrow-forward"
-                      size={18}
-                      color="#050508"
-                    />
+                    <View
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: 'rgba(5, 5, 8, 0.16)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons
+                        name="arrow-forward"
+                        size={17}
+                        color="#050508"
+                      />
+                    </View>
                   </Pressable>
                 </View>
               )}
@@ -2736,37 +2775,71 @@ export const HomeScreen: React.FC = () => {
                     <Pressable
                       onPress={() => animateToQuizStep(1)}
                       style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
                         paddingHorizontal: 16,
-                        paddingVertical: 14,
+                        paddingVertical: 13,
                         borderRadius: 16,
                         backgroundColor: '#1A1E29',
-                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
                         justifyContent: 'center',
                       }}
                     >
+                      <Ionicons
+                        name="arrow-back"
+                        size={16}
+                        color="#E5E7EB"
+                      />
                       <Text
                         style={{
-                          color: '#D1D5DB',
+                          color: '#E5E7EB',
                           fontSize: 13.5,
                           fontWeight: '800',
                         }}
                       >
-                        ‹ Atrás
+                        Atrás
                       </Text>
                     </Pressable>
 
                     <Pressable
                       onPress={() => animateToQuizStep(3)}
-                      style={[styles.quizPrimaryAddBtn, { flex: 1 }]}
+                      style={[
+                        styles.quizPrimaryAddBtn,
+                        {
+                          flex: 1,
+                          paddingVertical: 13,
+                          paddingHorizontal: 16,
+                          borderRadius: 16,
+                          justifyContent: 'space-between',
+                        },
+                      ]}
                     >
-                      <Text style={styles.quizPrimaryAddBtnText}>
-                        Siguiente: Nivel de Rutina
+                      <Text
+                        style={[
+                          styles.quizPrimaryAddBtnText,
+                          { fontSize: 14 },
+                        ]}
+                      >
+                        Siguiente: Rutina Diaria
                       </Text>
-                      <Ionicons
-                        name="arrow-forward"
-                        size={18}
-                        color="#050508"
-                      />
+                      <View
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 15,
+                          backgroundColor: 'rgba(5, 5, 8, 0.16)',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons
+                          name="arrow-forward"
+                          size={16}
+                          color="#050508"
+                        />
+                      </View>
                     </Pressable>
                   </View>
                 </View>
@@ -2825,7 +2898,7 @@ export const HomeScreen: React.FC = () => {
                         id: 'low' as PetActivityType,
                         emoji: '🛋️',
                         label: 'Hogareño / Tranquilo',
-                        tag: 'Quema Calórica Baja',
+                        tag: 'Quema Baja',
                         desc: 'Pasa la mayor parte del tiempo en interiores con paseos suaves. Requiere control calórico.',
                       },
                       {
@@ -2848,20 +2921,20 @@ export const HomeScreen: React.FC = () => {
                         <Pressable
                           key={act.id}
                           onPress={() => {
+                            Haptics.selectionAsync();
                             setQuizActivity(act.id);
-                            setTimeout(() => animateToQuizStep(4), 180);
                           }}
                           style={[
                             styles.quizSensCard,
                             active && styles.quizOptionCardActive,
-                            { padding: 15 },
+                            { padding: 14 },
                           ]}
                         >
                           <View
                             style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 24,
+                              width: 46,
+                              height: 46,
+                              borderRadius: 23,
                               backgroundColor: active
                                 ? 'rgba(212, 175, 55, 0.2)'
                                 : '#1A1E29',
@@ -2869,36 +2942,68 @@ export const HomeScreen: React.FC = () => {
                               justifyContent: 'center',
                             }}
                           >
-                            <Text style={{ fontSize: 24 }}>{act.emoji}</Text>
+                            <Text style={{ fontSize: 23 }}>{act.emoji}</Text>
                           </View>
 
-                          <View style={{ flex: 1, gap: 2 }}>
+                          <View style={{ flex: 1, gap: 4, paddingRight: 4 }}>
                             <View
                               style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
-                                gap: 8,
+                                flexWrap: 'wrap',
+                                gap: 6,
                               }}
                             >
                               <Text
                                 style={[
                                   styles.quizSensTitle,
-                                  { fontSize: 15 },
+                                  { fontSize: 15, flexShrink: 1 },
                                   active && { color: colors.primary.light },
                                 ]}
                               >
                                 {act.label}
                               </Text>
+                              <View
+                                style={{
+                                  backgroundColor: active
+                                    ? 'rgba(212, 175, 55, 0.2)'
+                                    : 'rgba(255, 255, 255, 0.08)',
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 2.5,
+                                  borderRadius: 6,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: active
+                                      ? colors.primary.light
+                                      : '#D1D5DB',
+                                    fontSize: 10.5,
+                                    fontWeight: '800',
+                                  }}
+                                >
+                                  {act.tag}
+                                </Text>
+                              </View>
                             </View>
-                            <Text style={styles.quizSensSub}>{act.desc}</Text>
+                            <Text
+                              style={[
+                                styles.quizSensSub,
+                                { lineHeight: 16, marginTop: 0 },
+                              ]}
+                            >
+                              {act.desc}
+                            </Text>
                           </View>
 
                           <Ionicons
                             name={
-                              active ? 'checkmark-circle' : 'chevron-forward'
+                              active ? 'checkmark-circle' : 'ellipse-outline'
                             }
-                            size={20}
-                            color={active ? colors.primary.DEFAULT : '#6B7280'}
+                            size={22}
+                            color={
+                              active ? colors.primary.DEFAULT : '#4B5563'
+                            }
                           />
                         </Pressable>
                       );
@@ -2909,37 +3014,71 @@ export const HomeScreen: React.FC = () => {
                     <Pressable
                       onPress={() => animateToQuizStep(2)}
                       style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
                         paddingHorizontal: 16,
-                        paddingVertical: 14,
+                        paddingVertical: 13,
                         borderRadius: 16,
                         backgroundColor: '#1A1E29',
-                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
                         justifyContent: 'center',
                       }}
                     >
+                      <Ionicons
+                        name="arrow-back"
+                        size={16}
+                        color="#E5E7EB"
+                      />
                       <Text
                         style={{
-                          color: '#D1D5DB',
+                          color: '#E5E7EB',
                           fontSize: 13.5,
                           fontWeight: '800',
                         }}
                       >
-                        ‹ Atrás
+                        Atrás
                       </Text>
                     </Pressable>
 
                     <Pressable
                       onPress={() => animateToQuizStep(4)}
-                      style={[styles.quizPrimaryAddBtn, { flex: 1 }]}
+                      style={[
+                        styles.quizPrimaryAddBtn,
+                        {
+                          flex: 1,
+                          paddingVertical: 13,
+                          paddingHorizontal: 16,
+                          borderRadius: 16,
+                          justifyContent: 'space-between',
+                        },
+                      ]}
                     >
-                      <Text style={styles.quizPrimaryAddBtnText}>
-                        Último paso: Prioridad Biológica
+                      <Text
+                        style={[
+                          styles.quizPrimaryAddBtnText,
+                          { fontSize: 14 },
+                        ]}
+                      >
+                        Último Paso: Objetivo
                       </Text>
-                      <Ionicons
-                        name="arrow-forward"
-                        size={18}
-                        color="#050508"
-                      />
+                      <View
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 15,
+                          backgroundColor: 'rgba(5, 5, 8, 0.16)',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons
+                          name="arrow-forward"
+                          size={16}
+                          color="#050508"
+                        />
+                      </View>
                     </Pressable>
                   </View>
                 </View>
@@ -3031,25 +3170,47 @@ export const HomeScreen: React.FC = () => {
                           style={[
                             styles.quizSensCard,
                             active && styles.quizOptionCardActive,
+                            { padding: 14 },
                           ]}
                         >
-                          <Text style={{ fontSize: 24 }}>{sens.emoji}</Text>
-                          <View style={{ flex: 1 }}>
+                          <View
+                            style={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 22,
+                              backgroundColor: active
+                                ? 'rgba(212, 175, 55, 0.2)'
+                                : '#1A1E29',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Text style={{ fontSize: 22 }}>{sens.emoji}</Text>
+                          </View>
+                          <View style={{ flex: 1, paddingRight: 4 }}>
                             <Text
                               style={[
                                 styles.quizSensTitle,
+                                { fontSize: 14.5 },
                                 active && { color: colors.primary.light },
                               ]}
                             >
                               {sens.title}
                             </Text>
-                            <Text style={styles.quizSensSub}>{sens.sub}</Text>
+                            <Text
+                              style={[
+                                styles.quizSensSub,
+                                { lineHeight: 16, marginTop: 3 },
+                              ]}
+                            >
+                              {sens.sub}
+                            </Text>
                           </View>
                           <Ionicons
                             name={
                               active ? 'checkmark-circle' : 'ellipse-outline'
                             }
-                            size={20}
+                            size={22}
                             color={
                               active ? colors.primary.DEFAULT : '#4B5563'
                             }
@@ -3063,33 +3224,80 @@ export const HomeScreen: React.FC = () => {
                     <Pressable
                       onPress={() => animateToQuizStep(3)}
                       style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
                         paddingHorizontal: 16,
-                        paddingVertical: 14,
+                        paddingVertical: 13,
                         borderRadius: 16,
                         backgroundColor: '#1A1E29',
-                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
                         justifyContent: 'center',
                       }}
                     >
+                      <Ionicons
+                        name="arrow-back"
+                        size={16}
+                        color="#E5E7EB"
+                      />
                       <Text
                         style={{
-                          color: '#D1D5DB',
+                          color: '#E5E7EB',
                           fontSize: 13.5,
                           fontWeight: '800',
                         }}
                       >
-                        ‹ Atrás
+                        Atrás
                       </Text>
                     </Pressable>
 
                     <Pressable
                       onPress={startQuizBiologicalAnalysis}
-                      style={[styles.quizPrimaryAddBtn, { flex: 1 }]}
+                      style={[
+                        styles.quizPrimaryAddBtn,
+                        {
+                          flex: 1,
+                          paddingVertical: 13,
+                          paddingHorizontal: 16,
+                          borderRadius: 16,
+                          justifyContent: 'space-between',
+                        },
+                      ]}
                     >
-                      <Ionicons name="sparkles" size={18} color="#050508" />
-                      <Text style={styles.quizPrimaryAddBtnText}>
-                        Analizar ADN y Ver Resultado
-                      </Text>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <Ionicons name="sparkles" size={18} color="#050508" />
+                        <Text
+                          style={[
+                            styles.quizPrimaryAddBtnText,
+                            { fontSize: 14 },
+                          ]}
+                        >
+                          Analizar ADN y Resultado
+                        </Text>
+                      </View>
+                      <View
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 15,
+                          backgroundColor: 'rgba(5, 5, 8, 0.16)',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons
+                          name="arrow-forward"
+                          size={16}
+                          color="#050508"
+                        />
+                      </View>
                     </Pressable>
                   </View>
                 </View>
