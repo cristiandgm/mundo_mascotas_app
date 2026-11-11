@@ -40,9 +40,10 @@ import {
   PetSensitivityType,
 } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
+import { ProductBag, TopServiceTabType } from '../data/catalog';
+import { useCatalog } from '../hooks/useCatalog';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
-type TopServiceTabType = 'bultos' | 'snacks';
 type SearchCategoryType =
   | 'concentrados'
   | 'humedo'
@@ -51,29 +52,6 @@ type SearchCategoryType =
   | 'todo';
 type MainTopTabType = 'store' | 'quiz' | 'pets';
 type BottomNavTab = 'home' | 'catalog' | 'activity' | 'account';
-
-interface ProductBag {
-  id: string;
-  sku: string;
-  brand:
-    | 'Diamond Naturals'
-    | 'Taste of the Wild'
-    | 'Acana'
-    | 'Orijen'
-    | 'Salud Vet';
-  name: string;
-  protein: string;
-  weightLb: number;
-  unitLabel?: string;
-  price: number;
-  coins: number;
-  petType: 'dog' | 'cat';
-  category: TopServiceTabType;
-  subFilter?: 'humedos' | 'premios' | 'higiene' | 'medicamentos';
-  stage: string;
-  tag?: string;
-  accentColor: string;
-}
 
 const SEARCH_CATEGORY_OPTIONS: {
   id: SearchCategoryType;
@@ -125,519 +103,6 @@ const SEARCH_CATEGORY_OPTIONS: {
   },
 ];
 
-const CATALOG_BAGS: ProductBag[] = [
-  // ==================== PERROS: BULTOS DE CONCENTRADO ====================
-  {
-    id: 'prod_123',
-    sku: '123',
-    brand: 'Diamond Naturals',
-    name: 'Diamond Naturals Lamb & Rice',
-    protein: 'Cordero Real y Arroz Integral',
-    weightLb: 40,
-    price: 289000,
-    coins: 289,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Adulto',
-    tag: 'Más pedido',
-    accentColor: '#D4AF37',
-  },
-  {
-    id: 'prod_1773',
-    sku: '1773',
-    brand: 'Diamond Naturals',
-    name: 'Diamond Naturals Light Lamb & Rice',
-    protein: 'Cordero Bajo en Calorías · Control Peso',
-    weightLb: 30,
-    price: 270600,
-    coins: 270,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Adulto Light',
-    tag: 'Control Peso',
-    accentColor: '#38BDF8',
-  },
-  {
-    id: 'prod_9423',
-    sku: '9423',
-    brand: 'Diamond Naturals',
-    name: 'Diamond Naturals Skin & Coat',
-    protein: 'Salmón Salvaje · Piel y Pelaje Brillante',
-    weightLb: 30,
-    price: 289600,
-    coins: 290,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Todas las etapas',
-    tag: 'Piel y Pelaje',
-    accentColor: '#EC4899',
-  },
-  {
-    id: 'prod_9567',
-    sku: '9567',
-    brand: 'Taste of the Wild',
-    name: 'Taste of the Wild High Prairie',
-    protein: 'Bisonte Asado y Venado · Libre de Granos',
-    weightLb: 28,
-    price: 341300,
-    coins: 341,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Adulto',
-    tag: 'Super Premium',
-    accentColor: '#F59E0B',
-  },
-  {
-    id: 'prod_9571',
-    sku: '9571',
-    brand: 'Taste of the Wild',
-    name: 'Taste of the Wild High Prairie Puppy',
-    protein: 'Bisonte y Venado · Fórmula Cachorros',
-    weightLb: 28,
-    price: 354500,
-    coins: 355,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Cachorro',
-    tag: 'Cachorros',
-    accentColor: '#10B981',
-  },
-  {
-    id: 'prod_9573',
-    sku: '9573',
-    brand: 'Taste of the Wild',
-    name: 'Taste of the Wild Pacific Stream',
-    protein: 'Salmón Ahumado · Libre de Granos',
-    weightLb: 28,
-    price: 354500,
-    coins: 355,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Adulto',
-    accentColor: '#06B6D4',
-  },
-  {
-    id: 'prod_8812',
-    sku: '8812',
-    brand: 'Acana',
-    name: 'Acana Wild Prairie Recipe',
-    protein: 'Pollo Fresco, Pavo y Huevos de Nido',
-    weightLb: 25,
-    price: 389000,
-    coins: 389,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Todas las etapas',
-    tag: '70% Proteína',
-    accentColor: '#8B5CF6',
-  },
-  {
-    id: 'prod_7710',
-    sku: '7710',
-    brand: 'Orijen',
-    name: 'Orijen Original Biológico',
-    protein: 'Pollo y Pavo de Corral + Pescado Salvaje',
-    weightLb: 25,
-    price: 435000,
-    coins: 435,
-    petType: 'dog',
-    category: 'bultos',
-    stage: 'Adulto',
-    tag: 'Ultra Luxury',
-    accentColor: '#EF4444',
-  },
-
-  // ==================== PERROS: ALIMENTO HÚMEDO, SNACKS & MEDICAMENTOS ====================
-  {
-    id: 'prod_dog_snack_1',
-    sku: '4401',
-    brand: 'Taste of the Wild',
-    name: 'Latas Húmedas High Prairie (Pack x6)',
-    protein: 'Estofado de Bisonte y Venado en Salsa',
-    weightLb: 5,
-    unitLabel: 'Pack x6 Latas',
-    price: 84000,
-    coins: 84,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'humedos',
-    stage: 'Húmedo Gourmet',
-    tag: 'Pack Ahorro',
-    accentColor: '#F59E0B',
-  },
-  {
-    id: 'prod_dog_wet_2',
-    sku: '4405',
-    brand: 'Taste of the Wild',
-    name: 'Latas Húmedas Pacific Stream Salmón (Pack x6)',
-    protein: 'Salmón Ahumado y Pescado Blanco en Salsa',
-    weightLb: 5,
-    unitLabel: 'Pack x6 Latas',
-    price: 86000,
-    coins: 86,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'humedos',
-    stage: 'Piel y Pelaje',
-    tag: 'Omega 3 & 6',
-    accentColor: '#06B6D4',
-  },
-  {
-    id: 'prod_dog_wet_3',
-    sku: '4406',
-    brand: 'Diamond Naturals',
-    name: 'Estofado Húmedo Cordero & Arroz (Pack x6)',
-    protein: 'Trozos de Cordero Real en Caldo Nutritivo',
-    weightLb: 5,
-    unitLabel: 'Pack x6 Latas',
-    price: 74000,
-    coins: 74,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'humedos',
-    stage: 'Digestión Suave',
-    accentColor: '#D4AF37',
-  },
-  {
-    id: 'prod_dog_snack_2',
-    sku: '4402',
-    brand: 'Orijen',
-    name: 'Orijen Original Freeze-Dried Treats',
-    protein: 'Premios Liofilizados 100% Carne de Corral',
-    weightLb: 1,
-    unitLabel: 'Bolsa 92g',
-    price: 68500,
-    coins: 69,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'premios',
-    stage: 'Premios Entrenamiento',
-    tag: '100% Carne',
-    accentColor: '#EF4444',
-  },
-  {
-    id: 'prod_dog_snack_3',
-    sku: '4403',
-    brand: 'Diamond Naturals',
-    name: 'Galletas Horneadas Cordero & Manzana',
-    protein: 'Premios Crujientes para Salud Dental',
-    weightLb: 2,
-    unitLabel: '2 LB',
-    price: 49000,
-    coins: 49,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'premios',
-    stage: 'Salud Dental',
-    accentColor: '#D4AF37',
-  },
-  {
-    id: 'prod_dog_snack_4',
-    sku: '4407',
-    brand: 'Acana',
-    name: 'Acana Crunchy Biscuits Hígado de Res',
-    protein: 'Bocados Proteicos con Camote y Caldo de Hueso',
-    weightLb: 1,
-    unitLabel: 'Bolsa 280g',
-    price: 54000,
-    coins: 54,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'premios',
-    stage: 'Premio Proteico',
-    accentColor: '#8B5CF6',
-  },
-  {
-    id: 'prod_dog_med_1',
-    sku: '7101',
-    brand: 'Salud Vet',
-    name: 'Bravecto Masticable 12 Semanas Perros',
-    protein: 'Protección Total Pulgas, Garrapatas y Ácaros',
-    weightLb: 1,
-    unitLabel: '1 Tableta · 90 Días',
-    price: 142000,
-    coins: 142,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'medicamentos',
-    stage: 'Antipulgas 12 Semanas',
-    tag: 'Más recetado',
-    accentColor: '#38BDF8',
-  },
-  {
-    id: 'prod_dog_med_2',
-    sku: '7102',
-    brand: 'Salud Vet',
-    name: 'NexGard Spectra Antipulgas + Desparasitante',
-    protein: 'Bocado Masticable Sabor Carne · Control Interno y Externo',
-    weightLb: 1,
-    unitLabel: 'Tableta Mensual',
-    price: 78000,
-    coins: 78,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'medicamentos',
-    stage: 'Doble Acción',
-    accentColor: '#10B981',
-  },
-  {
-    id: 'prod_dog_med_3',
-    sku: '7103',
-    brand: 'Salud Vet',
-    name: 'Condroprotector Articular Glucosamina & MSM',
-    protein: 'Regenerador de Cartílago y Movilidad Canina',
-    weightLb: 1,
-    unitLabel: 'Frasco x60 Tabs',
-    price: 96000,
-    coins: 96,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'medicamentos',
-    stage: 'Salud Articular',
-    accentColor: '#F59E0B',
-  },
-  {
-    id: 'prod_dog_care_1',
-    sku: '4404',
-    brand: 'Acana',
-    name: 'Kit Dermo-Cuidado Avena & Aloe Canino',
-    protein: 'Shampoo Hipoalergénico + Bálsamo de Huellas',
-    weightLb: 2,
-    unitLabel: 'Kit 500ml',
-    price: 76000,
-    coins: 76,
-    petType: 'dog',
-    category: 'snacks',
-    subFilter: 'higiene',
-    stage: 'Cuidado & Baño',
-    accentColor: '#10B981',
-  },
-
-  // ==================== GATOS: BULTOS DE CONCENTRADO FELINO ====================
-  {
-    id: 'prod_9580',
-    sku: '9580',
-    brand: 'Taste of the Wild',
-    name: 'Taste of the Wild Rocky Mountain Cat',
-    protein: 'Venado Asado y Salmón Ahumado · Sin Granos',
-    weightLb: 14,
-    price: 218000,
-    coins: 218,
-    petType: 'cat',
-    category: 'bultos',
-    stage: 'Gatos y Gatitos',
-    tag: 'Top Gatos',
-    accentColor: '#F59E0B',
-  },
-  {
-    id: 'prod_9582',
-    sku: '9582',
-    brand: 'Taste of the Wild',
-    name: 'Taste of the Wild Canyon River Feline',
-    protein: 'Trucha de Manantial y Salmón Ahumado',
-    weightLb: 14,
-    price: 224000,
-    coins: 224,
-    petType: 'cat',
-    category: 'bultos',
-    stage: 'Piel y Pelaje Felino',
-    accentColor: '#06B6D4',
-  },
-  {
-    id: 'prod_1910',
-    sku: '1910',
-    brand: 'Diamond Naturals',
-    name: 'Diamond Naturals Indoor Cat Hairball',
-    protein: 'Pollo Fresco y Salmón · Control Bolas de Pelo',
-    weightLb: 18,
-    price: 189000,
-    coins: 189,
-    petType: 'cat',
-    category: 'bultos',
-    stage: 'Gatos de Interior',
-    tag: 'Control Pelaje',
-    accentColor: '#D4AF37',
-  },
-  {
-    id: 'prod_8845',
-    sku: '8845',
-    brand: 'Acana',
-    name: 'Acana Bountiful Catch Cat',
-    protein: 'Salmón Salvaje, Arenque y Merluza',
-    weightLb: 10,
-    price: 245000,
-    coins: 245,
-    petType: 'cat',
-    category: 'bultos',
-    stage: 'Gatos Adultos',
-    tag: 'Salmón & Arenque',
-    accentColor: '#8B5CF6',
-  },
-  {
-    id: 'prod_7790',
-    sku: '7790',
-    brand: 'Orijen',
-    name: 'Orijen Cat & Kitten Biológico',
-    protein: '90% Pollo, Pavo y Pescado Salvaje Fresco',
-    weightLb: 12,
-    price: 315000,
-    coins: 315,
-    petType: 'cat',
-    category: 'bultos',
-    stage: 'Todas las etapas',
-    tag: 'Ultra Luxury',
-    accentColor: '#EF4444',
-  },
-
-  // ==================== GATOS: ALIMENTO HÚMEDO, SNACKS, MEDICAMENTOS & ARENA ====================
-  {
-    id: 'prod_cat_snack_1',
-    sku: '5501',
-    brand: 'Taste of the Wild',
-    name: 'Latas Felinas Rocky Mountain (Pack x6)',
-    protein: 'Salmón y Venado en Salsa Húmeda Hidratante',
-    weightLb: 3,
-    unitLabel: 'Pack x6 Latas',
-    price: 79000,
-    coins: 79,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'humedos',
-    stage: 'Hidratación Renal',
-    tag: 'Más pedido',
-    accentColor: '#F59E0B',
-  },
-  {
-    id: 'prod_cat_wet_2',
-    sku: '5504',
-    brand: 'Taste of the Wild',
-    name: 'Latas Felinas Canyon River Trucha (Pack x6)',
-    protein: 'Trucha y Salmón en Caldo Hidratante Urinario',
-    weightLb: 3,
-    unitLabel: 'Pack x6 Latas',
-    price: 82000,
-    coins: 82,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'humedos',
-    stage: 'Cuidado Urinario',
-    accentColor: '#06B6D4',
-  },
-  {
-    id: 'prod_cat_wet_3',
-    sku: '5505',
-    brand: 'Acana',
-    name: 'Paté Húmedo Acana Salmón & Pollo (Pack x6)',
-    protein: '85% Ingredientes Animales en Caldo de Hueso',
-    weightLb: 3,
-    unitLabel: 'Pack x6 Latas',
-    price: 89000,
-    coins: 89,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'humedos',
-    stage: 'Gourmet Sin Granos',
-    accentColor: '#8B5CF6',
-  },
-  {
-    id: 'prod_cat_snack_2',
-    sku: '5502',
-    brand: 'Orijen',
-    name: 'Orijen Six Fish Cat Treats Liofilizados',
-    protein: '100% Pescado Salvaje · Cero Carbohidratos',
-    weightLb: 1,
-    unitLabel: 'Bolsa 35g',
-    price: 58000,
-    coins: 58,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'premios',
-    stage: 'Premio Gourmet',
-    accentColor: '#EF4444',
-  },
-  {
-    id: 'prod_cat_snack_3',
-    sku: '5506',
-    brand: 'Diamond Naturals',
-    name: 'Snacks Cremosos Hidratantes Salmón & Atún (x12)',
-    protein: 'Tubitos Cremosos Altos en Humedad y Taurina',
-    weightLb: 1,
-    unitLabel: 'Pack x12 Tubos',
-    price: 46000,
-    coins: 46,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'premios',
-    stage: 'Snack Hidratante',
-    accentColor: '#D4AF37',
-  },
-  {
-    id: 'prod_cat_med_1',
-    sku: '7201',
-    brand: 'Salud Vet',
-    name: 'Bravecto Plus Pipeta Felina 12 Semanas',
-    protein: 'Antipulgas, Garrapatas y Parásitos Internos Tópico',
-    weightLb: 1,
-    unitLabel: '1 Pipeta · 90 Días',
-    price: 138000,
-    coins: 138,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'medicamentos',
-    stage: 'Protección 12 Semanas',
-    tag: 'Sin estrés oral',
-    accentColor: '#38BDF8',
-  },
-  {
-    id: 'prod_cat_med_2',
-    sku: '7202',
-    brand: 'Salud Vet',
-    name: 'Revolution Plus Pipeta Integral para Gatos',
-    protein: 'Control de Pulgas, Ácaros de Oído y Nematodos',
-    weightLb: 1,
-    unitLabel: 'Pipeta Mensual',
-    price: 69000,
-    coins: 69,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'medicamentos',
-    stage: 'Salud Felina',
-    accentColor: '#10B981',
-  },
-  {
-    id: 'prod_cat_med_3',
-    sku: '7203',
-    brand: 'Salud Vet',
-    name: 'Malta Digestiva Felina Control Bolas de Pelo',
-    protein: 'Pasta Oral con Omega 3 y Fibra Prebiótica',
-    weightLb: 1,
-    unitLabel: 'Tubo 100g',
-    price: 52000,
-    coins: 52,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'medicamentos',
-    stage: 'Tránsito Digestivo',
-    accentColor: '#F59E0B',
-  },
-  {
-    id: 'prod_cat_care_1',
-    sku: '5503',
-    brand: 'Diamond Naturals',
-    name: 'Arena Aglomerante Carbón Activado',
-    protein: 'Sello Instantáneo de Olores · 99.9% Libre de Polvo',
-    weightLb: 22,
-    unitLabel: 'Bulto 22 LB',
-    price: 64000,
-    coins: 64,
-    petType: 'cat',
-    category: 'snacks',
-    subFilter: 'higiene',
-    stage: 'Higiene Felina',
-    accentColor: '#10B981',
-  },
-];
-
 // Los 4 círculos de Marcas Insignia (al tocar cualquiera abre la vista especializada con el ADN de la marca y sus productos)
 const FOR_YOU_BULTOS_CIRCLES: {
   id: FoodBrandName;
@@ -660,6 +125,7 @@ const FOR_YOU_SNACKS_CIRCLES = [
 ];
 
 export const HomeScreen: React.FC = () => {
+  const { catalog } = useCatalog();
   const {
     user,
     openAuthModal,
@@ -1092,7 +558,7 @@ export const HomeScreen: React.FC = () => {
   };
 
   const getCategoryItemCount = (catId: SearchCategoryType) => {
-    return CATALOG_BAGS.filter((item) => {
+    return catalog.filter((item) => {
       if (item.petType !== activeSpecies) return false;
       if (catId === 'todo') return true;
       if (catId === 'concentrados') return item.category === 'bultos';
@@ -1105,7 +571,7 @@ export const HomeScreen: React.FC = () => {
 
   // Filtrado de productos para la pestaña 1 (Tienda) según mascota activa + categoría del mini-menú flotante
   const filteredProducts = useMemo(() => {
-    return CATALOG_BAGS.filter((item) => {
+    return catalog.filter((item) => {
       if (item.petType !== activeSpecies) return false;
 
       if (selectedSearchCategory === 'concentrados') {
@@ -1138,21 +604,21 @@ export const HomeScreen: React.FC = () => {
       }
       return true;
     });
-  }, [activeSpecies, selectedBrand, selectedSearchCategory, searchQuery]);
+  }, [catalog, activeSpecies, selectedBrand, selectedSearchCategory, searchQuery]);
 
   // Complementos y snacks para la mascota activa (segundo carrusel en Tienda)
   const speciesSnacks = useMemo(() => {
-    return CATALOG_BAGS.filter(
+    return catalog.filter(
       (item) => item.petType === activeSpecies && item.category === 'snacks'
     );
-  }, [activeSpecies]);
+  }, [catalog, activeSpecies]);
 
   // Los 2 productos frecuentes para la tarjeta de Reloj estilo Uber según la mascota activa
   const recentQuickItems = useMemo(() => {
-    return CATALOG_BAGS.filter(
+    return catalog.filter(
       (item) => item.petType === activeSpecies && item.category === 'bultos'
     ).slice(0, 2);
-  }, [activeSpecies]);
+  }, [catalog, activeSpecies]);
 
   // Algoritmo del Quiz Biológico (Pestaña 2): calcula bulto ideal, ración en gramos y duración
   const quizRecommendation = useMemo(() => {
@@ -1185,7 +651,7 @@ export const HomeScreen: React.FC = () => {
     }
 
     const product =
-      CATALOG_BAGS.find((p) => p.id === targetProdId) || CATALOG_BAGS[0];
+      catalog.find((p) => p.id === targetProdId) || catalog[0];
 
     // Cálculo de ración biológica diaria en gramos según peso y actividad
     const baseFactor =
@@ -1215,7 +681,7 @@ export const HomeScreen: React.FC = () => {
       estimatedDays,
       costPerDay,
     };
-  }, [activeSpecies, quizStage, quizActivity, quizSensitivity, quizWeightKg]);
+  }, [catalog, activeSpecies, quizStage, quizActivity, quizSensitivity, quizWeightKg]);
 
   // Totales del carrito
   const cartSummary = useMemo(() => {
@@ -1226,7 +692,7 @@ export const HomeScreen: React.FC = () => {
     const itemsList: { product: ProductBag; quantity: number }[] = [];
 
     Object.entries(cart).forEach(([id, qty]) => {
-      const prod = CATALOG_BAGS.find((p) => p.id === id);
+      const prod = catalog.find((p) => p.id === id);
       if (prod && qty > 0) {
         totalItems += qty;
         subtotal += prod.price * qty;
@@ -1263,7 +729,7 @@ export const HomeScreen: React.FC = () => {
       ),
       itemsList,
     };
-  }, [cart, deliveryZone, user, applyCoinsInCart]);
+  }, [catalog, cart, deliveryZone, user, applyCoinsInCart]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -4195,11 +3661,11 @@ export const HomeScreen: React.FC = () => {
                     const isCurrent = petItem.id === activePet.id;
                     const isConfirmingDel = confirmDeletePetId === petItem.id;
                     const recBag =
-                      CATALOG_BAGS.find(
+                      catalog.find(
                         (b) => b.id === petItem.recommendedProductId
                       ) ||
-                      CATALOG_BAGS.find((b) => b.petType === petItem.species) ||
-                      CATALOG_BAGS[0];
+                      catalog.find((b) => b.petType === petItem.species) ||
+                      catalog[0];
 
                     return (
                       <View
@@ -5211,7 +4677,7 @@ export const HomeScreen: React.FC = () => {
         onClose={() => setOrdersVisible(false)}
         onReorderItems={(skus) => {
           skus.forEach((sku) => {
-            const matched = CATALOG_BAGS.find((b) => b.sku === sku);
+            const matched = catalog.find((b) => b.sku === sku);
             if (matched) {
               handleAddToCart(matched.id);
             }
@@ -5303,7 +4769,7 @@ export const HomeScreen: React.FC = () => {
         activeSpecies={activeSpecies}
         petName={displayPetName}
         deliveryZone={deliveryZone}
-        products={CATALOG_BAGS}
+        products={catalog}
         cart={cart}
         onClose={() => setBrandDnaModalVisible(false)}
         onSelectBrand={(newBrand) => setActiveBrandDna(newBrand)}
