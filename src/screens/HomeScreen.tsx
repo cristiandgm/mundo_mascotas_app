@@ -1721,49 +1721,49 @@ export const HomeScreen: React.FC = () => {
               </View>
             )}
 
-            {/* 4. UBER RECENT (CON SESIÓN) O MÁS PEDIDOS DESTACADOS (MODO INVITADO) */}
-            <View style={styles.uberRecentCard}>
-              {recentQuickItems.map((item, idx) => (
-                <React.Fragment key={item.id}>
-                  {idx > 0 && <View style={styles.uberRecentDivider} />}
-                  <Pressable
-                    onPress={() => openProductDetail(item)}
-                    style={({ pressed }) => [
-                      styles.uberRecentRow,
-                      pressed && {
-                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                      },
-                    ]}
-                  >
-                    <View style={styles.uberClockIconBox}>
-                      <Ionicons
-                        name={user ? 'time-outline' : 'flame-outline'}
-                        size={20}
-                        color={user ? '#D1D5DB' : colors.primary.light}
-                      />
-                    </View>
-                    <View style={styles.uberRecentTextCol}>
-                      <Text style={styles.uberRecentTitle} numberOfLines={1}>
-                        {item.name} ({item.unitLabel || `${item.weightLb} LB`})
-                      </Text>
-                      <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
-                        {formatCOP(item.price)} ·{' '}
-                        {user
-                          ? deliveryZone === 'bogota'
+            {/* 4. UBER RECENT (SOLO CON SESIÓN INICIADA) */}
+            {user && (
+              <View style={styles.uberRecentCard}>
+                {recentQuickItems.map((item, idx) => (
+                  <React.Fragment key={item.id}>
+                    {idx > 0 && <View style={styles.uberRecentDivider} />}
+                    <Pressable
+                      onPress={() => openProductDetail(item)}
+                      style={({ pressed }) => [
+                        styles.uberRecentRow,
+                        pressed && {
+                          backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        },
+                      ]}
+                    >
+                      <View style={styles.uberClockIconBox}>
+                        <Ionicons
+                          name="time-outline"
+                          size={20}
+                          color="#D1D5DB"
+                        />
+                      </View>
+                      <View style={styles.uberRecentTextCol}>
+                        <Text style={styles.uberRecentTitle} numberOfLines={1}>
+                          {item.name} ({item.unitLabel || `${item.weightLb} LB`})
+                        </Text>
+                        <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
+                          {formatCOP(item.price)} ·{' '}
+                          {deliveryZone === 'bogota'
                             ? 'Domicilio Gratis en Bogotá'
-                            : `+${item.coins} Consenticoins`
-                          : '🔥 Favorito en Mundo Mascotas'}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color="#6B7280"
-                    />
-                  </Pressable>
-                </React.Fragment>
-              ))}
-            </View>
+                            : `+${item.coins} Consenticoins`}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color="#6B7280"
+                      />
+                    </Pressable>
+                  </React.Fragment>
+                ))}
+              </View>
+            )}
 
             {/* 5. UBER "FOR YOU" 4 CIRCULAR ICONS PERSONALIZADOS */}
             <View style={styles.uberSectionHeader}>
