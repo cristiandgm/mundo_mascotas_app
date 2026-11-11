@@ -763,7 +763,7 @@ export const HomeScreen: React.FC = () => {
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const categoryMenuAnim = useRef(new Animated.Value(0)).current;
 
-  // Estados del Quiz Biológico (Pestaña 2)
+  // Estados del Quiz Biológico (Pestaña 2 — Viaje Guiado Paso a Paso)
   const [quizStage, setQuizStage] = useState<PetStageType>(activePet.ageStage);
   const [quizActivity, setQuizActivity] = useState<PetActivityType>(
     activePet.activityLevel
@@ -773,6 +773,60 @@ export const HomeScreen: React.FC = () => {
   );
   const [quizWeightKg, setQuizWeightKg] = useState<number>(activePet.weightKg);
   const [quizSavedToast, setQuizSavedToast] = useState<boolean>(false);
+  const [quizJourneyStep, setQuizJourneyStep] = useState<
+    1 | 2 | 3 | 4 | 'analyzing' | 'result'
+  >(1);
+  const [quizAnalysisStep, setQuizAnalysisStep] = useState<number>(0);
+  const quizStepAnim = useRef(new Animated.Value(1)).current;
+  const quizStepSlide = useRef(new Animated.Value(0)).current;
+
+  const animateToQuizStep = (
+    nextStep: 1 | 2 | 3 | 4 | 'analyzing' | 'result'
+  ) => {
+    Haptics.selectionAsync();
+    quizStepAnim.setValue(0);
+    quizStepSlide.setValue(18);
+    setQuizJourneyStep(nextStep);
+    Animated.parallel([
+      Animated.timing(quizStepAnim, {
+        toValue: 1,
+        duration: 240,
+        useNativeDriver: true,
+      }),
+      Animated.spring(quizStepSlide, {
+        toValue: 0,
+        damping: 18,
+        stiffness: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const startQuizBiologicalAnalysis = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setQuizAnalysisStep(1);
+    animateToQuizStep('analyzing');
+
+    setTimeout(() => {
+      Haptics.selectionAsync();
+      setQuizAnalysisStep(2);
+    }, 550);
+
+    setTimeout(() => {
+      Haptics.selectionAsync();
+      setQuizAnalysisStep(3);
+    }, 1100);
+
+    setTimeout(() => {
+      Haptics.selectionAsync();
+      setQuizAnalysisStep(4);
+    }, 1650);
+
+    setTimeout(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      animateToQuizStep('result');
+    }, 2250);
+  };
 
   // Estados de Mascota(s) (Pestaña 3)
   const [isAddingPet, setIsAddingPet] = useState(false);
@@ -1786,6 +1840,7 @@ export const HomeScreen: React.FC = () => {
               <Pressable
                 onPress={() => {
                   Haptics.selectionAsync();
+                  setQuizJourneyStep(1);
                   setMainTopTab('quiz');
                 }}
                 style={{
@@ -2234,348 +2289,1132 @@ export const HomeScreen: React.FC = () => {
         )}
 
         {/* ===================================================================================== */}
-        {/* ==================== VISTA 2: QUIZ BIOLÓGICO (ASESOR NUTRICIONAL) =================== */}
+        {/* ============== VISTA 2: VIAJE BIOLÓGICO INTERACTIVO (ASESOR NUTRICIONAL) ============ */}
         {/* ===================================================================================== */}
         {mainTopTab === 'quiz' && (
           <View style={styles.quizSectionWrapper}>
-            {/* Cabecera del Quiz Biológico */}
-            <LinearGradient
-              colors={['#191E2B', '#10131C']}
-              style={styles.quizHeroCard}
-            >
-              <View style={styles.quizHeroTopRow}>
-                <View style={styles.quizHeroBadge}>
-                  <Text style={styles.quizHeroBadgeText}>
-                    🧬 ALGORITMO NUTRICIONAL
-                  </Text>
+            {/* CABECERA DEL VIAJE + MAPA DE ESTACIONES (PASOS 1 A 4) */}
+            {typeof quizJourneyStep === 'number' && (
+              <LinearGradient
+                colors={['#171B26', '#0F1219']}
+                style={styles.quizHeroCard}
+              >
+                <View style={styles.quizHeroTopRow}>
+                  <View style={styles.quizHeroBadge}>
+                    <Text style={styles.quizHeroBadgeText}>
+                      🧬 ESTACIÓN {quizJourneyStep} DE 4 · VIAJE BIOLÓGICO
+                    </Text>
+                  </View>
+
+                  <Pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      if (user) {
+                        setMainTopTab('pets');
+                      } else {
+                        const nextSp = activeSpecies === 'dog' ? 'cat' : 'dog';
+                        setGuestSpecies(nextSp);
+                        setQuizWeightKg(nextSp === 'cat' ? 4.5 : 20);
+                      }
+                    }}
+                    style={styles.quizSwitchPetPill}
+                  >
+                    <Text style={styles.quizSwitchPetText}>
+                      {user
+                        ? `${activeSpecies === 'cat' ? '🐱' : '🐶'} ${activePet.name} ⌄`
+                        : `${activeSpecies === 'cat' ? '🐱 Modo Gato' : '🐶 Modo Perro'} ⇄`}
+                    </Text>
+                  </Pressable>
                 </View>
-                <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    if (user) {
-                      setMainTopTab('pets');
-                    } else {
-                      const nextSp = activeSpecies === 'dog' ? 'cat' : 'dog';
-                      setGuestSpecies(nextSp);
-                      setQuizWeightKg(nextSp === 'cat' ? 4.5 : 20);
-                    }
+
+                {/* Barra de progreso de las 4 estaciones */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 6,
+                    marginBottom: 8,
                   }}
-                  style={styles.quizSwitchPetPill}
                 >
-                  <Text style={styles.quizSwitchPetText}>
-                    {user
-                      ? `${activeSpecies === 'cat' ? '🐱' : '🐶'} ${activePet.name} ⌄`
-                      : `${activeSpecies === 'cat' ? '🐱 Modo Gato' : '🐶 Modo Perro'} ⇄`}
-                  </Text>
-                </Pressable>
-              </View>
-              <Text style={styles.quizHeroTitle}>
-                Fórmula Biológica Ideal para {displayPetName}
-              </Text>
-              <Text style={styles.quizHeroSub}>
-                Responde estos 4 parámetros para calcular la proteína exacta, los
-                gramos diarios y cuántos días te durará el bulto.
-              </Text>
-            </LinearGradient>
-
-            {/* Paso 1: Etapa de vida */}
-            <Text style={styles.quizStepTitle}>1. Etapa biológica actual</Text>
-            <View style={styles.quizOptionRow}>
-              {[
-                {
-                  id: 'puppy' as PetStageType,
-                  emoji: '🐣',
-                  label: activeSpecies === 'cat' ? 'Gatito' : 'Cachorro',
-                  sub: '< 12 meses',
-                },
-                {
-                  id: 'adult' as PetStageType,
-                  emoji: activeSpecies === 'cat' ? '🐱' : '🐕',
-                  label: 'Adulto',
-                  sub: '1 a 7 años',
-                },
-                {
-                  id: 'senior' as PetStageType,
-                  emoji: '🦮',
-                  label: 'Senior',
-                  sub: '+7 años',
-                },
-              ].map((st) => {
-                const active = quizStage === st.id;
-                return (
-                  <Pressable
-                    key={st.id}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setQuizStage(st.id);
-                    }}
-                    style={[
-                      styles.quizOptionCard,
-                      active && styles.quizOptionCardActive,
-                    ]}
-                  >
-                    <Text style={styles.quizOptionEmoji}>{st.emoji}</Text>
-                    <Text
-                      style={[
-                        styles.quizOptionLabel,
-                        active && styles.quizOptionLabelActive,
-                      ]}
-                    >
-                      {st.label}
-                    </Text>
-                    <Text style={styles.quizOptionSub}>{st.sub}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Paso 2: Peso aproximado en Kg */}
-            <Text style={styles.quizStepTitle}>
-              2. Peso actual aproximado ({quizWeightKg} kg)
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-            >
-              {(activeSpecies === 'cat'
-                ? [2.5, 3.5, 4.5, 6, 8]
-                : [5, 12, 20, 28, 36, 45]
-              ).map((w) => {
-                const active = quizWeightKg === w;
-                return (
-                  <Pressable
-                    key={w}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setQuizWeightKg(w);
-                    }}
-                    style={[
-                      styles.quizWeightChip,
-                      active && styles.quizWeightChipActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.quizWeightChipText,
-                        active && styles.quizWeightChipTextActive,
-                      ]}
-                    >
-                      {w} kg
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            {/* Paso 3: Nivel de Actividad */}
-            <Text style={styles.quizStepTitle}>3. Nivel de actividad física</Text>
-            <View style={styles.quizOptionRow}>
-              {[
-                {
-                  id: 'low' as PetActivityType,
-                  emoji: '🛋️',
-                  label: 'Hogareño',
-                  sub: 'Baja quema calórica',
-                },
-                {
-                  id: 'moderate' as PetActivityType,
-                  emoji: '🚶',
-                  label: 'Moderado',
-                  sub: 'Paseos diarios',
-                },
-                {
-                  id: 'high' as PetActivityType,
-                  emoji: '⚡',
-                  label: 'Alta Energía',
-                  sub: 'Deporte / Trabajo',
-                },
-              ].map((act) => {
-                const active = quizActivity === act.id;
-                return (
-                  <Pressable
-                    key={act.id}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setQuizActivity(act.id);
-                    }}
-                    style={[
-                      styles.quizOptionCard,
-                      active && styles.quizOptionCardActive,
-                    ]}
-                  >
-                    <Text style={styles.quizOptionEmoji}>{act.emoji}</Text>
-                    <Text
-                      style={[
-                        styles.quizOptionLabel,
-                        active && styles.quizOptionLabelActive,
-                      ]}
-                    >
-                      {act.label}
-                    </Text>
-                    <Text style={styles.quizOptionSub}>{act.sub}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Paso 4: Necesidad Biológica Principal */}
-            <Text style={styles.quizStepTitle}>
-              4. Prioridad biológica o sensibilidad
-            </Text>
-            <View style={styles.quizSensitivityGrid}>
-              {[
-                {
-                  id: 'none' as PetSensitivityType,
-                  emoji: '🥩',
-                  title: 'Nutrición Balanceada Cordero & Arroz',
-                  sub: 'Mantenimiento óptimo diario y alta digestibilidad',
-                },
-                {
-                  id: 'skin' as PetSensitivityType,
-                  emoji: '✨',
-                  title: 'Piel Sensible y Pelaje Brillante',
-                  sub: 'Rico en Salmón Salvaje, Omega 3 y Omega 6',
-                },
-                {
-                  id: 'weight' as PetSensitivityType,
-                  emoji: '⚖️',
-                  title: 'Control de Peso / Esterilizado',
-                  sub: 'Fórmula Light baja en calorías con L-Carnitina',
-                },
-                {
-                  id: 'grain_free' as PetSensitivityType,
-                  emoji: '🐺',
-                  title: '100% Libre de Granos (Ancestral)',
-                  sub: 'Proteína pura de Bisonte, Venado o Salmón Ahumado',
-                },
-              ].map((sens) => {
-                const active = quizSensitivity === sens.id;
-                return (
-                  <Pressable
-                    key={sens.id}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setQuizSensitivity(sens.id);
-                    }}
-                    style={[
-                      styles.quizSensCard,
-                      active && styles.quizOptionCardActive,
-                    ]}
-                  >
-                    <Text style={{ fontSize: 22 }}>{sens.emoji}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.quizSensTitle,
-                          active && { color: colors.primary.light },
-                        ]}
+                  {[
+                    { step: 1, label: 'Etapa' },
+                    { step: 2, label: 'Peso' },
+                    { step: 3, label: 'Rutina' },
+                    { step: 4, label: 'Objetivo' },
+                  ].map((st) => {
+                    const isCompleted = quizJourneyStep > st.step;
+                    const isCurrent = quizJourneyStep === st.step;
+                    return (
+                      <Pressable
+                        key={st.step}
+                        onPress={() =>
+                          animateToQuizStep(st.step as 1 | 2 | 3 | 4)
+                        }
+                        style={{ flex: 1, gap: 5 }}
                       >
-                        {sens.title}
-                      </Text>
-                      <Text style={styles.quizSensSub}>{sens.sub}</Text>
-                    </View>
+                        <View
+                          style={{
+                            height: 5,
+                            borderRadius: 3,
+                            backgroundColor:
+                              isCompleted || isCurrent
+                                ? colors.primary.DEFAULT
+                                : 'rgba(255, 255, 255, 0.1)',
+                          }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: isCurrent ? '900' : '700',
+                            color: isCurrent
+                              ? colors.primary.light
+                              : isCompleted
+                              ? '#E5E7EB'
+                              : '#6B7280',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {isCompleted ? '✓ ' : ''}
+                          {st.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </LinearGradient>
+            )}
+
+            {/* CONTENEDOR ANIMADO DE CADA ESTACIÓN DEL VIAJE */}
+            <Animated.View
+              style={{
+                opacity: quizStepAnim,
+                transform: [{ translateY: quizStepSlide }],
+                gap: 14,
+              }}
+            >
+              {/* ==================== ESTACIÓN 1: ETAPA DE VIDA ==================== */}
+              {quizJourneyStep === 1 && (
+                <View
+                  style={{
+                    backgroundColor: '#12151C',
+                    borderRadius: 22,
+                    padding: 18,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    gap: 14,
+                  }}
+                >
+                  <View>
+                    <Text
+                      style={{
+                        color: colors.primary.light,
+                        fontSize: 11.5,
+                        fontWeight: '800',
+                        letterSpacing: 0.6,
+                        marginBottom: 4,
+                      }}
+                    >
+                      PASO 1 · MADUREZ METABÓLICA
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 21,
+                        fontWeight: '900',
+                        lineHeight: 26,
+                      }}
+                    >
+                      ¿En qué etapa de su vida está {displayPetName}?
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#9CA3AF',
+                        fontSize: 13,
+                        lineHeight: 18,
+                        marginTop: 4,
+                      }}
+                    >
+                      Los requerimientos de DHA, calcio y aminoácidos cambian en
+                      cada ciclo biológico.
+                    </Text>
+                  </View>
+
+                  <View style={{ gap: 10 }}>
+                    {[
+                      {
+                        id: 'puppy' as PetStageType,
+                        emoji: '🐣',
+                        label:
+                          activeSpecies === 'cat'
+                            ? 'Gatito en Crecimiento'
+                            : 'Cachorro en Desarrollo',
+                        ageTag: 'Menos de 12 meses',
+                        desc: 'Requiere alta densidad proteica, DHA para el cerebro y calcio balanceado.',
+                      },
+                      {
+                        id: 'adult' as PetStageType,
+                        emoji: activeSpecies === 'cat' ? '🐱' : '🐕',
+                        label: 'Adulto en Plenitud',
+                        ageTag: 'De 1 a 7 años',
+                        desc: 'Equilibrio celular óptimo entre músculo magro, energía diaria y digestión.',
+                      },
+                      {
+                        id: 'senior' as PetStageType,
+                        emoji: '🦮',
+                        label: 'Senior / Sabio',
+                        ageTag: 'Más de 7 años',
+                        desc: 'Soporte articular con glucosamina, antioxidantes y calorías moderadas.',
+                      },
+                    ].map((st) => {
+                      const active = quizStage === st.id;
+                      return (
+                        <Pressable
+                          key={st.id}
+                          onPress={() => {
+                            setQuizStage(st.id);
+                            setTimeout(() => animateToQuizStep(2), 180);
+                          }}
+                          style={[
+                            styles.quizSensCard,
+                            active && styles.quizOptionCardActive,
+                            { padding: 15 },
+                          ]}
+                        >
+                          <View
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 24,
+                              backgroundColor: active
+                                ? 'rgba(212, 175, 55, 0.2)'
+                                : '#1A1E29',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Text style={{ fontSize: 24 }}>{st.emoji}</Text>
+                          </View>
+
+                          <View style={{ flex: 1, gap: 2 }}>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 8,
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.quizSensTitle,
+                                  { fontSize: 15 },
+                                  active && { color: colors.primary.light },
+                                ]}
+                              >
+                                {st.label}
+                              </Text>
+                              <View
+                                style={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.07)',
+                                  paddingHorizontal: 7,
+                                  paddingVertical: 2,
+                                  borderRadius: 6,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: '#D1D5DB',
+                                    fontSize: 10,
+                                    fontWeight: '700',
+                                  }}
+                                >
+                                  {st.ageTag}
+                                </Text>
+                              </View>
+                            </View>
+                            <Text style={styles.quizSensSub}>{st.desc}</Text>
+                          </View>
+
+                          <Ionicons
+                            name={
+                              active ? 'checkmark-circle' : 'chevron-forward'
+                            }
+                            size={20}
+                            color={active ? colors.primary.DEFAULT : '#6B7280'}
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <Pressable
+                    onPress={() => animateToQuizStep(2)}
+                    style={styles.quizPrimaryAddBtn}
+                  >
+                    <Text style={styles.quizPrimaryAddBtnText}>
+                      Continuar al Paso 2: Peso y Talla
+                    </Text>
                     <Ionicons
-                      name={active ? 'checkmark-circle' : 'ellipse-outline'}
-                      size={20}
-                      color={active ? colors.primary.DEFAULT : '#4B5563'}
+                      name="arrow-forward"
+                      size={18}
+                      color="#050508"
                     />
                   </Pressable>
-                );
-              })}
-            </View>
-
-            {/* TARJETA DE RESULTADO BIOLÓGICO EN TIEMPO REAL */}
-            <LinearGradient
-              colors={['#1F2433', '#12151E']}
-              style={styles.quizResultCard}
-            >
-              <View style={styles.quizResultBadgeRow}>
-                <View style={styles.quizMatchPill}>
-                  <Text style={styles.quizMatchPillText}>
-                    ✓ 99% COMPATIBILIDAD BIOLÓGICA
-                  </Text>
                 </View>
-                <Text style={styles.quizWeightBadgeText}>
-                  {quizRecommendation.product.weightLb} LB
-                </Text>
-              </View>
+              )}
 
-              <Text style={styles.quizResultProdTitle}>
-                {quizRecommendation.product.name}
-              </Text>
-              <Text style={styles.quizResultProdSub}>
-                {quizRecommendation.product.protein}
-              </Text>
-
-              {/* Métricas de ración y duración */}
-              <View style={styles.quizMetricsRow}>
-                <View style={styles.quizMetricBox}>
-                  <Text style={styles.quizMetricValue}>
-                    {quizRecommendation.dailyGrams} g/día
-                  </Text>
-                  <Text style={styles.quizMetricLabel}>Ración sugerida</Text>
-                </View>
-                <View style={styles.quizMetricBox}>
-                  <Text style={styles.quizMetricValue}>
-                    ~{quizRecommendation.estimatedDays} días
-                  </Text>
-                  <Text style={styles.quizMetricLabel}>Duración del bulto</Text>
-                </View>
-                <View style={styles.quizMetricBox}>
-                  <Text style={styles.quizMetricValue}>
-                    {formatCOP(quizRecommendation.costPerDay)}
-                  </Text>
-                  <Text style={styles.quizMetricLabel}>Costo por día</Text>
-                </View>
-              </View>
-
-              <View style={styles.quizResultActions}>
-                <Pressable
-                  onPress={() => {
-                    handleAddToCart(quizRecommendation.product.id);
-                    setCartModalVisible(true);
+              {/* ==================== ESTACIÓN 2: PESO Y CONSTITUCIÓN ==================== */}
+              {quizJourneyStep === 2 && (
+                <View
+                  style={{
+                    backgroundColor: '#12151C',
+                    borderRadius: 22,
+                    padding: 18,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    gap: 14,
                   }}
-                  style={styles.quizPrimaryAddBtn}
                 >
-                  <Ionicons name="bag-add" size={18} color="#050508" />
-                  <Text style={styles.quizPrimaryAddBtnText}>
-                    Pedir Bulto ({formatCOP(quizRecommendation.product.price)})
-                  </Text>
-                </Pressable>
+                  <View>
+                    <Text
+                      style={{
+                        color: colors.primary.light,
+                        fontSize: 11.5,
+                        fontWeight: '800',
+                        letterSpacing: 0.6,
+                        marginBottom: 4,
+                      }}
+                    >
+                      PASO 2 · MASA CORPORAL Y TALLA
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 21,
+                        fontWeight: '900',
+                        lineHeight: 26,
+                      }}
+                    >
+                      ¿Cuánto pesa aproximadamente {displayPetName}?
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#9CA3AF',
+                        fontSize: 13,
+                        lineHeight: 18,
+                        marginTop: 4,
+                      }}
+                    >
+                      Con su peso exacto calculamos los gramos por porción y los
+                      días que te durará el bulto.
+                    </Text>
+                  </View>
 
-                <Pressable
-                  onPress={() => {
-                    if (!user) {
-                      Haptics.selectionAsync();
-                      openAuthModal('login');
-                      return;
-                    }
-                    Haptics.notificationAsync(
-                      Haptics.NotificationFeedbackType.Success
-                    );
-                    updatePet(activePet.id, {
-                      ageStage: quizStage,
-                      weightKg: quizWeightKg,
-                      activityLevel: quizActivity,
-                      sensitivity: quizSensitivity,
-                      recommendedProductId: quizRecommendation.product.id,
-                    });
-                    setQuizSavedToast(true);
-                    setTimeout(() => setQuizSavedToast(false), 2500);
+                  {/* Cuadrícula de tarjetas de peso con referencia de talla */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      gap: 10,
+                    }}
+                  >
+                    {(activeSpecies === 'cat'
+                      ? [
+                          { w: 2.5, tag: 'Esbelto / Joven', icon: '🐱' },
+                          { w: 3.5, tag: 'Talla Ligera', icon: '🐈' },
+                          { w: 4.5, tag: 'Peso Ideal Promedio', icon: '✨' },
+                          { w: 6, tag: 'Gato Grande', icon: '🐈‍⬛' },
+                          { w: 8, tag: 'Gigante / Maine Coon', icon: '🦁' },
+                        ]
+                      : [
+                          { w: 5, tag: 'Mini / Toy (<7 kg)', icon: '🐶' },
+                          { w: 12, tag: 'Pequeño / Mediano', icon: '🐕' },
+                          { w: 20, tag: 'Mediano Estándar', icon: '🐕‍🦺' },
+                          { w: 28, tag: 'Raza Grande', icon: '🦮' },
+                          { w: 36, tag: 'Grande Atlético', icon: '🐺' },
+                          { w: 45, tag: 'Raza Gigante (+40 kg)', icon: '🦁' },
+                        ]
+                    ).map((item) => {
+                      const active = quizWeightKg === item.w;
+                      return (
+                        <Pressable
+                          key={item.w}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setQuizWeightKg(item.w);
+                          }}
+                          style={[
+                            {
+                              width: '48%',
+                              backgroundColor: '#171B24',
+                              borderRadius: 16,
+                              padding: 13,
+                              borderWidth: 1.5,
+                              borderColor: 'rgba(255, 255, 255, 0.08)',
+                              gap: 4,
+                            },
+                            active && styles.quizOptionCardActive,
+                          ]}
+                        >
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: active
+                                  ? colors.primary.light
+                                  : '#FFFFFF',
+                                fontSize: 19,
+                                fontWeight: '900',
+                              }}
+                            >
+                              {item.w} kg
+                            </Text>
+                            <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+                          </View>
+                          <Text
+                            style={{
+                              color: '#9CA3AF',
+                              fontSize: 11.5,
+                              fontWeight: '600',
+                            }}
+                          >
+                            {item.tag}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  {/* Pre-cálculo energético basal en vivo */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 10,
+                      backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                      borderRadius: 14,
+                      padding: 12,
+                      borderWidth: 1,
+                      borderColor: 'rgba(212, 175, 55, 0.3)',
+                    }}
+                  >
+                    <Ionicons
+                      name="flame-outline"
+                      size={20}
+                      color={colors.primary.light}
+                    />
+                    <Text
+                      style={{
+                        color: '#E5E7EB',
+                        fontSize: 12,
+                        fontWeight: '600',
+                        flex: 1,
+                        lineHeight: 17,
+                      }}
+                    >
+                      Para{' '}
+                      <Text
+                        style={{ color: colors.primary.light, fontWeight: '800' }}
+                      >
+                        {quizWeightKg} kg
+                      </Text>
+                      , su metabolismo basal requiere aprox.{' '}
+                      <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>
+                        {Math.round(70 * Math.pow(quizWeightKg, 0.75) * 1.4)}{' '}
+                        kcal/día
+                      </Text>
+                      .
+                    </Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <Pressable
+                      onPress={() => animateToQuizStep(1)}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        borderRadius: 16,
+                        backgroundColor: '#1A1E29',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#D1D5DB',
+                          fontSize: 13.5,
+                          fontWeight: '800',
+                        }}
+                      >
+                        ‹ Atrás
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => animateToQuizStep(3)}
+                      style={[styles.quizPrimaryAddBtn, { flex: 1 }]}
+                    >
+                      <Text style={styles.quizPrimaryAddBtnText}>
+                        Siguiente: Nivel de Rutina
+                      </Text>
+                      <Ionicons
+                        name="arrow-forward"
+                        size={18}
+                        color="#050508"
+                      />
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              {/* ==================== ESTACIÓN 3: RUTINA Y ACTIVIDAD FÍSICA ==================== */}
+              {quizJourneyStep === 3 && (
+                <View
+                  style={{
+                    backgroundColor: '#12151C',
+                    borderRadius: 22,
+                    padding: 18,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    gap: 14,
                   }}
-                  style={styles.quizSecondarySaveBtn}
                 >
-                  <Text style={styles.quizSecondarySaveText}>
-                    {!user
-                      ? '🔒 Inicia sesión para guardar este diagnóstico en tu perfil'
-                      : quizSavedToast
-                      ? `✓ Guardado en la ficha de ${activePet.name}`
-                      : `Guardar diagnóstico en el perfil de ${activePet.name}`}
+                  <View>
+                    <Text
+                      style={{
+                        color: colors.primary.light,
+                        fontSize: 11.5,
+                        fontWeight: '800',
+                        letterSpacing: 0.6,
+                        marginBottom: 4,
+                      }}
+                    >
+                      PASO 3 · GASTO CALÓRICO DIARIO
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 21,
+                        fontWeight: '900',
+                        lineHeight: 26,
+                      }}
+                    >
+                      ¿Cómo es la rutina diaria de {displayPetName}?
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#9CA3AF',
+                        fontSize: 13,
+                        lineHeight: 18,
+                        marginTop: 4,
+                      }}
+                    >
+                      Ajustamos el nivel de grasa y proteína para mantener su
+                      peso ideal sin hambre.
+                    </Text>
+                  </View>
+
+                  <View style={{ gap: 10 }}>
+                    {[
+                      {
+                        id: 'low' as PetActivityType,
+                        emoji: '🛋️',
+                        label: 'Hogareño / Tranquilo',
+                        tag: 'Quema Calórica Baja',
+                        desc: 'Pasa la mayor parte del tiempo en interiores con paseos suaves. Requiere control calórico.',
+                      },
+                      {
+                        id: 'moderate' as PetActivityType,
+                        emoji: '🚶',
+                        label: 'Paseos y Juego Diario',
+                        tag: 'Equilibrio Ideal',
+                        desc: 'Salidas diarias al parque o sesiones de juego constantes en casa.',
+                      },
+                      {
+                        id: 'high' as PetActivityType,
+                        emoji: '⚡',
+                        label: 'Atleta / Alta Energía',
+                        tag: 'Alto Rendimiento',
+                        desc: 'Corre, entrena o tiene actividad intensa. Necesita máxima proteína animal.',
+                      },
+                    ].map((act) => {
+                      const active = quizActivity === act.id;
+                      return (
+                        <Pressable
+                          key={act.id}
+                          onPress={() => {
+                            setQuizActivity(act.id);
+                            setTimeout(() => animateToQuizStep(4), 180);
+                          }}
+                          style={[
+                            styles.quizSensCard,
+                            active && styles.quizOptionCardActive,
+                            { padding: 15 },
+                          ]}
+                        >
+                          <View
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 24,
+                              backgroundColor: active
+                                ? 'rgba(212, 175, 55, 0.2)'
+                                : '#1A1E29',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Text style={{ fontSize: 24 }}>{act.emoji}</Text>
+                          </View>
+
+                          <View style={{ flex: 1, gap: 2 }}>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 8,
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.quizSensTitle,
+                                  { fontSize: 15 },
+                                  active && { color: colors.primary.light },
+                                ]}
+                              >
+                                {act.label}
+                              </Text>
+                            </View>
+                            <Text style={styles.quizSensSub}>{act.desc}</Text>
+                          </View>
+
+                          <Ionicons
+                            name={
+                              active ? 'checkmark-circle' : 'chevron-forward'
+                            }
+                            size={20}
+                            color={active ? colors.primary.DEFAULT : '#6B7280'}
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <Pressable
+                      onPress={() => animateToQuizStep(2)}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        borderRadius: 16,
+                        backgroundColor: '#1A1E29',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#D1D5DB',
+                          fontSize: 13.5,
+                          fontWeight: '800',
+                        }}
+                      >
+                        ‹ Atrás
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => animateToQuizStep(4)}
+                      style={[styles.quizPrimaryAddBtn, { flex: 1 }]}
+                    >
+                      <Text style={styles.quizPrimaryAddBtnText}>
+                        Último paso: Prioridad Biológica
+                      </Text>
+                      <Ionicons
+                        name="arrow-forward"
+                        size={18}
+                        color="#050508"
+                      />
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              {/* ==================== ESTACIÓN 4: PRIORIDAD BIOLÓGICA O SENSIBILIDAD ==================== */}
+              {quizJourneyStep === 4 && (
+                <View
+                  style={{
+                    backgroundColor: '#12151C',
+                    borderRadius: 22,
+                    padding: 18,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    gap: 14,
+                  }}
+                >
+                  <View>
+                    <Text
+                      style={{
+                        color: colors.primary.light,
+                        fontSize: 11.5,
+                        fontWeight: '800',
+                        letterSpacing: 0.6,
+                        marginBottom: 4,
+                      }}
+                    >
+                      PASO 4 · OBJETIVO NUTRICIONAL
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 21,
+                        fontWeight: '900',
+                        lineHeight: 26,
+                      }}
+                    >
+                      ¿Qué beneficio quieres priorizar en {displayPetName}?
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#9CA3AF',
+                        fontSize: 13,
+                        lineHeight: 18,
+                        marginTop: 4,
+                      }}
+                    >
+                      Elige su prioridad y nuestro laboratorio cruzará su perfil
+                      con las fórmulas de Diamond, Taste of the Wild, Acana y
+                      Orijen.
+                    </Text>
+                  </View>
+
+                  <View style={styles.quizSensitivityGrid}>
+                    {[
+                      {
+                        id: 'none' as PetSensitivityType,
+                        emoji: '🥩',
+                        title: 'Digestión Noble Cordero & Arroz',
+                        sub: 'Mantenimiento óptimo diario, estómago tranquilo y probióticos vivos',
+                      },
+                      {
+                        id: 'skin' as PetSensitivityType,
+                        emoji: '✨',
+                        title: 'Piel Sensible y Pelaje Brillante',
+                        sub: 'Fórmula rica en Salmón Salvaje, Trucha, Omega 3 y Omega 6',
+                      },
+                      {
+                        id: 'weight' as PetSensitivityType,
+                        emoji: '⚖️',
+                        title: 'Control de Peso / Esterilizado',
+                        sub: 'Fórmula Light baja en calorías con L-Carnitina quema-grasa',
+                      },
+                      {
+                        id: 'grain_free' as PetSensitivityType,
+                        emoji: '🐺',
+                        title: '100% Libre de Granos (Ancestral)',
+                        sub: 'Proteína pura de Bisonte Asado, Venado o Pollo de Corral',
+                      },
+                    ].map((sens) => {
+                      const active = quizSensitivity === sens.id;
+                      return (
+                        <Pressable
+                          key={sens.id}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setQuizSensitivity(sens.id);
+                          }}
+                          style={[
+                            styles.quizSensCard,
+                            active && styles.quizOptionCardActive,
+                          ]}
+                        >
+                          <Text style={{ fontSize: 24 }}>{sens.emoji}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={[
+                                styles.quizSensTitle,
+                                active && { color: colors.primary.light },
+                              ]}
+                            >
+                              {sens.title}
+                            </Text>
+                            <Text style={styles.quizSensSub}>{sens.sub}</Text>
+                          </View>
+                          <Ionicons
+                            name={
+                              active ? 'checkmark-circle' : 'ellipse-outline'
+                            }
+                            size={20}
+                            color={
+                              active ? colors.primary.DEFAULT : '#4B5563'
+                            }
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                    <Pressable
+                      onPress={() => animateToQuizStep(3)}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        borderRadius: 16,
+                        backgroundColor: '#1A1E29',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#D1D5DB',
+                          fontSize: 13.5,
+                          fontWeight: '800',
+                        }}
+                      >
+                        ‹ Atrás
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={startQuizBiologicalAnalysis}
+                      style={[styles.quizPrimaryAddBtn, { flex: 1 }]}
+                    >
+                      <Ionicons name="sparkles" size={18} color="#050508" />
+                      <Text style={styles.quizPrimaryAddBtnText}>
+                        Analizar ADN y Ver Resultado
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              {/* ==================== ESTACIÓN 5: LABORATORIO ANALIZANDO EN TIEMPO REAL ==================== */}
+              {quizJourneyStep === 'analyzing' && (
+                <LinearGradient
+                  colors={['#1C2130', '#10131C']}
+                  style={{
+                    borderRadius: 24,
+                    padding: 24,
+                    borderWidth: 1.5,
+                    borderColor: 'rgba(212, 175, 55, 0.45)',
+                    alignItems: 'center',
+                    gap: 16,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 74,
+                      height: 74,
+                      borderRadius: 37,
+                      backgroundColor: 'rgba(212, 175, 55, 0.16)',
+                      borderWidth: 1.5,
+                      borderColor: colors.primary.DEFAULT,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 34 }}>🧬</Text>
+                  </View>
+
+                  <View style={{ alignItems: 'center', gap: 4 }}>
+                    <Text
+                      style={{
+                        color: colors.primary.light,
+                        fontSize: 12,
+                        fontWeight: '900',
+                        letterSpacing: 1,
+                      }}
+                    >
+                      LABORATORIO NUTRICIONAL MUNDO MASCOTAS
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 21,
+                        fontWeight: '900',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Formulando el plan de {displayPetName}...
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.primary.light,
+                        fontSize: 28,
+                        fontWeight: '900',
+                        marginTop: 2,
+                      }}
+                    >
+                      {Math.min(100, quizAnalysisStep * 25)}%
+                    </Text>
+                  </View>
+
+                  {/* Barra de carga animada */}
+                  <View
+                    style={{
+                      width: '100%',
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: '#1E2433',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: `${Math.min(100, quizAnalysisStep * 25)}%`,
+                        height: '100%',
+                        backgroundColor: colors.primary.DEFAULT,
+                        borderRadius: 4,
+                      }}
+                    />
+                  </View>
+
+                  {/* Pasos científicos encendiéndose en vivo */}
+                  <View style={{ width: '100%', gap: 10, marginTop: 4 }}>
+                    {[
+                      {
+                        step: 1,
+                        text: `Calculando curva metabólica para ${quizWeightKg} kg (${
+                          quizStage === 'puppy'
+                            ? 'Cachorro'
+                            : quizStage === 'senior'
+                            ? 'Senior'
+                            : 'Adulto'
+                        })`,
+                      },
+                      {
+                        step: 2,
+                        text: 'Evaluando inclusión proteica y perfil de aminoácidos esenciales',
+                      },
+                      {
+                        step: 3,
+                        text: 'Cruzando ADN de Diamond Naturals, Taste of the Wild, Acana y Orijen',
+                      },
+                      {
+                        step: 4,
+                        text: 'Determinando gramos exactos por día y duración del bulto',
+                      },
+                    ].map((check) => {
+                      const done = quizAnalysisStep >= check.step;
+                      return (
+                        <View
+                          key={check.step}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 10,
+                            backgroundColor: done
+                              ? 'rgba(212, 175, 55, 0.1)'
+                              : 'rgba(255, 255, 255, 0.03)',
+                            paddingHorizontal: 12,
+                            paddingVertical: 10,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: done
+                              ? 'rgba(212, 175, 55, 0.35)'
+                              : 'rgba(255, 255, 255, 0.06)',
+                          }}
+                        >
+                          <Ionicons
+                            name={
+                              done ? 'checkmark-circle' : 'hourglass-outline'
+                            }
+                            size={18}
+                            color={done ? colors.primary.light : '#6B7280'}
+                          />
+                          <Text
+                            style={{
+                              color: done ? '#FFFFFF' : '#6B7280',
+                              fontSize: 12.5,
+                              fontWeight: done ? '700' : '600',
+                              flex: 1,
+                            }}
+                          >
+                            {check.text}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </LinearGradient>
+              )}
+
+              {/* ==================== ESTACIÓN 6: REVELACIÓN DEL DIAGNÓSTICO PERSONALIZADO ==================== */}
+              {quizJourneyStep === 'result' && (
+                <LinearGradient
+                  colors={['#1F2433', '#11141D']}
+                  style={[styles.quizResultCard, { marginTop: 0 }]}
+                >
+                  <View style={styles.quizResultBadgeRow}>
+                    <View style={styles.quizMatchPill}>
+                      <Text style={styles.quizMatchPillText}>
+                        ✓ 99.4% COMPATIBILIDAD BIOLÓGICA
+                      </Text>
+                    </View>
+                    <Text style={styles.quizWeightBadgeText}>
+                      {quizRecommendation.product.weightLb} LB
+                    </Text>
+                  </View>
+
+                  <Text
+                    style={{
+                      color: '#9CA3AF',
+                      fontSize: 12,
+                      fontWeight: '700',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Fórmula ganadora para {displayPetName} ({quizWeightKg} kg ·{' '}
+                    {quizStage === 'puppy'
+                      ? 'Cachorro'
+                      : quizStage === 'senior'
+                      ? 'Senior'
+                      : 'Adulto'}
+                    ):
                   </Text>
-                </Pressable>
-              </View>
-            </LinearGradient>
+
+                  <Text style={styles.quizResultProdTitle}>
+                    {quizRecommendation.product.name}
+                  </Text>
+                  <Text style={styles.quizResultProdSub}>
+                    {quizRecommendation.product.protein}
+                  </Text>
+
+                  {/* Botón rápido para ver el ADN científico de la marca ganadora */}
+                  {quizRecommendation.product.brand !== 'Salud Vet' && (
+                    <Pressable
+                      onPress={() =>
+                        openBrandDna(
+                          quizRecommendation.product.brand as FoodBrandName
+                        )
+                      }
+                      style={{
+                        alignSelf: 'flex-start',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                        backgroundColor: 'rgba(212, 175, 55, 0.14)',
+                        paddingHorizontal: 11,
+                        paddingVertical: 6,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: 'rgba(212, 175, 55, 0.35)',
+                        marginBottom: 14,
+                      }}
+                    >
+                      <Text style={{ fontSize: 12 }}>🧬</Text>
+                      <Text
+                        style={{
+                          color: colors.primary.light,
+                          fontSize: 11.5,
+                          fontWeight: '800',
+                        }}
+                      >
+                        Explorar ADN de {quizRecommendation.product.brand} ›
+                      </Text>
+                    </Pressable>
+                  )}
+
+                  {/* Métricas de ración, porciones y duración */}
+                  <View style={styles.quizMetricsRow}>
+                    <View style={styles.quizMetricBox}>
+                      <Text style={styles.quizMetricValue}>
+                        {quizRecommendation.dailyGrams} g/día
+                      </Text>
+                      <Text style={styles.quizMetricLabel}>
+                        2 comidas de {Math.round(quizRecommendation.dailyGrams / 2)}g
+                      </Text>
+                    </View>
+                    <View style={styles.quizMetricBox}>
+                      <Text style={styles.quizMetricValue}>
+                        ~{quizRecommendation.estimatedDays} días
+                      </Text>
+                      <Text style={styles.quizMetricLabel}>
+                        Duración del bulto
+                      </Text>
+                    </View>
+                    <View style={styles.quizMetricBox}>
+                      <Text style={styles.quizMetricValue}>
+                        {formatCOP(quizRecommendation.costPerDay)}
+                      </Text>
+                      <Text style={styles.quizMetricLabel}>Costo por día</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.quizResultActions}>
+                    <Pressable
+                      onPress={() => {
+                        handleAddToCart(quizRecommendation.product.id);
+                        setCartModalVisible(true);
+                      }}
+                      style={styles.quizPrimaryAddBtn}
+                    >
+                      <Ionicons name="bag-add" size={18} color="#050508" />
+                      <Text style={styles.quizPrimaryAddBtnText}>
+                        Pedir Bulto ({formatCOP(quizRecommendation.product.price)})
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => {
+                        if (!user) {
+                          Haptics.selectionAsync();
+                          openAuthModal('login');
+                          return;
+                        }
+                        Haptics.notificationAsync(
+                          Haptics.NotificationFeedbackType.Success
+                        );
+                        updatePet(activePet.id, {
+                          ageStage: quizStage,
+                          weightKg: quizWeightKg,
+                          activityLevel: quizActivity,
+                          sensitivity: quizSensitivity,
+                          recommendedProductId: quizRecommendation.product.id,
+                        });
+                        setQuizSavedToast(true);
+                        setTimeout(() => setQuizSavedToast(false), 2500);
+                      }}
+                      style={styles.quizSecondarySaveBtn}
+                    >
+                      <Text style={styles.quizSecondarySaveText}>
+                        {!user
+                          ? '🔒 Inicia sesión para guardar este diagnóstico en tu perfil'
+                          : quizSavedToast
+                          ? `✓ Guardado en la ficha de ${activePet.name}`
+                          : `Guardar diagnóstico en el perfil de ${activePet.name}`}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => animateToQuizStep(1)}
+                      style={{
+                        alignSelf: 'center',
+                        paddingVertical: 8,
+                        paddingHorizontal: 14,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#9CA3AF',
+                          fontSize: 12.5,
+                          fontWeight: '700',
+                        }}
+                      >
+                        🔄 Ajustar respuestas o evaluar otra mascota
+                      </Text>
+                    </Pressable>
+                  </View>
+                </LinearGradient>
+              )}
+            </Animated.View>
           </View>
         )}
 
