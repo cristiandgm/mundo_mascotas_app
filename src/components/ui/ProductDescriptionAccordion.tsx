@@ -307,29 +307,28 @@ function parseProductDescription(product: ProductBag): ParsedDescription {
   };
 }
 
-interface ProductDescriptionAccordionProps {
-  product: ProductBag;
+interface CollapsibleSectionCardProps {
+  title: string;
+  preview?: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  children: React.ReactNode;
 }
 
 /**
- * Menú desplegable dentro de la tarjeta de detalle de producto que presenta
- * la descripción real de Shopify (beneficios, etiquetas y guías) adaptada
- * al tema oscuro de la app.
+ * Tarjeta colapsable reutilizable para cada sección de la ficha del producto
+ * (Descripción del producto, Detalles de conservación, Guía de alimentación, etc.).
  */
-export const ProductDescriptionAccordion: React.FC<
-  ProductDescriptionAccordionProps
-> = ({ product }) => {
+const CollapsibleSectionCard: React.FC<CollapsibleSectionCardProps> = ({
+  title,
+  preview,
+  icon,
+  children,
+}) => {
   const [expanded, setExpanded] = useState(false);
-  const [openSubIndexes, setOpenSubIndexes] = useState<Record<number, boolean>>(
-    {}
-  );
-
   const chevronAnim = useRef(new Animated.Value(0)).current;
   const contentFade = useRef(new Animated.Value(0)).current;
 
-  const parsed = useMemo(() => parseProductDescription(product), [product]);
-
-  const toggleMain = () => {
+  const toggle = () => {
     Haptics.selectionAsync();
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const next = !expanded;
@@ -350,12 +349,6 @@ export const ProductDescriptionAccordion: React.FC<
     ]).start();
   };
 
-  const toggleSubSection = (idx: number) => {
-    Haptics.selectionAsync();
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setOpenSubIndexes((prev) => ({ ...prev, [idx]: !prev[idx] }));
-  };
-
   const chevronRotate = chevronAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
@@ -364,25 +357,23 @@ export const ProductDescriptionAccordion: React.FC<
   return (
     <View style={[styles.container, expanded && styles.containerExpanded]}>
       <Pressable
-        onPress={toggleMain}
+        onPress={toggle}
         style={({ pressed }) => [
           styles.headerBtn,
           pressed && { opacity: 0.86 },
         ]}
       >
         <View style={styles.headerIconBox}>
-          <Ionicons
-            name="document-text-outline"
-            size={16}
-            color={colors.primary.light}
-          />
+          <Ionicons name={icon} size={16} color={colors.primary.light} />
         </View>
 
         <View style={styles.headerTextCol}>
-          <Text style={styles.headerTitle}>Descripción del producto</Text>
-          {!expanded && (
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          {!expanded && Boolean(preview) && (
             <Text style={styles.headerPreview} numberOfLines={1}>
-              {parsed.previewText}
+              {preview}
             </Text>
           )}
         </View>
@@ -404,138 +395,183 @@ export const ProductDescriptionAccordion: React.FC<
 
       {expanded && (
         <Animated.View style={[styles.body, { opacity: contentFade }]}>
-          {parsed.introParagraphs.map((para, idx) => (
-            <Text key={`intro-${idx}`} style={styles.introText}>
-              {para}
-            </Text>
-          ))}
-
-          {parsed.quickTags.length > 0 && (
-            <View style={styles.quickTagsWrap}>
-              {parsed.quickTags.map((tag, idx) => (
-                <View key={`tag-${idx}`} style={styles.quickTagChip}>
-                  <Text style={styles.quickTagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {parsed.benefits.length > 0 && (
-            <View style={styles.benefitsBlock}>
-              {parsed.benefitsTitle && (
-                <Text style={styles.sectionOverline}>
-                  {parsed.benefitsTitle}
-                </Text>
-              )}
-              {parsed.benefits.map((b, idx) => (
-                <View key={`benefit-${idx}`} style={styles.benefitCard}>
-                  {b.title && (
-                    <Text style={styles.benefitTitle}>{b.title}</Text>
-                  )}
-                  <Text style={styles.benefitBody}>{b.body}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {parsed.extraParagraphs.map((para, idx) => (
-            <Text key={`extra-${idx}`} style={styles.extraText}>
-              {para}
-            </Text>
-          ))}
-
-          {parsed.detailsSections.map((sec, idx) => {
-            const subOpen = Boolean(openSubIndexes[idx]);
-            return (
-              <View key={`sub-${idx}`} style={styles.subAccordionCard}>
-                <Pressable
-                  onPress={() => toggleSubSection(idx)}
-                  style={({ pressed }) => [
-                    styles.subAccordionHeader,
-                    pressed && { opacity: 0.85 },
-                  ]}
-                >
-                  <Text style={styles.subAccordionTitle} numberOfLines={2}>
-                    {sec.title}
-                  </Text>
-                  <Ionicons
-                    name={subOpen ? 'chevron-up' : 'chevron-down'}
-                    size={15}
-                    color={colors.primary.light}
-                  />
-                </Pressable>
-
-                {subOpen && (
-                  <View style={styles.subAccordionBody}>
-                    {sec.paragraphs.map((p, pIdx) => (
-                      <Text key={`sp-${pIdx}`} style={styles.subParagraphText}>
-                        {p}
-                      </Text>
-                    ))}
-
-                    {sec.feedingRows.length > 0 && (
-                      <View style={styles.feedingList}>
-                        {sec.feedingRows.map((row, rIdx) => (
-                          <View key={`feed-${rIdx}`} style={styles.feedingRow}>
-                            <View style={styles.feedingRowTop}>
-                              <Text style={styles.feedingWeight}>
-                                {row.weight}
-                              </Text>
-                              {row.cost && (
-                                <View style={styles.feedingCostPill}>
-                                  <Text style={styles.feedingCostText}>
-                                    {row.cost}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                            {(row.active || row.lessActive) && (
-                              <View style={styles.feedingRationPair}>
-                                {row.active && (
-                                  <View style={styles.feedingRationBox}>
-                                    <Text style={styles.feedingRationLabel}>
-                                      🏃 Activo
-                                    </Text>
-                                    <Text style={styles.feedingRationValue}>
-                                      {row.active}
-                                    </Text>
-                                  </View>
-                                )}
-                                {row.lessActive && (
-                                  <View style={styles.feedingRationBox}>
-                                    <Text style={styles.feedingRationLabel}>
-                                      🛋️ Menos act.
-                                    </Text>
-                                    <Text style={styles.feedingRationValue}>
-                                      {row.lessActive}
-                                    </Text>
-                                  </View>
-                                )}
-                              </View>
-                            )}
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
-                    {sec.footnote && (
-                      <Text style={styles.subFootnoteText}>{sec.footnote}</Text>
-                    )}
-                  </View>
-                )}
-              </View>
-            );
-          })}
+          {children}
         </Animated.View>
       )}
     </View>
   );
 };
 
+function getSectionMeta(sec: DetailsSection): {
+  title: string;
+  preview?: string;
+  icon: keyof typeof Ionicons.glyphMap;
+} {
+  const cleanTitle = sec.title.replace(/^[^\p{L}\p{N}]+/u, '').trim() || sec.title;
+  const lower = cleanTitle.toLowerCase();
+
+  if (
+    sec.feedingRows.length > 0 ||
+    lower.includes('alimentación') ||
+    lower.includes('ración') ||
+    lower.includes('guía')
+  ) {
+    return {
+      title: cleanTitle,
+      preview:
+        sec.feedingRows.length > 0
+          ? `${sec.feedingRows.length} rangos de peso · Activo / Menos act.`
+          : sec.paragraphs[0],
+      icon: 'restaurant-outline',
+    };
+  }
+
+  if (lower.includes('presentación') || lower.includes('conservación')) {
+    return {
+      title: cleanTitle,
+      preview: sec.paragraphs[0],
+      icon: 'cube-outline',
+    };
+  }
+
+  return {
+    title: cleanTitle,
+    preview: sec.paragraphs[0],
+    icon: 'information-circle-outline',
+  };
+}
+
+interface ProductDescriptionAccordionProps {
+  product: ProductBag;
+}
+
+/**
+ * Renderiza "Descripción del producto" junto a sus secciones independientes
+ * (Detalles de presentación y conservación, Guía de alimentación, etc.) como
+ * menús desplegables hermanos al mismo nivel dentro de la tarjeta del producto.
+ */
+export const ProductDescriptionAccordion: React.FC<
+  ProductDescriptionAccordionProps
+> = ({ product }) => {
+  const parsed = useMemo(() => parseProductDescription(product), [product]);
+
+  return (
+    <View style={styles.accordionsStack}>
+      <CollapsibleSectionCard
+        title="Descripción del producto"
+        preview={parsed.previewText}
+        icon="document-text-outline"
+      >
+        {parsed.introParagraphs.map((para, idx) => (
+          <Text key={`intro-${idx}`} style={styles.introText}>
+            {para}
+          </Text>
+        ))}
+
+        {parsed.quickTags.length > 0 && (
+          <View style={styles.quickTagsWrap}>
+            {parsed.quickTags.map((tag, idx) => (
+              <View key={`tag-${idx}`} style={styles.quickTagChip}>
+                <Text style={styles.quickTagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {parsed.benefits.length > 0 && (
+          <View style={styles.benefitsBlock}>
+            {parsed.benefitsTitle && (
+              <Text style={styles.sectionOverline}>{parsed.benefitsTitle}</Text>
+            )}
+            {parsed.benefits.map((b, idx) => (
+              <View key={`benefit-${idx}`} style={styles.benefitCard}>
+                {b.title && <Text style={styles.benefitTitle}>{b.title}</Text>}
+                <Text style={styles.benefitBody}>{b.body}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {parsed.extraParagraphs.map((para, idx) => (
+          <Text key={`extra-${idx}`} style={styles.extraText}>
+            {para}
+          </Text>
+        ))}
+      </CollapsibleSectionCard>
+
+      {parsed.detailsSections.map((sec, idx) => {
+        const meta = getSectionMeta(sec);
+        return (
+          <CollapsibleSectionCard
+            key={`section-${idx}`}
+            title={meta.title}
+            preview={meta.preview}
+            icon={meta.icon}
+          >
+            {sec.paragraphs.map((p, pIdx) => (
+              <Text key={`sp-${pIdx}`} style={styles.subParagraphText}>
+                {p}
+              </Text>
+            ))}
+
+            {sec.feedingRows.length > 0 && (
+              <View style={styles.feedingList}>
+                {sec.feedingRows.map((row, rIdx) => (
+                  <View key={`feed-${rIdx}`} style={styles.feedingRow}>
+                    <View style={styles.feedingRowTop}>
+                      <Text style={styles.feedingWeight}>{row.weight}</Text>
+                      {row.cost && (
+                        <View style={styles.feedingCostPill}>
+                          <Text style={styles.feedingCostText}>{row.cost}</Text>
+                        </View>
+                      )}
+                    </View>
+                    {(row.active || row.lessActive) && (
+                      <View style={styles.feedingRationPair}>
+                        {row.active && (
+                          <View style={styles.feedingRationBox}>
+                            <Text style={styles.feedingRationLabel}>
+                              🏃 Activo
+                            </Text>
+                            <Text style={styles.feedingRationValue}>
+                              {row.active}
+                            </Text>
+                          </View>
+                        )}
+                        {row.lessActive && (
+                          <View style={styles.feedingRationBox}>
+                            <Text style={styles.feedingRationLabel}>
+                              🛋️ Menos act.
+                            </Text>
+                            <Text style={styles.feedingRationValue}>
+                              {row.lessActive}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {sec.footnote && (
+              <Text style={styles.subFootnoteText}>{sec.footnote}</Text>
+            )}
+          </CollapsibleSectionCard>
+        );
+      })}
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
-  container: {
+  accordionsStack: {
     marginHorizontal: 22,
     marginBottom: 14,
+    gap: 10,
+  },
+  container: {
     backgroundColor: '#171A23',
     borderRadius: 16,
     borderWidth: 1,
@@ -655,35 +691,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  subAccordionCard: {
-    backgroundColor: '#11141B',
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-    overflow: 'hidden',
-  },
-  subAccordionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    paddingHorizontal: 11,
-    paddingVertical: 9,
-  },
-  subAccordionTitle: {
-    flex: 1,
-    color: '#F3F4F6',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  subAccordionBody: {
-    paddingHorizontal: 11,
-    paddingBottom: 11,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
-    gap: 8,
-  },
   subParagraphText: {
     color: '#D1D5DB',
     fontSize: 12,
@@ -693,7 +700,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   feedingRow: {
-    backgroundColor: '#171A23',
+    backgroundColor: '#11141B',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
@@ -727,7 +734,7 @@ const styles = StyleSheet.create({
   },
   feedingRationBox: {
     flex: 1,
-    backgroundColor: '#11141B',
+    backgroundColor: '#171A23',
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 8,
