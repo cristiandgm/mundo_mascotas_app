@@ -52,6 +52,7 @@ import { useDraggableSheet } from '../utils/useDraggableSheet';
 import { ProductBag, TopServiceTabType } from '../data/catalog';
 import { useCatalog } from '../hooks/useCatalog';
 import { ProductThumbnail } from '../components/ui/ProductThumbnail';
+import { ConsenticoinIcon } from '../components/ui/ConsenticoinIcon';
 import { ProductDescriptionAccordion } from '../components/ui/ProductDescriptionAccordion';
 import {
   AnimatedCartControl,
@@ -988,9 +989,21 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.uberCardTitle} numberOfLines={1}>
               {product.name}
             </Text>
-            <Text style={styles.uberCardSubtitle} numberOfLines={1}>
-              {product.protein} · +{product.coins} Coins
-            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <Text
+                style={[styles.uberCardSubtitle, { flexShrink: 1 }]}
+                numberOfLines={1}
+              >
+                {product.protein} · +{product.coins} Coins
+              </Text>
+              <ConsenticoinIcon size={10} />
+            </View>
           </Pressable>
 
           <View style={styles.uberCardPriceRow}>
@@ -1832,9 +1845,18 @@ export const HomeScreen: React.FC = () => {
                       = {formatCOP((user?.points ?? 250) * COIN_VALUE_COP)}
                     </Text>
                   </View>
-                  <Text style={styles.uberPromoBigCoins}>
-                    {user?.points ?? 250} COINS 🪙
-                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <Text style={styles.uberPromoBigCoins}>
+                      {user?.points ?? 250} COINS
+                    </Text>
+                    <ConsenticoinIcon size={19} />
+                  </View>
                 </LinearGradient>
                 <Text style={styles.uberCardTitle}>
                   Billetera Consenticoins ›
@@ -4691,9 +4713,18 @@ export const HomeScreen: React.FC = () => {
                         }}
                         style={{ flex: 1 }}
                       >
-                        <Text style={styles.cartZoneLabel}>
-                          🪙 BILLETERA CONSENTICOINS CASH
-                        </Text>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <ConsenticoinIcon size={12} />
+                          <Text style={styles.cartZoneLabel}>
+                            BILLETERA CONSENTICOINS CASH
+                          </Text>
+                        </View>
                         <Text
                           style={{
                             color: '#FFFFFF',
@@ -4808,15 +4839,23 @@ export const HomeScreen: React.FC = () => {
 
                     {cartSummary.coinsDiscountCop > 0 && (
                       <View style={styles.costRow}>
-                        <Text
-                          style={[
-                            styles.costLabel,
-                            { color: colors.primary.light, fontWeight: '700' },
-                          ]}
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 5,
+                          }}
                         >
-                          Redención Consenticoins (-{cartSummary.coinsToRedeem}{' '}
-                          🪙)
-                        </Text>
+                          <Text
+                            style={[
+                              styles.costLabel,
+                              { color: colors.primary.light, fontWeight: '700' },
+                            ]}
+                          >
+                            Redención Consenticoins (-{cartSummary.coinsToRedeem})
+                          </Text>
+                          <ConsenticoinIcon size={12} />
+                        </View>
                         <Text
                           style={[
                             styles.costValue,
@@ -4830,9 +4869,18 @@ export const HomeScreen: React.FC = () => {
 
                     <View style={styles.costRow}>
                       <Text style={styles.costLabel}>Consenticoins a ganar</Text>
-                      <Text style={[styles.costValue, { color: colors.primary.light }]}>
-                        +{cartSummary.totalCoins} Coins 🪙
-                      </Text>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 5,
+                        }}
+                      >
+                        <ConsenticoinIcon size={12} />
+                        <Text style={[styles.costValue, { color: colors.primary.light }]}>
+                          +{cartSummary.totalCoins} Coins
+                        </Text>
+                      </View>
                     </View>
 
                     <View style={styles.costDivider} />
@@ -5217,14 +5265,24 @@ export const HomeScreen: React.FC = () => {
                   </View>
                   <View style={styles.productDetailSpecDivider} />
                   <View style={styles.productDetailSpecBox}>
-                    <Text
-                      style={[
-                        styles.productDetailSpecValue,
-                        { color: colors.primary.light },
-                      ]}
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 5,
+                      }}
                     >
-                      +{selectedProduct.coins} 🪙
-                    </Text>
+                      <Text
+                        style={[
+                          styles.productDetailSpecValue,
+                          { color: colors.primary.light },
+                        ]}
+                      >
+                        +{selectedProduct.coins}
+                      </Text>
+                      <ConsenticoinIcon size={14} />
+                    </View>
                     <Text style={styles.productDetailSpecLabel}>
                       Consenticoins
                     </Text>

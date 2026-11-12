@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
+import { ConsenticoinIcon } from './ui/ConsenticoinIcon';
 import {
   CustomerAddress,
   CustomerBillingInfo,
@@ -829,14 +830,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                     <View style={styles.costRow}>
                       <Text style={styles.costLabel}>Consenticoins a ganar</Text>
-                      <Text
-                        style={[
-                          styles.costValue,
-                          { color: colors.primary.light },
-                        ]}
-                      >
-                        +{totalCoinsToEarn} Coins 🪙
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                        <ConsenticoinIcon size={12} />
+                        <Text
+                          style={[
+                            styles.costValue,
+                            { color: colors.primary.light },
+                          ]}
+                        >
+                          +{totalCoinsToEarn} Coins
+                        </Text>
+                      </View>
                     </View>
 
                     <View style={styles.costDivider} />
@@ -946,12 +950,23 @@ const CheckoutConfirmationView: React.FC<CheckoutConfirmationViewProps> = ({
         </View>
 
         {snapshot.coinsEarned > 0 && (
-          <Text style={styles.confirmedCoinsText}>
-            🪙 +{snapshot.coinsEarned} Consenticoins abonados a tu billetera
-            {snapshot.coinsToRedeem > 0
-              ? ` (descontaste ${snapshot.coinsToRedeem} Coins)`
-              : ''}
-          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              marginTop: 2,
+            }}
+          >
+            <ConsenticoinIcon size={13} />
+            <Text style={styles.confirmedCoinsText}>
+              +{snapshot.coinsEarned} Consenticoins abonados a tu billetera
+              {snapshot.coinsToRedeem > 0
+                ? ` (descontaste ${snapshot.coinsToRedeem} Coins)`
+                : ''}
+            </Text>
+          </View>
         )}
       </View>
 
@@ -1770,3 +1785,4 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 });
+

@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
+import { ConsenticoinIcon } from './ui/ConsenticoinIcon';
 import { ModernInput } from './ui/ModernInput';
 import { ModernButton } from './ui/ModernButton';
 import { PetSelector } from './ui/PetSelector';
@@ -209,9 +210,20 @@ export const FloatingAuthModal: React.FC = () => {
                 </Text>
 
                 {authModalView === 'register' && (
-                  <Text style={styles.subtitleText}>
-                    Recibe 250 Consenticoins de regalo al registrarte 🪙
-                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <ConsenticoinIcon size={13} />
+                    <Text style={styles.subtitleText}>
+                      Recibe 250 Consenticoins de regalo al registrarte
+                    </Text>
+                  </View>
                 )}
               </View>
 

@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
+import { ConsenticoinIcon } from './ui/ConsenticoinIcon';
 import {
   useAuth,
   COIN_VALUE_COP,
@@ -340,7 +341,7 @@ export const ConsenticoinsWalletModal: React.FC<
             <View style={styles.sheetTitleRow} {...headerPanHandlers}>
               <View style={styles.headerTitleLeft}>
                 <View style={styles.bankIconBadge}>
-                  <Text style={{ fontSize: 15 }}>🪙</Text>
+                  <ConsenticoinIcon size={16} color={colors.primary.light} />
                 </View>
                 <View>
                   <Text style={styles.uberMainHeaderTitle}>
@@ -458,15 +459,26 @@ export const ConsenticoinsWalletModal: React.FC<
                   </View>
                 </View>
 
-                <Text style={styles.cardSecondaryEquivalent}>
-                  {showPrimaryInCop
-                    ? `Equivalente a ${formatNumber(
-                        currentCoins
-                      )} Consenticoins 🪙`
-                    : `Equivalente a ${formatCOP(
-                        currentCopValue
-                      )} COP en descuento directo`}
-                </Text>
+                {showPrimaryInCop ? (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 5,
+                      marginTop: 4,
+                    }}
+                  >
+                    <Text style={styles.cardSecondaryEquivalent}>
+                      Equivalente a {formatNumber(currentCoins)} Consenticoins
+                    </Text>
+                    <ConsenticoinIcon size={11} />
+                  </View>
+                ) : (
+                  <Text style={styles.cardSecondaryEquivalent}>
+                    Equivalente a {formatCOP(currentCopValue)} COP en descuento
+                    directo
+                  </Text>
+                )}
               </View>
 
               {/* Pie de la tarjeta metálica: Titular + Número enmascarado + Mascota */}
@@ -835,17 +847,29 @@ export const ConsenticoinsWalletModal: React.FC<
                         </View>
 
                         <View style={styles.txAmountCol}>
-                          <Text
-                            style={[
-                              styles.txCoinsAmount,
-                              isEarn
-                                ? styles.txCoinsEarn
-                                : styles.txCoinsRedeem,
-                            ]}
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
                           >
-                            {isEarn ? '+' : '-'}
-                            {tx.coins} 🪙
-                          </Text>
+                            <Text
+                              style={[
+                                styles.txCoinsAmount,
+                                isEarn
+                                  ? styles.txCoinsEarn
+                                  : styles.txCoinsRedeem,
+                              ]}
+                            >
+                              {isEarn ? '+' : '-'}
+                              {tx.coins}
+                            </Text>
+                            <ConsenticoinIcon
+                              size={11}
+                              color={isEarn ? colors.primary.light : '#E5E7EB'}
+                            />
+                          </View>
                           <Text style={styles.txCopAmount}>
                             {isEarn ? '+' : '-'}
                             {formatCOP(tx.copEquivalent)}
@@ -982,9 +1006,18 @@ export const ConsenticoinsWalletModal: React.FC<
 
                         <View style={styles.vaultRewardBottomRow}>
                           <View>
-                            <Text style={styles.vaultRewardCoinsCost}>
-                              {reward.coinsRequired} Coins 🪙
-                            </Text>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 5,
+                              }}
+                            >
+                              <Text style={styles.vaultRewardCoinsCost}>
+                                {reward.coinsRequired} Coins
+                              </Text>
+                              <ConsenticoinIcon size={12} />
+                            </View>
                             <Text style={styles.vaultRewardNormalPrice}>
                               Valor comercial: {formatCOP(reward.normalPriceCop)}
                             </Text>
@@ -1063,14 +1096,29 @@ export const ConsenticoinsWalletModal: React.FC<
                           isClaimed && styles.missionClaimBtnDone,
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.missionClaimBtnText,
-                            isClaimed && styles.missionClaimBtnTextDone,
-                          ]}
-                        >
-                          {isClaimed ? 'Abonado ✓' : `+${mission.coins} 🪙`}
-                        </Text>
+                        {isClaimed ? (
+                          <Text
+                            style={[
+                              styles.missionClaimBtnText,
+                              styles.missionClaimBtnTextDone,
+                            ]}
+                          >
+                            Abonado ✓
+                          </Text>
+                        ) : (
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <Text style={styles.missionClaimBtnText}>
+                              +{mission.coins}
+                            </Text>
+                            <ConsenticoinIcon size={11} color="#050508" />
+                          </View>
+                        )}
                       </Pressable>
                     </View>
                   );

@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
+import { ConsenticoinIcon } from './ui/ConsenticoinIcon';
 import { UserAvatar } from './ui/UserAvatar';
 import {
   useAuth,
@@ -212,7 +213,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                   pressed && { opacity: 0.8 },
                 ]}
               >
-                <Ionicons name="wallet-outline" size={22} color={colors.primary.light} />
+                <ConsenticoinIcon size={21} color={colors.primary.light} />
                 <Text style={styles.uberQuickTileTitle}>
                   {profileData.points} Coins
                 </Text>

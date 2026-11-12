@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
+import { ConsenticoinIcon } from './ui/ConsenticoinIcon';
 import { useAuth } from '../context/AuthContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -36,6 +37,7 @@ export interface InboxMessage {
   iconBgColor: string;
   iconColor: string;
   badgeColor: string;
+  showCoinIcon?: boolean;
 }
 
 interface InboxModalProps {
@@ -74,7 +76,8 @@ const INITIAL_MESSAGES: InboxMessage[] = [
   {
     id: 'msg_offer_1',
     category: 'offers',
-    title: 'Bono Doble de Consenticoins 🪙',
+    title: 'Bono Doble de Consenticoins',
+    showCoinIcon: true,
     subtitle: '+200 Coins extra en Taste of the Wild y Diamond',
     timestamp: 'Hoy · 2:15 p. m.',
     detailBody:
@@ -612,9 +615,18 @@ export const InboxModal: React.FC<InboxModalProps> = ({
                           <View style={styles.messageContentCol}>
                             <View style={styles.messageMainLine}>
                               <View style={{ flex: 1, paddingRight: 10 }}>
-                                <Text style={styles.messageTitle}>
-                                  {msg.title}
-                                </Text>
+                                <View
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                  }}
+                                >
+                                  <Text style={[styles.messageTitle, { flexShrink: 1 }]}>
+                                    {msg.title}
+                                  </Text>
+                                  {msg.showCoinIcon && <ConsenticoinIcon size={13} />}
+                                </View>
                                 <Text style={styles.messageSubtitle}>
                                   {msg.subtitle}
                                 </Text>

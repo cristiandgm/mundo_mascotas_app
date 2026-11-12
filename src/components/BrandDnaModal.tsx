@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
+import { ConsenticoinIcon } from './ui/ConsenticoinIcon';
 import { ProductThumbnail } from './ui/ProductThumbnail';
 import {
   AnimatedCartControl,
@@ -857,9 +858,19 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                           <Text style={styles.productPriceText}>
                             {formatCOP(product.price)}
                           </Text>
-                          <Text style={styles.productCoinsText}>
-                            +{product.coins} Consenticoins 🪙
-                          </Text>
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                              marginTop: 1,
+                            }}
+                          >
+                            <ConsenticoinIcon size={11} />
+                            <Text style={styles.productCoinsText}>
+                              +{product.coins} Consenticoins
+                            </Text>
+                          </View>
                         </View>
 
                         {/* Botón Pedir o Stepper */}
