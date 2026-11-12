@@ -21,7 +21,7 @@ import {
   COIN_VALUE_COP,
 } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
-import { ORIJEN_LOGO } from './BrandDnaModal';
+import { ACANA_LOGO, ORIJEN_LOGO } from './BrandDnaModal';
 
 interface ConsenticoinsWalletModalProps {
   visible: boolean;
@@ -1097,7 +1097,8 @@ export const ConsenticoinsWalletModal: React.FC<
                         cop: 'Hasta $ 7.100 COP de retorno',
                       },
                       {
-                        brand: '🍁 Acana Canada',
+                        brand: 'Acana Canada',
+                        logoImage: ACANA_LOGO,
                         bag: 'Recetas WholePrey™ 10 LB y 25 LB',
                         earn: '+245 a +389 Coins por bulto',
                         cop: 'Hasta $ 7.780 COP de retorno',

@@ -27,7 +27,13 @@ import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { InboxModal } from '../components/InboxModal';
-import { BrandDnaModal, FoodBrandName, ORIJEN_LOGO } from '../components/BrandDnaModal';
+import {
+  ACANA_LOGO,
+  BRAND_LOGO_MAP,
+  BrandDnaModal,
+  FoodBrandName,
+  ORIJEN_LOGO,
+} from '../components/BrandDnaModal';
 import { ConsenticoinsWalletModal } from '../components/ConsenticoinsWalletModal';
 import {
   BreedSelectorSheet,
@@ -123,7 +129,7 @@ const FOR_YOU_BULTOS_CIRCLES: {
 }[] = [
   { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'K9 Strain®' },
   { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: 'Ancestral' },
-  { id: 'Acana', label: 'Acana', emoji: '🍁', sub: '70% Animal' },
+  { id: 'Acana', label: 'Acana', logoImage: ACANA_LOGO, sub: '70% Animal' },
   { id: 'Orijen', label: 'Orijen', logoImage: ORIJEN_LOGO, sub: '85-90% Carne' },
 ];
 
@@ -5083,23 +5089,28 @@ export const HomeScreen: React.FC = () => {
                 >
                   {!selectedProduct.imageUrl && (
                     <View style={styles.productDetailEmojiBox}>
-                      {selectedProduct.brand === 'Orijen' ? (
-                        <Image
-                          source={ORIJEN_LOGO}
-                          style={{ width: '100%', height: '100%' }}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <Text style={{ fontSize: 34 }}>
-                          {selectedProduct.brand === 'Diamond Naturals'
-                            ? '💎'
-                            : selectedProduct.brand === 'Taste of the Wild'
-                              ? '🐺'
-                              : selectedProduct.brand === 'Acana'
-                                ? '🍁'
+                      {(() => {
+                        const brandLogo =
+                          BRAND_LOGO_MAP[selectedProduct.brand];
+                        if (brandLogo) {
+                          return (
+                            <Image
+                              source={brandLogo}
+                              style={{ width: '100%', height: '100%' }}
+                              resizeMode="cover"
+                            />
+                          );
+                        }
+                        return (
+                          <Text style={{ fontSize: 34 }}>
+                            {selectedProduct.brand === 'Diamond Naturals'
+                              ? '💎'
+                              : selectedProduct.brand === 'Taste of the Wild'
+                                ? '🐺'
                                 : '🛍️'}
-                        </Text>
-                      )}
+                          </Text>
+                        );
+                      })()}
                     </View>
                   )}
                   <View style={{ flex: 1 }}>

@@ -25,6 +25,12 @@ import {
 } from './ui/CartAddedFeedback';
 
 export const ORIJEN_LOGO = require('../../assets/orijen-logo.jpg');
+export const ACANA_LOGO = require('../../assets/acana-logo.png');
+
+export const BRAND_LOGO_MAP: Partial<Record<string, ImageSourcePropType>> = {
+  Acana: ACANA_LOGO,
+  Orijen: ORIJEN_LOGO,
+};
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -184,7 +190,7 @@ export const BRAND_DNA_DATABASE: Record<FoodBrandName, BrandDnaProfile> = {
   Acana: {
     id: 'Acana',
     shortName: 'Acana',
-    emoji: '🍁',
+    logoImage: ACANA_LOGO,
     origin: '🇨🇦 Alberta, Canadá · Champion Petfoods',
     officialTagline: 'GO BEYOND THE 1ST INGREDIENT™ · WHOLEPREY™',
     headline: '60% a 70% Ingredientes Animales en Proporciones WholePrey™',
