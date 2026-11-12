@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
+import { ProductThumbnail } from './ui/ProductThumbnail';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -40,6 +41,7 @@ export interface BrandProductItem {
   stage: string;
   tag?: string;
   accentColor: string;
+  imageUrl?: string;
 }
 
 interface BrandDnaProfile {
@@ -708,19 +710,15 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                       pressed && { opacity: 0.9 },
                     ]}
                   >
-                    {/* Ícono / Visual Izquierdo */}
+                    {/* Ícono / Foto real izquierda */}
                     <View style={styles.productVisualBox}>
-                      <Text style={{ fontSize: 28 }}>
-                        {product.subFilter === 'humedos'
-                          ? '🥫'
-                          : product.subFilter === 'premios'
-                          ? '🦴'
-                          : product.subFilter === 'higiene'
-                          ? '🧼'
-                          : product.petType === 'cat'
-                          ? '🐱'
-                          : '🐶'}
-                      </Text>
+                      <ProductThumbnail
+                        product={product}
+                        emojiSize={28}
+                        borderRadius={12}
+                        padding={4}
+                        style={{ width: 66, height: 56 }}
+                      />
                       <View style={styles.productWeightMiniPill}>
                         <Text style={styles.productWeightMiniText}>
                           {product.unitLabel || `${product.weightLb} LB`}

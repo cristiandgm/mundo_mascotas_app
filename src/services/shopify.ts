@@ -144,14 +144,18 @@ const KNOWN_BRANDS: ProductBag['brand'][] = [
   'Salud Vet',
 ];
 
-function resolveBrand(vendor: string): ProductBag['brand'] {
-  const v = vendor.toLowerCase();
-  const found = KNOWN_BRANDS.find((b) => v.includes(b.toLowerCase().split(' ')[0]));
+function resolveBrand(vendor: string, title: string, tags: string[]): ProductBag['brand'] {
+  // En algunas tiendas el campo vendor es genérico (ej. "VETERINARIA ESPECIALIZADA"),
+  // así que buscamos la marca en vendor, título y tags antes de caer a Salud Vet.
+  const haystack = `${vendor} ${title} ${tags.join(' ')}`.toLowerCase();
+  const found = KNOWN_BRANDS.find((b) =>
+    haystack.includes(b.toLowerCase().split(' ')[0])
+  );
   return found ?? 'Salud Vet';
 }
 
 function toPounds(weight: number | null, unit: ShopifyVariantNode['weightUnit']) {
-  if (!weight || !unit) return undefined;
+  if (!weight || weight <= 0 || !unit) return undefined;
   switch (unit) {
     case 'POUNDS':
       return weight;
@@ -164,13 +168,81 @@ function toPounds(weight: number | null, unit: ShopifyVariantNode['weightUnit'])
   }
 }
 
+function parseWeightFromText(
+  text: string
+): { weightLb: number; unitLabel: string } | undefined {
+  const match = text.match(
+    /(\d+(?:[.,]\d+)?)\s*(kg|kilos?|kilogramos?|lb|libras?|g|gr|gramos?)\b/i
+  );
+  if (!match) return undefined;
+
+  const value = parseFloat(match[1].replace(',', '.'));
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+
+  const rawUnit = match[2].toLowerCase();
+  if (rawUnit.startsWith('k')) {
+    return {
+      weightLb: value * 2.20462,
+      unitLabel: `${value} KG`,
+    };
+  }
+  if (rawUnit.startsWith('l')) {
+    return {
+      weightLb: value,
+      unitLabel: `${value} LB`,
+    };
+  }
+  return {
+    weightLb: value / 453.592,
+    unitLabel: `${value} g`,
+  };
+}
+
+function inferStage(tagsUpper: string[], titleUpper: string, species: 'dog' | 'cat'): string {
+  const combined = `${titleUpper} ${tagsUpper.join(' ')}`;
+  if (combined.includes('PUPPY') || combined.includes('CACHORRO') || combined.includes('KITTEN') || combined.includes('GATITO')) {
+    return species === 'cat' ? 'Gatito' : 'Cachorro';
+  }
+  if (combined.includes('SENIOR')) return 'Senior';
+  if (combined.includes('FIT') || combined.includes('LIGHT')) return 'Control Peso';
+  if (combined.includes('SMALL BREED') || combined.includes('PEQUEÑ')) return 'Razas Pequeñas';
+  if (combined.includes('ADULT') || combined.includes('ADULTO')) return 'Adulto';
+  return 'Todas las etapas';
+}
+
+function inferProteinSubtitle(
+  titleUpper: string,
+  tagsUpper: string[],
+  productType: string
+): string {
+  const combined = `${titleUpper} ${tagsUpper.join(' ')}`;
+  if (combined.includes('SIX FISH')) return 'Pescado Salvaje · Fórmula Biológica';
+  if (combined.includes('FIT')) return 'Control de Peso · Alta Proteína Magra';
+  if (combined.includes('PUPPY') || combined.includes('CACHORRO')) {
+    return 'Crecimiento Cachorros · Proteína Biológica';
+  }
+  if (combined.includes('SMALL BREED') || combined.includes('PEQUEÑ')) {
+    return 'Croqueta Razas Pequeñas · Alta Proteína';
+  }
+  if (combined.includes('SALMON') || combined.includes('SALMÓN')) {
+    return 'Salmón Salvaje · Piel y Pelaje';
+  }
+  if (combined.includes('LAMB') || combined.includes('CORDERO')) {
+    return 'Cordero Real · Digestión Noble';
+  }
+  if (combined.includes('ORIGINAL')) return 'Pollo, Pavo y Pescado Salvaje';
+  return productType.toUpperCase() === 'SECOS'
+    ? 'Alimento Seco Super Premium'
+    : productType || 'Fórmula Nutricional';
+}
+
 /**
  * Convierte un producto de Shopify al modelo ProductBag que usa la app.
  *
  * Estrategia de datos (de más a menos prioridad):
  *   1. Metafields `mundo.*` cargados en Shopify
  *   2. Producto equivalente del catálogo local (mismo SKU) -> conserva colores, textos y badges
- *   3. Inferencia por tags / tipo de producto / peso de la variante
+ *   3. Inferencia por tags / título / tipo de producto / peso de la variante
  *
  * El `id` se mantiene como `prod_<SKU>` para que el quiz, el carrito y los
  * pedidos existentes sigan funcionando sin cambios.
@@ -189,13 +261,18 @@ export function mapShopifyProduct(node: ShopifyProductNode): ProductBag | null {
   const local = CATALOG_BAGS.find((p) => p.sku === sku);
 
   const tagsLower = node.tags.map((t) => t.toLowerCase());
+  const tagsUpper = node.tags.map((t) => t.toUpperCase());
+  const titleUpper = node.title.toUpperCase();
   const price = Math.round(parseFloat(variant.price.amount));
 
   const species: 'dog' | 'cat' =
     mf.species === 'cat' || mf.species === 'dog'
       ? mf.species
       : local?.petType ??
-        (tagsLower.some((t) => t.includes('gato') || t === 'cat') ? 'cat' : 'dog');
+        (tagsLower.some((t) => t.includes('gato') || t === 'cat') ||
+        /\b(gato|cat)\b/i.test(node.title)
+          ? 'cat'
+          : 'dog');
 
   const subFilterRaw = mf.sub_filter ?? local?.subFilter;
   const subFilter = (['humedos', 'premios', 'higiene', 'medicamentos'] as const).find(
@@ -210,26 +287,33 @@ export function mapShopifyProduct(node: ShopifyProductNode): ProductBag | null {
       ? 'snacks'
       : 'bultos';
 
+  const parsedWeight = parseWeightFromText(`${node.title} ${node.tags.join(' ')}`);
   const weightLb =
     (mf.weight_lb ? parseFloat(mf.weight_lb) : undefined) ??
     local?.weightLb ??
     toPounds(variant.weight, variant.weightUnit) ??
+    parsedWeight?.weightLb ??
     1;
+
+  const unitLabel = mf.unit_label ?? local?.unitLabel ?? parsedWeight?.unitLabel;
 
   return {
     id,
     sku,
-    brand: resolveBrand(node.vendor),
+    brand: resolveBrand(node.vendor, node.title, node.tags),
     name: node.title,
-    protein: mf.protein ?? local?.protein ?? node.productType,
+    protein:
+      mf.protein ??
+      local?.protein ??
+      inferProteinSubtitle(titleUpper, tagsUpper, node.productType),
     weightLb: Math.round(weightLb * 10) / 10,
-    unitLabel: mf.unit_label ?? local?.unitLabel,
+    unitLabel,
     price,
     coins: Math.floor(price / 1000), // regla actual: 1 Consenticoin por cada $1.000 COP
     petType: species,
     category,
     subFilter,
-    stage: mf.life_stage ?? local?.stage ?? 'Todas las etapas',
+    stage: mf.life_stage ?? local?.stage ?? inferStage(tagsUpper, titleUpper, species),
     tag: mf.badge ?? local?.tag,
     accentColor: mf.accent_color ?? local?.accentColor ?? '#D4AF37',
     variantId: variant.id,

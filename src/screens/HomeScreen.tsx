@@ -42,6 +42,7 @@ import {
 import { useDraggableSheet } from '../utils/useDraggableSheet';
 import { ProductBag, TopServiceTabType } from '../data/catalog';
 import { useCatalog } from '../hooks/useCatalog';
+import { ProductThumbnail } from '../components/ui/ProductThumbnail';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
 type SearchCategoryType =
@@ -650,8 +651,18 @@ export const HomeScreen: React.FC = () => {
       }
     }
 
+    const speciesPool = catalog.filter((p) => p.petType === activeSpecies);
+    const fallbackProduct =
+      (activeSpecies === 'dog' && quizStage === 'puppy'
+        ? speciesPool.find((p) => p.stage.toLowerCase().includes('cachorro'))
+        : activeSpecies === 'cat' && quizSensitivity === 'weight'
+        ? speciesPool.find((p) => p.name.toLowerCase().includes('fit'))
+        : undefined) ||
+      speciesPool[0] ||
+      catalog[0];
+
     const product =
-      catalog.find((p) => p.id === targetProdId) || catalog[0];
+      catalog.find((p) => p.id === targetProdId) || fallbackProduct;
 
     // Cálculo de ración biológica diaria en gramos según peso y actividad
     const baseFactor =
@@ -730,6 +741,118 @@ export const HomeScreen: React.FC = () => {
       itemsList,
     };
   }, [catalog, cart, deliveryZone, user, applyCoinsInCart]);
+
+  const renderFeatureCard = (product: ProductBag, bottomTagLabel: string) => {
+    const qty = cart[product.id] || 0;
+    return (
+      <View key={product.id} style={styles.uberFeatureCard}>
+        <Pressable onPress={() => openProductDetail(product)}>
+          <LinearGradient
+            colors={['#161922', '#0F1117']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.uberCardGraphicArea}
+          >
+            <View style={styles.uberCardTopBadges}>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  if (product.brand !== 'Salud Vet') {
+                    openBrandDna(product.brand as FoodBrandName);
+                  } else {
+                    openProductDetail(product);
+                  }
+                }}
+                style={styles.uberBrandBadge}
+              >
+                <Text style={styles.uberBrandBadgeText}>
+                  {product.brand}
+                  {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
+                </Text>
+              </Pressable>
+              <View style={styles.uberWeightPill}>
+                <Text style={styles.uberWeightPillText}>
+                  {product.unitLabel || `${product.weightLb} LB`}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.uberCardVisualCenter}>
+              {product.imageUrl ? (
+                <ProductThumbnail
+                  product={product}
+                  emojiSize={32}
+                  borderRadius={14}
+                  padding={6}
+                  style={styles.bagPhotoShowcase}
+                />
+              ) : (
+                <View style={styles.bagIllustrationCircle}>
+                  <ProductThumbnail
+                    product={product}
+                    emojiSize={32}
+                    borderRadius={29}
+                    padding={0}
+                    style={{ width: 58, height: 58, backgroundColor: 'transparent' }}
+                  />
+                </View>
+              )}
+            </View>
+
+            <View style={styles.uberCardBottomTag}>
+              <Text style={styles.uberCardBottomTagText}>{bottomTagLabel}</Text>
+            </View>
+          </LinearGradient>
+        </Pressable>
+
+        <View style={styles.uberCardBody}>
+          <Pressable onPress={() => openProductDetail(product)}>
+            <Text style={styles.uberCardTitle} numberOfLines={1}>
+              {product.name}
+            </Text>
+            <Text style={styles.uberCardSubtitle} numberOfLines={1}>
+              {product.protein} · +{product.coins} Coins
+            </Text>
+          </Pressable>
+
+          <View style={styles.uberCardPriceRow}>
+            <Text style={styles.uberCardPrice}>
+              {formatCOP(product.price)}
+            </Text>
+
+            {qty === 0 ? (
+              <Pressable
+                onPress={() => handleAddToCart(product.id)}
+                style={({ pressed }) => [
+                  styles.uberAddBtn,
+                  pressed && { opacity: 0.85 },
+                ]}
+              >
+                <Ionicons name="add" size={16} color="#050508" />
+                <Text style={styles.uberAddBtnText}>Pedir</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.qtyStepper}>
+                <Pressable
+                  onPress={() => handleDecrementCart(product.id)}
+                  style={styles.qtyStepBtn}
+                >
+                  <Ionicons name="remove" size={14} color="#FFFFFF" />
+                </Pressable>
+                <Text style={styles.qtyCountText}>{qty}</Text>
+                <Pressable
+                  onPress={() => handleAddToCart(product.id)}
+                  style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
+                >
+                  <Ionicons name="add" size={14} color="#050508" />
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -1135,16 +1258,6 @@ export const HomeScreen: React.FC = () => {
                   /* Result rows */
                   filteredProducts.map((item, idx) => {
                     const inCart = cart[item.id] ?? 0;
-                    const brandEmoji =
-                      item.brand === 'Diamond Naturals'
-                        ? '💎'
-                        : item.brand === 'Taste of the Wild'
-                          ? '🌿'
-                          : item.brand === 'Acana'
-                            ? '🦅'
-                            : item.brand === 'Orijen'
-                              ? '🐾'
-                              : '🛍️';
                     return (
                       <React.Fragment key={item.id}>
                         {idx > 0 && <View style={styles.uberRecentDivider} />}
@@ -1155,10 +1268,17 @@ export const HomeScreen: React.FC = () => {
                             pressed && { backgroundColor: 'rgba(255,255,255,0.04)' },
                           ]}
                         >
-                          {/* Brand emoji icon */}
-                          <View style={styles.searchResultIconBox}>
-                            <Text style={{ fontSize: 20 }}>{brandEmoji}</Text>
-                          </View>
+                          {/* Foto real del producto (o emoji de respaldo) */}
+                          <ProductThumbnail
+                            product={item}
+                            emojiSize={20}
+                            borderRadius={12}
+                            padding={3}
+                            style={[
+                              styles.searchResultIconBox,
+                              item.imageUrl ? { backgroundColor: '#F7F8FA' } : null,
+                            ]}
+                          />
 
                           {/* Text info */}
                           <View style={{ flex: 1 }}>
@@ -1256,13 +1376,23 @@ export const HomeScreen: React.FC = () => {
                         },
                       ]}
                     >
-                      <View style={styles.uberClockIconBox}>
-                        <Ionicons
-                          name="time-outline"
-                          size={20}
-                          color="#D1D5DB"
+                      {item.imageUrl ? (
+                        <ProductThumbnail
+                          product={item}
+                          emojiSize={18}
+                          borderRadius={11}
+                          padding={3}
+                          style={{ width: 38, height: 38 }}
                         />
-                      </View>
+                      ) : (
+                        <View style={styles.uberClockIconBox}>
+                          <Ionicons
+                            name="time-outline"
+                            size={20}
+                            color="#D1D5DB"
+                          />
+                        </View>
+                      )}
                       <View style={styles.uberRecentTextCol}>
                         <Text style={styles.uberRecentTitle} numberOfLines={1}>
                           {item.name} ({item.unitLabel || `${item.weightLb} LB`})
@@ -1411,245 +1541,38 @@ export const HomeScreen: React.FC = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.uberHorizontalCardsScroll}
             >
-              {filteredProducts.map((product) => {
-                const qty = cart[product.id] || 0;
-                return (
-                  <View key={product.id} style={styles.uberFeatureCard}>
-                    <Pressable onPress={() => openProductDetail(product)}>
-                      <LinearGradient
-                        colors={['#161922', '#0F1117']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.uberCardGraphicArea}
-                      >
-                        <View style={styles.uberCardTopBadges}>
-                          <Pressable
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              if (product.brand !== 'Salud Vet') {
-                                openBrandDna(product.brand as FoodBrandName);
-                              } else {
-                                openProductDetail(product);
-                              }
-                            }}
-                            style={styles.uberBrandBadge}
-                          >
-                            <Text style={styles.uberBrandBadgeText}>
-                              {product.brand}
-                              {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
-                            </Text>
-                          </Pressable>
-                          <View style={styles.uberWeightPill}>
-                            <Text style={styles.uberWeightPillText}>
-                              {product.unitLabel || `${product.weightLb} LB`}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.uberCardVisualCenter}>
-                          <View style={styles.bagIllustrationCircle}>
-                            <Text style={{ fontSize: 34 }}>
-                              {product.subFilter === 'medicamentos'
-                                ? '💊'
-                                : product.subFilter === 'humedos'
-                                ? '🥫'
-                                : product.subFilter === 'premios'
-                                ? '🦴'
-                                : product.subFilter === 'higiene'
-                                ? '🧼'
-                                : product.petType === 'cat'
-                                ? '🐱'
-                                : '🐶'}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.uberCardBottomTag}>
-                          <Text style={styles.uberCardBottomTagText}>
-                            {deliveryZone === 'bogota'
-                              ? 'Domicilio Gratis Bogotá'
-                              : '+ Flete transportadora'}
-                          </Text>
-                        </View>
-                      </LinearGradient>
-                    </Pressable>
-
-                    <View style={styles.uberCardBody}>
-                      <Pressable onPress={() => openProductDetail(product)}>
-                        <Text style={styles.uberCardTitle} numberOfLines={1}>
-                          {product.name}
-                        </Text>
-                        <Text style={styles.uberCardSubtitle} numberOfLines={1}>
-                          {product.protein} · +{product.coins} Coins
-                        </Text>
-                      </Pressable>
-
-                      <View style={styles.uberCardPriceRow}>
-                        <Text style={styles.uberCardPrice}>
-                          {formatCOP(product.price)}
-                        </Text>
-
-                        {qty === 0 ? (
-                          <Pressable
-                            onPress={() => handleAddToCart(product.id)}
-                            style={({ pressed }) => [
-                              styles.uberAddBtn,
-                              pressed && { opacity: 0.85 },
-                            ]}
-                          >
-                            <Ionicons name="add" size={16} color="#050508" />
-                            <Text style={styles.uberAddBtnText}>Pedir</Text>
-                          </Pressable>
-                        ) : (
-                          <View style={styles.qtyStepper}>
-                            <Pressable
-                              onPress={() => handleDecrementCart(product.id)}
-                              style={styles.qtyStepBtn}
-                            >
-                              <Ionicons
-                                name="remove"
-                                size={14}
-                                color="#FFFFFF"
-                              />
-                            </Pressable>
-                            <Text style={styles.qtyCountText}>{qty}</Text>
-                            <Pressable
-                              onPress={() => handleAddToCart(product.id)}
-                              style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                            >
-                              <Ionicons name="add" size={14} color="#050508" />
-                            </Pressable>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
+              {filteredProducts.map((product) =>
+                renderFeatureCard(
+                  product,
+                  deliveryZone === 'bogota'
+                    ? 'Domicilio Gratis Bogotá'
+                    : '+ Flete transportadora'
+                )
+              )}
             </ScrollView>
 
             {/* 7. SEGUNDO CARRUSEL EN TIENDA: HÚMEDOS, PREMIOS Y CUIDADO */}
-            <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
-              <Text style={styles.uberSectionTitle}>
-                {activeSpecies === 'cat'
-                  ? `Húmedos y Arena para ${displayPetName}`
-                  : `Premios y Húmedos para ${displayPetName}`}
-              </Text>
-            </View>
+            {speciesSnacks.length > 0 && (
+              <>
+                <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
+                  <Text style={styles.uberSectionTitle}>
+                    {activeSpecies === 'cat'
+                      ? `Húmedos y Arena para ${displayPetName}`
+                      : `Premios y Húmedos para ${displayPetName}`}
+                  </Text>
+                </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.uberHorizontalCardsScroll}
-            >
-              {speciesSnacks.map((product) => {
-                const qty = cart[product.id] || 0;
-                return (
-                  <View key={product.id} style={styles.uberFeatureCard}>
-                    <Pressable onPress={() => openProductDetail(product)}>
-                      <LinearGradient
-                        colors={['#161922', '#0F1117']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.uberCardGraphicArea}
-                      >
-                        <View style={styles.uberCardTopBadges}>
-                          <Pressable
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              if (product.brand !== 'Salud Vet') {
-                                openBrandDna(product.brand as FoodBrandName);
-                              } else {
-                                openProductDetail(product);
-                              }
-                            }}
-                            style={styles.uberBrandBadge}
-                          >
-                            <Text style={styles.uberBrandBadgeText}>
-                              {product.brand}
-                              {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
-                            </Text>
-                          </Pressable>
-                          <View style={styles.uberWeightPill}>
-                            <Text style={styles.uberWeightPillText}>
-                              {product.unitLabel || `${product.weightLb} LB`}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.uberCardVisualCenter}>
-                          <View style={styles.bagIllustrationCircle}>
-                            <Text style={{ fontSize: 32 }}>
-                              {product.subFilter === 'humedos'
-                                ? '🥫'
-                                : product.subFilter === 'higiene'
-                                ? '🧼'
-                                : '🦴'}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.uberCardBottomTag}>
-                          <Text style={styles.uberCardBottomTagText}>
-                            {product.stage}
-                          </Text>
-                        </View>
-                      </LinearGradient>
-                    </Pressable>
-
-                    <View style={styles.uberCardBody}>
-                      <Pressable onPress={() => openProductDetail(product)}>
-                        <Text style={styles.uberCardTitle} numberOfLines={1}>
-                          {product.name}
-                        </Text>
-                        <Text style={styles.uberCardSubtitle} numberOfLines={1}>
-                          {product.protein} · +{product.coins} Coins
-                        </Text>
-                      </Pressable>
-
-                      <View style={styles.uberCardPriceRow}>
-                        <Text style={styles.uberCardPrice}>
-                          {formatCOP(product.price)}
-                        </Text>
-
-                        {qty === 0 ? (
-                          <Pressable
-                            onPress={() => handleAddToCart(product.id)}
-                            style={({ pressed }) => [
-                              styles.uberAddBtn,
-                              pressed && { opacity: 0.85 },
-                            ]}
-                          >
-                            <Ionicons name="add" size={16} color="#050508" />
-                            <Text style={styles.uberAddBtnText}>Pedir</Text>
-                          </Pressable>
-                        ) : (
-                          <View style={styles.qtyStepper}>
-                            <Pressable
-                              onPress={() => handleDecrementCart(product.id)}
-                              style={styles.qtyStepBtn}
-                            >
-                              <Ionicons
-                                name="remove"
-                                size={14}
-                                color="#FFFFFF"
-                              />
-                            </Pressable>
-                            <Text style={styles.qtyCountText}>{qty}</Text>
-                            <Pressable
-                              onPress={() => handleAddToCart(product.id)}
-                              style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                            >
-                              <Ionicons name="add" size={14} color="#050508" />
-                            </Pressable>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
-            </ScrollView>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.uberHorizontalCardsScroll}
+                >
+                  {speciesSnacks.map((product) =>
+                    renderFeatureCard(product, product.stage)
+                  )}
+                </ScrollView>
+              </>
+            )}
 
             {/* 8. TERCER CARRUSEL EN TIENDA ("Más beneficios en Mundo Mascotas") */}
             <View style={[styles.uberSectionHeader, { marginTop: 22 }]}>
@@ -2933,33 +2856,54 @@ export const HomeScreen: React.FC = () => {
                       </Text>
                     </View>
                     <Text style={styles.quizWeightBadgeText}>
-                      {quizRecommendation.product.weightLb} LB
+                      {quizRecommendation.product.unitLabel ||
+                        `${quizRecommendation.product.weightLb} LB`}
                     </Text>
                   </View>
 
-                  <Text
+                  <View
                     style={{
-                      color: '#9CA3AF',
-                      fontSize: 12,
-                      fontWeight: '700',
-                      marginBottom: 4,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                      marginBottom: 12,
                     }}
                   >
-                    Fórmula ganadora para {displayPetName} ({quizWeightKg} kg ·{' '}
-                    {quizStage === 'puppy'
-                      ? 'Cachorro'
-                      : quizStage === 'senior'
-                      ? 'Senior'
-                      : 'Adulto'}
-                    ):
-                  </Text>
+                    <ProductThumbnail
+                      product={quizRecommendation.product}
+                      emojiSize={30}
+                      borderRadius={16}
+                      padding={6}
+                      style={{ width: 76, height: 84 }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: '#9CA3AF',
+                          fontSize: 11.5,
+                          fontWeight: '700',
+                          marginBottom: 3,
+                        }}
+                      >
+                        Fórmula ganadora para {displayPetName} ({quizWeightKg} kg ·{' '}
+                        {quizStage === 'puppy'
+                          ? 'Cachorro'
+                          : quizStage === 'senior'
+                          ? 'Senior'
+                          : 'Adulto'}
+                        ):
+                      </Text>
 
-                  <Text style={styles.quizResultProdTitle}>
-                    {quizRecommendation.product.name}
-                  </Text>
-                  <Text style={styles.quizResultProdSub}>
-                    {quizRecommendation.product.protein}
-                  </Text>
+                      <Text style={styles.quizResultProdTitle}>
+                        {quizRecommendation.product.name}
+                      </Text>
+                      <Text
+                        style={[styles.quizResultProdSub, { marginBottom: 0 }]}
+                      >
+                        {quizRecommendation.product.protein}
+                      </Text>
+                    </View>
+                  </View>
 
                   {/* Botón rápido para ver el ADN científico de la marca ganadora */}
                   {quizRecommendation.product.brand !== 'Salud Vet' && (
@@ -3950,17 +3894,13 @@ export const HomeScreen: React.FC = () => {
                           idx > 0 && styles.miniCartItemDivider,
                         ]}
                       >
-                        <Text style={{ fontSize: 18 }}>
-                          {product.subFilter === 'medicamentos'
-                            ? '💊'
-                            : product.subFilter === 'humedos'
-                            ? '🥫'
-                            : product.subFilter === 'premios'
-                            ? '🦴'
-                            : product.petType === 'cat'
-                            ? '🐱'
-                            : '🐶'}
-                        </Text>
+                        <ProductThumbnail
+                          product={product}
+                          emojiSize={18}
+                          borderRadius={10}
+                          padding={2}
+                          style={{ width: 36, height: 36 }}
+                        />
                         <View style={{ flex: 1 }}>
                           <Text
                             style={styles.miniCartItemName}
@@ -4391,10 +4331,18 @@ export const HomeScreen: React.FC = () => {
                   {/* Lista de bultos */}
                   {cartSummary.itemsList.map(({ product, quantity }) => (
                     <View key={product.id} style={styles.cartItemRow}>
+                      <ProductThumbnail
+                        product={product}
+                        emojiSize={22}
+                        borderRadius={12}
+                        padding={3}
+                        style={{ width: 48, height: 48 }}
+                      />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.cartItemName}>{product.name}</Text>
                         <Text style={styles.cartItemSub}>
-                          Presentación: {product.weightLb} LB ·{' '}
+                          Presentación:{' '}
+                          {product.unitLabel || `${product.weightLb} LB`} ·{' '}
                           {formatCOP(product.price)} c/u
                         </Text>
                       </View>
@@ -4832,7 +4780,19 @@ export const HomeScreen: React.FC = () => {
                   <Ionicons name="close" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
 
-                {/* Brand + emoji (clicable para abrir el ADN de la marca) */}
+                {/* Brand + foto real (clicable para abrir el ADN de la marca) */}
+                {selectedProduct.imageUrl && (
+                  <View style={styles.productDetailPhotoBanner}>
+                    <ProductThumbnail
+                      product={selectedProduct}
+                      emojiSize={42}
+                      borderRadius={18}
+                      padding={10}
+                      style={{ width: 156, height: 156 }}
+                    />
+                  </View>
+                )}
+
                 <Pressable
                   onPress={() => {
                     if (selectedProduct.brand !== 'Salud Vet') {
@@ -4842,21 +4802,26 @@ export const HomeScreen: React.FC = () => {
                       setTimeout(() => openBrandDna(targetBrand), 180);
                     }
                   }}
-                  style={styles.productDetailBrandRow}
+                  style={[
+                    styles.productDetailBrandRow,
+                    selectedProduct.imageUrl ? { paddingTop: 10 } : null,
+                  ]}
                 >
-                  <View style={styles.productDetailEmojiBox}>
-                    <Text style={{ fontSize: 34 }}>
-                      {selectedProduct.brand === 'Diamond Naturals'
-                        ? '💎'
-                        : selectedProduct.brand === 'Taste of the Wild'
-                          ? '🐺'
-                          : selectedProduct.brand === 'Acana'
-                            ? '🍁'
-                            : selectedProduct.brand === 'Orijen'
-                              ? '👑'
-                              : '🛍️'}
-                    </Text>
-                  </View>
+                  {!selectedProduct.imageUrl && (
+                    <View style={styles.productDetailEmojiBox}>
+                      <Text style={{ fontSize: 34 }}>
+                        {selectedProduct.brand === 'Diamond Naturals'
+                          ? '💎'
+                          : selectedProduct.brand === 'Taste of the Wild'
+                            ? '🐺'
+                            : selectedProduct.brand === 'Acana'
+                              ? '🍁'
+                              : selectedProduct.brand === 'Orijen'
+                                ? '👑'
+                                : '🛍️'}
+                      </Text>
+                    </View>
+                  )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.productDetailBrand}>
                       {selectedProduct.brand}
@@ -5393,13 +5358,19 @@ const styles = StyleSheet.create({
     width: 256,
   },
   uberCardGraphicArea: {
-    height: 148,
+    height: 186,
     borderRadius: 18,
     padding: 12,
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 10,
+  },
+  bagPhotoShowcase: {
+    width: '100%',
+    height: 104,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.28)',
   },
   uberCardTopBadges: {
     flexDirection: 'row',
@@ -6610,6 +6581,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 20,
     elevation: 20,
+  },
+  productDetailPhotoBanner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 22,
+    paddingHorizontal: 22,
   },
   productDetailBrandRow: {
     flexDirection: 'row',
