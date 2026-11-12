@@ -51,12 +51,16 @@ export function useCatalog() {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const items = await loadShopifyCatalog(force);
+      console.info(`[Catalog] Cargados ${items.length} productos reales desde Shopify.`);
       setState({ catalog: items, source: 'shopify', loading: false, error: null });
     } catch (e) {
+      const message =
+        e instanceof Error ? e.message : 'Error desconocido cargando el catálogo';
+      console.warn('[Catalog] Usando catálogo local de respaldo:', message);
       setState((s) => ({
         ...s,
         loading: false,
-        error: e instanceof Error ? e.message : 'Error desconocido cargando el catálogo',
+        error: message,
       }));
     }
   }, []);
@@ -69,3 +73,4 @@ export function useCatalog() {
 
   return { ...state, refresh };
 }
+
