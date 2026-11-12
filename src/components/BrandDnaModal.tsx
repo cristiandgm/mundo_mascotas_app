@@ -9,6 +9,8 @@ import {
   ScrollView,
   Animated,
   Dimensions,
+  Image,
+  ImageSourcePropType,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { ProductThumbnail } from './ui/ProductThumbnail';
+
+export const ORIJEN_LOGO = require('../../assets/orijen-logo.jpg');
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -48,7 +52,8 @@ export interface BrandProductItem {
 interface BrandDnaProfile {
   id: FoodBrandName;
   shortName: string;
-  emoji: string;
+  emoji?: string;
+  logoImage?: ImageSourcePropType;
   origin: string;
   officialTagline: string;
   headline: string;
@@ -221,7 +226,7 @@ export const BRAND_DNA_DATABASE: Record<FoodBrandName, BrandDnaProfile> = {
   Orijen: {
     id: 'Orijen',
     shortName: 'Orijen',
-    emoji: '👑',
+    logoImage: ORIJEN_LOGO,
     origin: '🇨🇦 Alberta, Canadá · The Apex of Nutrition',
     officialTagline: 'NOURISH AS NATURE INTENDED™ · 85%–90% ANIMAL',
     headline: 'El Ápice Mundial de la Nutrición Biológicamente Apropiada™',
@@ -459,7 +464,15 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                       isSelected && styles.brandSwitchPillActive,
                     ]}
                   >
-                    <Text style={{ fontSize: 13 }}>{bInfo.emoji}</Text>
+                    {bInfo.logoImage ? (
+                      <Image
+                        source={bInfo.logoImage}
+                        style={styles.brandSwitchLogo}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text style={{ fontSize: 13 }}>{bInfo.emoji}</Text>
+                    )}
                     <Text
                       style={[
                         styles.brandSwitchText,
@@ -522,7 +535,15 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                     { borderColor: `${dna.signatureAccent}66` },
                   ]}
                 >
-                  <Text style={{ fontSize: 36 }}>{dna.emoji}</Text>
+                  {dna.logoImage ? (
+                    <Image
+                      source={dna.logoImage}
+                      style={styles.brandEmblemLogo}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text style={{ fontSize: 36 }}>{dna.emoji}</Text>
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.officialTaglineText}>
@@ -914,6 +935,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderColor: '#FFFFFF',
   },
+  brandSwitchLogo: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
   brandSwitchText: {
     color: '#D1D5DB',
     fontSize: 13,
@@ -987,6 +1013,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  brandEmblemLogo: {
+    width: '100%',
+    height: '100%',
   },
   officialTaglineText: {
     color: colors.primary.light,

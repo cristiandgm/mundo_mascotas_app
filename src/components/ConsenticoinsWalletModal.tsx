@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
+  Image,
+  ImageSourcePropType,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +21,7 @@ import {
   COIN_VALUE_COP,
 } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
+import { ORIJEN_LOGO } from './BrandDnaModal';
 
 interface ConsenticoinsWalletModalProps {
   visible: boolean;
@@ -39,7 +42,8 @@ interface VaultRewardItem {
   brand: string;
   name: string;
   subtitle: string;
-  emoji: string;
+  emoji?: string;
+  logoImage?: ImageSourcePropType;
   coinsRequired: number;
   normalPriceCop: number;
   tag: string;
@@ -85,7 +89,7 @@ const VAULT_REWARDS: VaultRewardItem[] = [
     brand: 'Orijen',
     name: 'Orijen Original Freeze-Dried Treats (92g)',
     subtitle: 'Premios 100% carne liofilizada sin cocción',
-    emoji: '👑',
+    logoImage: ORIJEN_LOGO,
     coinsRequired: 840,
     normalPriceCop: 68500,
     tag: 'Ultra Luxury',
@@ -949,7 +953,15 @@ export const ConsenticoinsWalletModal: React.FC<
                   return (
                     <View key={reward.id} style={styles.vaultRewardCard}>
                       <View style={styles.vaultRewardEmojiBox}>
-                        <Text style={{ fontSize: 28 }}>{reward.emoji}</Text>
+                        {reward.logoImage ? (
+                          <Image
+                            source={reward.logoImage}
+                            style={styles.vaultRewardLogoImage}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Text style={{ fontSize: 28 }}>{reward.emoji}</Text>
+                        )}
                         <View style={styles.vaultRewardTagPill}>
                           <Text style={styles.vaultRewardTagText}>
                             {reward.tag}
@@ -1070,32 +1082,41 @@ export const ConsenticoinsWalletModal: React.FC<
                 </Text>
 
                 <View style={styles.cashbackTableCard}>
-                  {[
-                    {
-                      brand: '💎 Diamond Naturals',
-                      bag: 'Bultos 18 LB a 40 LB',
-                      earn: '+189 a +290 Coins por bulto',
-                      cop: 'Hasta $ 5.800 COP de retorno',
-                    },
-                    {
-                      brand: '🐺 Taste of the Wild',
-                      bag: 'Bultos Grain-Free 14 LB y 28 LB',
-                      earn: '+218 a +355 Coins por bulto',
-                      cop: 'Hasta $ 7.100 COP de retorno',
-                    },
-                    {
-                      brand: '🍁 Acana Canada',
-                      bag: 'Recetas WholePrey™ 10 LB y 25 LB',
-                      earn: '+245 a +389 Coins por bulto',
-                      cop: 'Hasta $ 7.780 COP de retorno',
-                    },
-                    {
-                      brand: '👑 Orijen Biológico',
-                      bag: '85-90% Carne Fresca 12 LB y 25 LB',
-                      earn: '+315 a +435 Coins por bulto',
-                      cop: 'Hasta $ 8.700 COP de retorno',
-                    },
-                  ].map((row, index) => (
+                  {(
+                    [
+                      {
+                        brand: '💎 Diamond Naturals',
+                        bag: 'Bultos 18 LB a 40 LB',
+                        earn: '+189 a +290 Coins por bulto',
+                        cop: 'Hasta $ 5.800 COP de retorno',
+                      },
+                      {
+                        brand: '🐺 Taste of the Wild',
+                        bag: 'Bultos Grain-Free 14 LB y 28 LB',
+                        earn: '+218 a +355 Coins por bulto',
+                        cop: 'Hasta $ 7.100 COP de retorno',
+                      },
+                      {
+                        brand: '🍁 Acana Canada',
+                        bag: 'Recetas WholePrey™ 10 LB y 25 LB',
+                        earn: '+245 a +389 Coins por bulto',
+                        cop: 'Hasta $ 7.780 COP de retorno',
+                      },
+                      {
+                        brand: 'Orijen Biológico',
+                        logoImage: ORIJEN_LOGO,
+                        bag: '85-90% Carne Fresca 12 LB y 25 LB',
+                        earn: '+315 a +435 Coins por bulto',
+                        cop: 'Hasta $ 8.700 COP de retorno',
+                      },
+                    ] as {
+                      brand: string;
+                      logoImage?: ImageSourcePropType;
+                      bag: string;
+                      earn: string;
+                      cop: string;
+                    }[]
+                  ).map((row, index) => (
                     <View
                       key={row.brand}
                       style={[
@@ -1104,9 +1125,18 @@ export const ConsenticoinsWalletModal: React.FC<
                       ]}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.cashbackBrandName}>
-                          {row.brand}
-                        </Text>
+                        <View style={styles.cashbackBrandRow}>
+                          {row.logoImage && (
+                            <Image
+                              source={row.logoImage}
+                              style={styles.cashbackBrandLogo}
+                              resizeMode="cover"
+                            />
+                          )}
+                          <Text style={styles.cashbackBrandName}>
+                            {row.brand}
+                          </Text>
+                        </View>
                         <Text style={styles.cashbackBagMeta}>{row.bag}</Text>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
@@ -1826,6 +1856,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
   },
+  vaultRewardLogoImage: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+  },
   vaultRewardTagPill: {
     backgroundColor: 'rgba(212, 175, 55, 0.16)',
     paddingHorizontal: 6,
@@ -1958,6 +1993,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 13,
     gap: 10,
+  },
+  cashbackBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cashbackBrandLogo: {
+    width: 17,
+    height: 17,
+    borderRadius: 5,
   },
   cashbackBrandName: {
     color: '#FFFFFF',

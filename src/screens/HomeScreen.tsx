@@ -7,6 +7,7 @@ import {
   Pressable,
   TouchableOpacity,
   Image,
+  ImageSourcePropType,
   TextInput,
   Modal,
   Animated,
@@ -25,7 +26,7 @@ import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { InboxModal } from '../components/InboxModal';
-import { BrandDnaModal, FoodBrandName } from '../components/BrandDnaModal';
+import { BrandDnaModal, FoodBrandName, ORIJEN_LOGO } from '../components/BrandDnaModal';
 import { ConsenticoinsWalletModal } from '../components/ConsenticoinsWalletModal';
 import {
   BreedSelectorSheet,
@@ -109,13 +110,14 @@ const SEARCH_CATEGORY_OPTIONS: {
 const FOR_YOU_BULTOS_CIRCLES: {
   id: FoodBrandName;
   label: string;
-  emoji: string;
+  emoji?: string;
+  logoImage?: ImageSourcePropType;
   sub: string;
 }[] = [
   { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'K9 Strain®' },
   { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: 'Ancestral' },
   { id: 'Acana', label: 'Acana', emoji: '🍁', sub: '70% Animal' },
-  { id: 'Orijen', label: 'Orijen', emoji: '👑', sub: '85-90% Carne' },
+  { id: 'Orijen', label: 'Orijen', logoImage: ORIJEN_LOGO, sub: '85-90% Carne' },
 ];
 
 // Los 4 círculos estilo "For you" de Uber para la pestaña Snacks & Cuidado
@@ -1546,7 +1548,15 @@ export const HomeScreen: React.FC = () => {
                         isSelected && styles.uberCircleGraphicActive,
                       ]}
                     >
-                      <Text style={styles.uberCircleEmoji}>{item.emoji}</Text>
+                      {item.logoImage ? (
+                        <Image
+                          source={item.logoImage}
+                          style={styles.uberCircleLogoImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Text style={styles.uberCircleEmoji}>{item.emoji}</Text>
+                      )}
                     </View>
                     <Text
                       style={[
@@ -4890,17 +4900,23 @@ export const HomeScreen: React.FC = () => {
                 >
                   {!selectedProduct.imageUrl && (
                     <View style={styles.productDetailEmojiBox}>
-                      <Text style={{ fontSize: 34 }}>
-                        {selectedProduct.brand === 'Diamond Naturals'
-                          ? '💎'
-                          : selectedProduct.brand === 'Taste of the Wild'
-                            ? '🐺'
-                            : selectedProduct.brand === 'Acana'
-                              ? '🍁'
-                              : selectedProduct.brand === 'Orijen'
-                                ? '👑'
+                      {selectedProduct.brand === 'Orijen' ? (
+                        <Image
+                          source={ORIJEN_LOGO}
+                          style={{ width: '100%', height: '100%' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 34 }}>
+                          {selectedProduct.brand === 'Diamond Naturals'
+                            ? '💎'
+                            : selectedProduct.brand === 'Taste of the Wild'
+                              ? '🐺'
+                              : selectedProduct.brand === 'Acana'
+                                ? '🍁'
                                 : '🛍️'}
-                      </Text>
+                        </Text>
+                      )}
                     </View>
                   )}
                   <View style={{ flex: 1 }}>
@@ -5422,10 +5438,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: 'transparent',
+    overflow: 'hidden',
   },
   uberCircleGraphicActive: {
     borderColor: colors.primary.DEFAULT,
     backgroundColor: 'rgba(212, 175, 55, 0.14)',
+  },
+  uberCircleLogoImage: {
+    width: '100%',
+    height: '100%',
   },
   uberCircleEmoji: {
     fontSize: 30,
@@ -6738,6 +6759,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212, 175, 55, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   productDetailBrand: {
     color: '#9CA3AF',
