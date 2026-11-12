@@ -12,11 +12,15 @@ interface CatalogState {
 }
 
 // Caché en memoria compartida por toda la app (evita pedir el catálogo en cada pantalla)
+const CATALOG_CACHE_VERSION = 2;
 let memoryCache: ProductBag[] | null = null;
+let memoryCacheVersion = 0;
 let inflight: Promise<ProductBag[]> | null = null;
 
 function loadShopifyCatalog(force: boolean): Promise<ProductBag[]> {
-  if (!force && memoryCache) return Promise.resolve(memoryCache);
+  if (!force && memoryCache && memoryCacheVersion === CATALOG_CACHE_VERSION) {
+    return Promise.resolve(memoryCache);
+  }
   if (!inflight) {
     inflight = fetchShopifyCatalog()
       .then((items) => {
@@ -24,6 +28,7 @@ function loadShopifyCatalog(force: boolean): Promise<ProductBag[]> {
           throw new Error('Shopify no devolvió productos con SKU.');
         }
         memoryCache = items;
+        memoryCacheVersion = CATALOG_CACHE_VERSION;
         return items;
       })
       .finally(() => {
@@ -39,10 +44,12 @@ function loadShopifyCatalog(force: boolean): Promise<ProductBag[]> {
  * - Sin credenciales o si falla la red: catálogo local de respaldo (la app nunca se queda vacía).
  */
 export function useCatalog() {
+  const hasFreshCache =
+    Boolean(memoryCache) && memoryCacheVersion === CATALOG_CACHE_VERSION;
   const [state, setState] = useState<CatalogState>({
-    catalog: memoryCache ?? CATALOG_BAGS,
-    source: memoryCache ? 'shopify' : 'local',
-    loading: isShopifyConfigured && !memoryCache,
+    catalog: hasFreshCache && memoryCache ? memoryCache : CATALOG_BAGS,
+    source: hasFreshCache ? 'shopify' : 'local',
+    loading: isShopifyConfigured && !hasFreshCache,
     error: null,
   });
 
@@ -66,7 +73,10 @@ export function useCatalog() {
   }, []);
 
   useEffect(() => {
-    if (isShopifyConfigured && !memoryCache) {
+    if (
+      isShopifyConfigured &&
+      (!memoryCache || memoryCacheVersion !== CATALOG_CACHE_VERSION)
+    ) {
       void refresh(false);
     }
   }, [refresh]);

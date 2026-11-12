@@ -32,6 +32,8 @@ export interface ProductBag {
   handle?: string;
   imageUrl?: string;
   zoomImageUrl?: string;
+  description?: string;
+  descriptionHtml?: string;
   available?: boolean;
 }
 

@@ -45,6 +45,7 @@ import { useDraggableSheet } from '../utils/useDraggableSheet';
 import { ProductBag, TopServiceTabType } from '../data/catalog';
 import { useCatalog } from '../hooks/useCatalog';
 import { ProductThumbnail } from '../components/ui/ProductThumbnail';
+import { ProductDescriptionAccordion } from '../components/ui/ProductDescriptionAccordion';
 import {
   AnimatedCartControl,
   CartAddedEvent,
@@ -4995,11 +4996,11 @@ export const HomeScreen: React.FC = () => {
           statusBarTranslucent
         >
           {/* Backdrop — tap to dismiss */}
-          <Pressable
-            style={styles.productDetailBackdrop}
-            onPress={closeProductDetail}
-          >
-            {/* Stop propagation so taps on the card don't dismiss */}
+          <View style={styles.productDetailBackdrop}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={closeProductDetail}
+            />
             <Animated.View
               style={[
                 styles.productDetailCard,
@@ -5012,28 +5013,34 @@ export const HomeScreen: React.FC = () => {
                 },
               ]}
             >
-              <Pressable onPress={() => {}}>
-                {/* Top luxury gold subtle glow */}
-                <LinearGradient
-                  colors={[
-                    'rgba(212, 175, 55, 0.16)',
-                    'rgba(212, 175, 55, 0.03)',
-                    'transparent',
-                  ]}
-                  style={styles.productDetailGradientTop}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                />
+              {/* Top luxury gold subtle glow */}
+              <LinearGradient
+                colors={[
+                  'rgba(212, 175, 55, 0.16)',
+                  'rgba(212, 175, 55, 0.03)',
+                  'transparent',
+                ]}
+                style={styles.productDetailGradientTop}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
 
-                {/* Close button */}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={closeProductDetail}
-                  style={styles.productDetailCloseBtn}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                  <Ionicons name="close" size={18} color="#FFFFFF" />
-                </TouchableOpacity>
+              {/* Close button fijo arriba a la derecha */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={closeProductDetail}
+                style={styles.productDetailCloseBtn}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Ionicons name="close" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              <ScrollView
+                style={styles.productDetailScroll}
+                bounces={false}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+              >
 
                 {/* Brand + foto real grande (al tocar abre el visor con zoom) */}
                 {selectedProduct.imageUrl && (
@@ -5152,6 +5159,12 @@ export const HomeScreen: React.FC = () => {
                   </View>
                 </View>
 
+                {/* Menú desplegable con descripción completa del producto */}
+                <ProductDescriptionAccordion
+                  key={selectedProduct.id}
+                  product={selectedProduct}
+                />
+
                 {/* Delivery info */}
                 <View style={styles.productDetailDeliveryRow}>
                   <Ionicons
@@ -5186,9 +5199,10 @@ export const HomeScreen: React.FC = () => {
                     </View>
                   ) : null}
                 </View>
+              </ScrollView>
 
-                {/* Price + Add button */}
-                <View style={styles.productDetailFooter}>
+              {/* Price + Add button fijo abajo */}
+              <View style={styles.productDetailFooter}>
                   <View>
                     <Text style={styles.productDetailPriceLabel}>Precio</Text>
                     <Text style={styles.productDetailPrice}>
@@ -5257,8 +5271,7 @@ export const HomeScreen: React.FC = () => {
                       </AnimatedCartControl>
                     );
                   })()}
-                </View>
-              </Pressable>
+              </View>
             </Animated.View>
 
             <CartAddedToast
@@ -5271,7 +5284,7 @@ export const HomeScreen: React.FC = () => {
                 setTimeout(() => setCartModalVisible(true), 220);
               }}
             />
-          </Pressable>
+          </View>
         </Modal>
       )}
 
@@ -6931,11 +6944,16 @@ const styles = StyleSheet.create({
   },
   productDetailCard: {
     width: '100%',
+    maxHeight: '88%',
     backgroundColor: '#12151C',
     borderRadius: 28,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     overflow: 'hidden',
+  },
+  productDetailScroll: {
+    flexShrink: 1,
+    flexGrow: 0,
   },
   productDetailGradientTop: {
     position: 'absolute',
@@ -7103,7 +7121,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 22,
-    paddingBottom: 24,
+    paddingTop: 14,
+    paddingBottom: 22,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
     gap: 12,
   },
   productDetailPriceLabel: {

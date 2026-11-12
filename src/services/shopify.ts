@@ -51,6 +51,8 @@ const PRODUCTS_QUERY = /* GraphQL */ `
         vendor
         productType
         tags
+        description
+        descriptionHtml
         featuredImage {
           url(transform: { maxWidth: 600, maxHeight: 600 })
           zoomUrl: url(transform: { maxWidth: 1600, maxHeight: 1600 })
@@ -94,6 +96,8 @@ interface ShopifyProductNode {
   vendor: string;
   productType: string;
   tags: string[];
+  description?: string | null;
+  descriptionHtml?: string | null;
   featuredImage: { url: string; zoomUrl?: string } | null;
   metafields: ({ key: string; value: string } | null)[];
   variants: { nodes: ShopifyVariantNode[] };
@@ -321,6 +325,8 @@ export function mapShopifyProduct(node: ShopifyProductNode): ProductBag | null {
     handle: node.handle,
     imageUrl: node.featuredImage?.url,
     zoomImageUrl: node.featuredImage?.zoomUrl ?? node.featuredImage?.url,
+    description: node.description?.trim() || undefined,
+    descriptionHtml: node.descriptionHtml?.trim() || undefined,
     available: variant.availableForSale,
   };
 }

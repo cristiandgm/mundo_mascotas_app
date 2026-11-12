@@ -52,6 +52,8 @@ export interface BrandProductItem {
   accentColor: string;
   imageUrl?: string;
   zoomImageUrl?: string;
+  description?: string;
+  descriptionHtml?: string;
 }
 
 interface BrandDnaProfile {
