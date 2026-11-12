@@ -27,6 +27,7 @@ import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
 import { CheckoutModal, PlaceOrderPayload } from '../components/CheckoutModal';
+import { BubbleLaunchOrigin, CartSummaryModal } from '../components/CartSummaryModal';
 import { InboxModal } from '../components/InboxModal';
 import {
   ACANA_LOGO,
@@ -48,7 +49,6 @@ import {
   PetActivityType,
   PetSensitivityType,
 } from '../context/AuthContext';
-import { useDraggableSheet } from '../utils/useDraggableSheet';
 import { ProductBag, TopServiceTabType } from '../data/catalog';
 import { useCatalog } from '../hooks/useCatalog';
 import { ProductThumbnail } from '../components/ui/ProductThumbnail';
@@ -387,7 +387,9 @@ export const HomeScreen: React.FC = () => {
   const [cartAddedEvent, setCartAddedEvent] = useState<CartAddedEvent | null>(
     null
   );
-  const [miniCartPreviewOpen, setMiniCartPreviewOpen] = useState(false);
+  const [cartLaunchOrigin, setCartLaunchOrigin] =
+    useState<BubbleLaunchOrigin | null>(null);
+  const cartBubbleCircleRef = useRef<React.ComponentRef<typeof View>>(null);
   const [isDraggingCartBubble, setIsDraggingCartBubble] = useState(false);
   const [showBubblePlusOne, setShowBubblePlusOne] = useState(false);
   const cartPulseAnim = useRef(new Animated.Value(1)).current;
@@ -453,10 +455,10 @@ export const HomeScreen: React.FC = () => {
         const rawX = lastCartPosRef.current.x + gestureState.dx;
         const rawY = lastCartPosRef.current.y + gestureState.dy;
 
-        // Si fue un toque rápido (sin arrastrar), abre la vista rápida de lo que va agregando
+        // Si fue un toque rápido (sin arrastrar), despliega la ventana de resumen desde el carrito
         if (Math.abs(gestureState.dx) < 8 && Math.abs(gestureState.dy) < 8) {
           Haptics.selectionAsync();
-          setMiniCartPreviewOpen((prev) => !prev);
+          openCartFromBubbleRef.current();
           return;
         }
 
@@ -475,17 +477,35 @@ export const HomeScreen: React.FC = () => {
 
   const searchInputRef = useRef<any>(null);
 
-  const {
-    translateY: cartTranslateY,
-    isExpanded: isCartExpanded,
-    isDragging: isCartDragging,
-    headerPanHandlers: cartHeaderPanHandlers,
-    grabberPanHandlers: cartGrabberPanHandlers,
-    animateClose: animateCloseCart,
-  } = useDraggableSheet({
-    visible: cartModalVisible,
-    onClose: () => setCartModalVisible(false),
-  });
+  const openCartAsSheet = () => {
+    setCartLaunchOrigin(null);
+    setCartModalVisible(true);
+  };
+
+  const openCartFromBubble = () => {
+    if (cartBubbleCircleRef.current) {
+      cartBubbleCircleRef.current.measureInWindow((wx, wy, ww, hh) => {
+        if (ww > 0 && hh > 0) {
+          setCartLaunchOrigin({ x: wx + ww / 2, y: wy + hh / 2 });
+        } else {
+          setCartLaunchOrigin({
+            x: lastCartPosRef.current.x + BUBBLE_SIZE / 2,
+            y: lastCartPosRef.current.y + insets.top + BUBBLE_SIZE / 2,
+          });
+        }
+        setCartModalVisible(true);
+      });
+      return;
+    }
+    setCartLaunchOrigin({
+      x: lastCartPosRef.current.x + BUBBLE_SIZE / 2,
+      y: lastCartPosRef.current.y + insets.top + BUBBLE_SIZE / 2,
+    });
+    setCartModalVisible(true);
+  };
+
+  const openCartFromBubbleRef = useRef(openCartFromBubble);
+  openCartFromBubbleRef.current = openCartFromBubble;
 
   const formatCOP = (amount: number) => {
     return '$ ' + amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -551,6 +571,25 @@ export const HomeScreen: React.FC = () => {
         setShowBubblePlusOne(false);
       }
     });
+  };
+
+  const triggerBubbleAbsorbPulse = () => {
+    cartPulseAnim.stopAnimation();
+    cartPulseAnim.setValue(0.84);
+    Animated.sequence([
+      Animated.timing(cartPulseAnim, {
+        toValue: 1.22,
+        duration: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.spring(cartPulseAnim, {
+        toValue: 1,
+        tension: 150,
+        friction: 5,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   const handleAddToCart = (productId: string) => {
@@ -3202,7 +3241,7 @@ export const HomeScreen: React.FC = () => {
                     <Pressable
                       onPress={() => {
                         handleAddToCart(quizRecommendation.product.id);
-                        setCartModalVisible(true);
+                        openCartAsSheet();
                       }}
                       style={styles.quizPrimaryAddBtn}
                     >
@@ -4075,133 +4114,6 @@ export const HomeScreen: React.FC = () => {
       {/* ==================== 7.5 BURBUJA CIRCULAR ARRASTRABLE DE CARRITO (ESTILO ENGRANAJE EXPO GO · SOLO EN "TIENDA") ==================== */}
       {mainTopTab === 'store' && (
         <>
-          {/* Panel flotante rápido cuando el cliente toca la burbuja del carrito */}
-          {miniCartPreviewOpen && (
-            <View
-              style={[
-                styles.floatingBubblePopoverCard,
-                { bottom: Math.max(insets.bottom, 12) + 82 },
-              ]}
-            >
-              <View style={styles.miniCartDrawerHeader}>
-                <Text style={styles.miniCartDrawerTitle}>
-                  🛒 {user ? `Carrito de ${activePet.name}` : 'Tu Carrito'} (
-                  {cartSummary.totalItems})
-                </Text>
-                <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setMiniCartPreviewOpen(false);
-                  }}
-                  hitSlop={8}
-                >
-                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                </Pressable>
-              </View>
-
-              {cartSummary.itemsList.length === 0 ? (
-                <View style={{ paddingVertical: 14, alignItems: 'center' }}>
-                  <Text
-                    style={{
-                      color: '#9CA3AF',
-                      fontSize: 12.5,
-                      textAlign: 'center',
-                    }}
-                  >
-                    Aún no has agregado productos. Toca "+ Pedir" en cualquier
-                    tarjeta para verlos aquí en tiempo real.
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  <ScrollView
-                    style={{ maxHeight: 175 }}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    {cartSummary.itemsList.map(({ product, quantity }, idx) => (
-                      <View
-                        key={product.id}
-                        style={[
-                          styles.miniCartItemRow,
-                          idx > 0 && styles.miniCartItemDivider,
-                        ]}
-                      >
-                        <ProductThumbnail
-                          product={product}
-                          emojiSize={18}
-                          borderRadius={10}
-                          padding={2}
-                          style={{ width: 36, height: 36 }}
-                        />
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={styles.miniCartItemName}
-                            numberOfLines={1}
-                          >
-                            {product.name}
-                          </Text>
-                          <Text style={styles.miniCartItemMeta}>
-                            {product.unitLabel || `${product.weightLb} LB`} ·{' '}
-                            {formatCOP(product.price * quantity)}
-                          </Text>
-                        </View>
-
-                        <AnimatedCartControl quantity={quantity}>
-                          <View style={styles.qtyStepper}>
-                            <Pressable
-                              onPress={() => handleDecrementCart(product.id)}
-                              style={styles.qtyStepBtn}
-                            >
-                              <Ionicons name="remove" size={13} color="#FFFFFF" />
-                            </Pressable>
-                            <Text style={styles.qtyCountText}>{quantity}</Text>
-                            <Pressable
-                              onPress={() => handleAddToCart(product.id)}
-                              style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                            >
-                              <Ionicons name="add" size={13} color="#050508" />
-                            </Pressable>
-                          </View>
-                        </AnimatedCartControl>
-                      </View>
-                    ))}
-                  </ScrollView>
-
-                  <View style={styles.miniCartFooterRow}>
-                    <View>
-                      <Text style={styles.miniCartFooterTotal}>
-                        {formatCOP(cartSummary.subtotal)}
-                      </Text>
-                      <Text style={styles.miniCartFooterShip}>
-                        {deliveryZone === 'bogota'
-                          ? '🚚 Domicilio Gratis Bogotá'
-                          : `📦 + Flete (${cartSummary.totalWeightLb} LB)`}
-                      </Text>
-                    </View>
-
-                    <Pressable
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        setMiniCartPreviewOpen(false);
-                        setCartModalVisible(true);
-                      }}
-                      style={styles.storeFloatingCartCheckoutBtn}
-                    >
-                      <Text style={styles.storeFloatingCartCheckoutText}>
-                        Confirmar pedido
-                      </Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={14}
-                        color="#050508"
-                      />
-                    </Pressable>
-                  </View>
-                </>
-              )}
-            </View>
-          )}
-
           {/* Burbuja Circular Arrastrable con el dedo a cualquier parte de la pantalla */}
           <Animated.View
             {...floatingCartPanResponder.panHandlers}
@@ -4218,7 +4130,11 @@ export const HomeScreen: React.FC = () => {
               },
             ]}
           >
-            <View style={styles.draggableCartCircleWrap}>
+            <View
+              ref={cartBubbleCircleRef}
+              collapsable={false}
+              style={styles.draggableCartCircleWrap}
+            >
               {showBubblePlusOne && (
                 <>
                   <Animated.View
@@ -4373,7 +4289,7 @@ export const HomeScreen: React.FC = () => {
             onPress={() => {
               Haptics.selectionAsync();
               setActiveBottomTab('catalog');
-              setCartModalVisible(true);
+              openCartAsSheet();
             }}
             style={[
               styles.uberDockTab,
@@ -4489,449 +4405,55 @@ export const HomeScreen: React.FC = () => {
         topOffset={Math.max(insets.top, 12) + 8}
         onViewCart={() => {
           Haptics.selectionAsync();
-          setCartModalVisible(true);
+          openCartAsSheet();
         }}
       />
 
-      {/* ==================== MODAL RESUMEN DE BOLSA / LIQUIDACIÓN DE ENVÍO ==================== */}
-      <Modal
+      {/* ==================== MODAL RESUMEN DE BOLSA / PORTAL DEL CARRITO ==================== */}
+      <CartSummaryModal
         visible={cartModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={animateCloseCart}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable style={{ flex: 1 }} onPress={animateCloseCart} />
-          <Animated.View
-            style={[
-              styles.cartSheetContainer,
-              isCartExpanded && styles.cartSheetContainerExpanded,
-              { transform: [{ translateY: cartTranslateY }] },
-            ]}
-          >
-            <View style={styles.cartSheetHeader}>
-              <View style={styles.dragHandleHitZone} {...cartGrabberPanHandlers}>
-                <View
-                  style={[
-                    styles.dragHandle,
-                    isCartDragging && styles.dragHandleActive,
-                  ]}
-                />
-              </View>
-              <View style={styles.cartSheetTitleRow} {...cartHeaderPanHandlers}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Text style={styles.cartSheetTitle}>Bolsa</Text>
-                  <View style={styles.cartCountHeaderPill}>
-                    <Text style={styles.cartCountHeaderPillText}>
-                      {cartSummary.totalItems} {cartSummary.totalItems === 1 ? 'ítem' : 'ítems'}
-                    </Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={animateCloseCart}
-                  style={styles.closeModalBtn}
-                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-                >
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <ScrollView
-              contentContainerStyle={[
-                styles.cartSheetScroll,
-                { paddingBottom: Math.max(insets.bottom, 16) + 24 },
-              ]}
-              showsVerticalScrollIndicator={false}
-            >
-              {cartSummary.itemsList.length === 0 ? (
-                <View style={styles.emptyCartBox}>
-                  <Ionicons
-                    name="bag-handle-outline"
-                    size={42}
-                    color={colors.dark.textMuted}
-                  />
-                  <Text style={styles.emptyCartTitle}>Tu bolsa está vacía</Text>
-                  <Text style={styles.emptyCartSub}>
-                    Agrega bultos de Diamond Naturals, Taste of the Wild o Acana para calcular tu entrega.
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  {/* Dirección seleccionada dentro del carrito (o aviso en modo invitado) */}
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setCartModalVisible(false);
-                      if (user) {
-                        setTimeout(() => setAddressSheetVisible(true), 200);
-                      } else {
-                        setTimeout(() => openAuthModal('login'), 200);
-                      }
-                    }}
-                    style={styles.cartZoneBox}
-                  >
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <View style={{ flex: 1, paddingRight: 10 }}>
-                        {user ? (
-                          <>
-                            <Text style={styles.cartZoneLabel}>
-                              Entregar en ({selectedAddress.label} ·{' '}
-                              {selectedAddress.city}):
-                            </Text>
-                            <Text
-                              style={{
-                                color: '#FFFFFF',
-                                fontSize: 14,
-                                fontWeight: '800',
-                                marginTop: 2,
-                              }}
-                            >
-                              {selectedAddress.address1}
-                            </Text>
-                            {selectedAddress.address2 ? (
-                              <Text
-                                style={{
-                                  color: '#9CA3AF',
-                                  fontSize: 12,
-                                  marginTop: 2,
-                                }}
-                              >
-                                {selectedAddress.address2}
-                              </Text>
-                            ) : null}
-                          </>
-                        ) : (
-                          <>
-                            <Text style={styles.cartZoneLabel}>
-                              📍 Dirección de entrega pendiente (Modo invitado)
-                            </Text>
-                            <Text
-                              style={{
-                                color: '#FFFFFF',
-                                fontSize: 13.5,
-                                fontWeight: '800',
-                                marginTop: 2,
-                              }}
-                            >
-                              Inicia sesión para elegir tu dirección y cobertura
-                            </Text>
-                          </>
-                        )}
-                      </View>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 4,
-                          backgroundColor: 'rgba(212, 175, 55, 0.14)',
-                          paddingHorizontal: 10,
-                          paddingVertical: 6,
-                          borderRadius: 12,
-                          borderWidth: 1,
-                          borderColor: 'rgba(212, 175, 55, 0.35)',
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: colors.primary.light,
-                            fontSize: 12,
-                            fontWeight: '800',
-                          }}
-                        >
-                          {user ? `Cambiar (${addresses.length})` : 'Ingresar'}
-                        </Text>
-                        <Ionicons
-                          name="chevron-forward"
-                          size={14}
-                          color={colors.primary.light}
-                        />
-                      </View>
-                    </View>
-                  </Pressable>
-
-                  {/* Lista de bultos */}
-                  {cartSummary.itemsList.map(({ product, quantity }) => (
-                    <View key={product.id} style={styles.cartItemRow}>
-                      <ProductThumbnail
-                        product={product}
-                        emojiSize={24}
-                        borderRadius={12}
-                        padding={2}
-                        style={{ width: 62, height: 68 }}
-                      />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.cartItemName}>{product.name}</Text>
-                        <Text style={styles.cartItemSub}>
-                          Presentación:{' '}
-                          {product.unitLabel || `${product.weightLb} LB`} ·{' '}
-                          {formatCOP(product.price)} c/u
-                        </Text>
-                      </View>
-                      <AnimatedCartControl quantity={quantity}>
-                        <View style={styles.qtyStepper}>
-                          <Pressable
-                            onPress={() => handleDecrementCart(product.id)}
-                            style={styles.qtyStepBtn}
-                          >
-                            <Ionicons name="remove" size={15} color="#FFFFFF" />
-                          </Pressable>
-                          <Text style={styles.qtyCountText}>{quantity}</Text>
-                          <Pressable
-                            onPress={() => handleAddToCart(product.id)}
-                            style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                          >
-                            <Ionicons name="add" size={15} color="#050508" />
-                          </Pressable>
-                        </View>
-                      </AnimatedCartControl>
-                    </View>
-                  ))}
-
-                  {/* Selector estilo Uber Cash para usar Consenticoins en la Bolsa */}
-                  <View style={styles.cartZoneBox}>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 10,
-                      }}
-                    >
-                      <Pressable
-                        onPress={() => {
-                          Haptics.selectionAsync();
-                          setCartModalVisible(false);
-                          setTimeout(() => setWalletVisible(true), 200);
-                        }}
-                        style={{ flex: 1 }}
-                      >
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 6,
-                          }}
-                        >
-                          <ConsenticoinIcon size={12} />
-                          <Text style={styles.cartZoneLabel}>
-                            BILLETERA CONSENTICOINS CASH
-                          </Text>
-                        </View>
-                        <Text
-                          style={{
-                            color: '#FFFFFF',
-                            fontSize: 13.5,
-                            fontWeight: '800',
-                            marginTop: 2,
-                          }}
-                        >
-                          {user
-                            ? `Saldo: ${user.points} Coins (${formatCOP(
-                                user.points * COIN_VALUE_COP
-                              )})`
-                            : 'Tienes 250 Coins ($ 5.000) de bienvenida'}
-                        </Text>
-                        <Text
-                          style={{
-                            color: colors.primary.light,
-                            fontSize: 11.5,
-                            fontWeight: '700',
-                            marginTop: 2,
-                          }}
-                        >
-                          Ver extracto y bóveda de premios ›
-                        </Text>
-                      </Pressable>
-
-                      {user && user.points > 0 ? (
-                        <Pressable
-                          onPress={() => {
-                            Haptics.selectionAsync();
-                            setApplyCoinsInCart((prev) => !prev);
-                          }}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 5,
-                            backgroundColor: applyCoinsInCart
-                              ? colors.primary.DEFAULT
-                              : '#181B22',
-                            paddingHorizontal: 12,
-                            paddingVertical: 8,
-                            borderRadius: 14,
-                            borderWidth: 1,
-                            borderColor: applyCoinsInCart
-                              ? colors.primary.light
-                              : 'rgba(212, 175, 55, 0.35)',
-                          }}
-                        >
-                          <Ionicons
-                            name={
-                              applyCoinsInCart
-                                ? 'checkmark-circle'
-                                : 'ellipse-outline'
-                            }
-                            size={16}
-                            color={
-                              applyCoinsInCart
-                                ? '#050508'
-                                : colors.primary.light
-                            }
-                          />
-                          <Text
-                            style={{
-                              color: applyCoinsInCart
-                                ? '#050508'
-                                : colors.primary.light,
-                              fontSize: 12,
-                              fontWeight: '900',
-                            }}
-                          >
-                            {applyCoinsInCart ? 'Aplicado' : 'Usar saldo'}
-                          </Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  </View>
-
-                  {/* Desglose de Costos */}
-                  <View style={styles.costBreakdownCard}>
-                    <View style={styles.costRow}>
-                      <Text style={styles.costLabel}>
-                        Subtotal ({cartSummary.totalItems} bultos ·{' '}
-                        {cartSummary.totalWeightLb} LB)
-                      </Text>
-                      <Text style={styles.costValue}>
-                        {formatCOP(cartSummary.subtotal)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.costRow}>
-                      <Text style={styles.costLabel}>
-                        {deliveryZone === 'bogota'
-                          ? 'Domicilio en Bogotá D.C.'
-                          : `Flete Transportadora (${cartSummary.totalWeightLb} LB)`}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.costValue,
-                          {
-                            color:
-                              deliveryZone === 'bogota'
-                                ? colors.primary.light
-                                : '#D1D5DB',
-                          },
-                        ]}
-                      >
-                        {deliveryZone === 'bogota'
-                          ? 'Gratis ($ 0)'
-                          : `+ ${formatCOP(cartSummary.estimatedCarrierFee)}`}
-                      </Text>
-                    </View>
-
-                    {cartSummary.coinsDiscountCop > 0 && (
-                      <View style={styles.costRow}>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 5,
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.costLabel,
-                              { color: colors.primary.light, fontWeight: '700' },
-                            ]}
-                          >
-                            Redención Consenticoins (-{cartSummary.coinsToRedeem})
-                          </Text>
-                          <ConsenticoinIcon size={12} />
-                        </View>
-                        <Text
-                          style={[
-                            styles.costValue,
-                            { color: colors.primary.light, fontWeight: '900' },
-                          ]}
-                        >
-                          - {formatCOP(cartSummary.coinsDiscountCop)}
-                        </Text>
-                      </View>
-                    )}
-
-                    <View style={styles.costRow}>
-                      <Text style={styles.costLabel}>Consenticoins a ganar</Text>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <ConsenticoinIcon size={12} />
-                        <Text style={[styles.costValue, { color: colors.primary.light }]}>
-                          +{cartSummary.totalCoins} Coins
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.costDivider} />
-
-                    <View style={styles.costRow}>
-                      <Text style={styles.costTotalLabel}>Total Estimado</Text>
-                      <Text style={styles.costTotalValue}>
-                        {formatCOP(cartSummary.totalWithShipping)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.checkoutHintBanner}>
-                    <Ionicons
-                      name="card-outline"
-                      size={16}
-                      color={colors.primary.light}
-                    />
-                    <Text style={styles.checkoutHintText}>
-                      {deliveryZone === 'bogota'
-                        ? 'En el siguiente paso eliges Contra entrega (Efectivo, Bre-B, Datáfono +5%) o Pago anticipado.'
-                        : 'Envío nacional: en el siguiente paso eliges Pago anticipado (Bre-B, Efectivo o Link de pagos +5%).'}
-                    </Text>
-                  </View>
-
-                  <Pressable
-                    onPress={() => {
-                      if (!user) {
-                        Haptics.selectionAsync();
-                        setCartModalVisible(false);
-                        setTimeout(() => openAuthModal('login'), 200);
-                        return;
-                      }
-                      Haptics.selectionAsync();
-                      setCartModalVisible(false);
-                      setTimeout(() => setCheckoutModalVisible(true), 200);
-                    }}
-                    style={styles.checkoutGoldBtn}
-                  >
-                    <Text style={styles.checkoutGoldBtnText}>
-                      {user
-                        ? `Continuar al Checkout (${formatCOP(cartSummary.totalWithShipping)})`
-                        : `Iniciar sesión para continuar (${formatCOP(cartSummary.totalWithShipping)})`}
-                    </Text>
-                  </Pressable>
-                </>
-              )}
-            </ScrollView>
-          </Animated.View>
-        </View>
-      </Modal>
+        launchOrigin={cartLaunchOrigin}
+        deliveryZone={deliveryZone}
+        itemsList={cartSummary.itemsList}
+        totalItems={cartSummary.totalItems}
+        totalWeightLb={cartSummary.totalWeightLb}
+        subtotal={cartSummary.subtotal}
+        estimatedCarrierFee={cartSummary.estimatedCarrierFee}
+        coinsToRedeem={cartSummary.coinsToRedeem}
+        coinsDiscountCop={cartSummary.coinsDiscountCop}
+        totalCoinsToEarn={cartSummary.totalCoins}
+        totalWithShipping={cartSummary.totalWithShipping}
+        applyCoinsInCart={applyCoinsInCart}
+        onToggleApplyCoins={() => setApplyCoinsInCart((prev) => !prev)}
+        onAddToCart={handleAddToCart}
+        onDecrementCart={handleDecrementCart}
+        onRequestAddressChange={() => {
+          setCartModalVisible(false);
+          if (user) {
+            setTimeout(() => setAddressSheetVisible(true), 120);
+          } else {
+            setTimeout(() => openAuthModal('login'), 120);
+          }
+        }}
+        onRequestOpenWallet={() => {
+          setCartModalVisible(false);
+          setTimeout(() => setWalletVisible(true), 120);
+        }}
+        onRequestProceedToCheckout={() => {
+          setCartModalVisible(false);
+          setTimeout(() => setCheckoutModalVisible(true), 120);
+        }}
+        onRequestLogin={() => {
+          setCartModalVisible(false);
+          setTimeout(() => openAuthModal('login'), 120);
+        }}
+        onClose={(absorbedIntoBubble) => {
+          setCartModalVisible(false);
+          if (absorbedIntoBubble) {
+            triggerBubbleAbsorbPulse();
+          }
+        }}
+      />
 
       {/* Panel de Inbox con transición de portal desde la esquina superior derecha */}
       <InboxModal
@@ -4939,7 +4461,7 @@ export const HomeScreen: React.FC = () => {
         onClose={() => setInboxVisible(false)}
         onQuickAddProduct={(prodId) => {
           handleAddToCart(prodId);
-          setCartModalVisible(true);
+          openCartAsSheet();
         }}
         onOpenProfile={() => setProfileVisible(true)}
       />
@@ -4971,7 +4493,7 @@ export const HomeScreen: React.FC = () => {
         onClose={() => setCheckoutModalVisible(false)}
         onBackToCart={() => {
           setCheckoutModalVisible(false);
-          setTimeout(() => setCartModalVisible(true), 200);
+          setTimeout(() => openCartAsSheet(), 200);
         }}
         onChangeAddress={() => {
           reopenCheckoutAfterAddressRef.current = true;
@@ -5024,7 +4546,7 @@ export const HomeScreen: React.FC = () => {
         applyCoinsInCart={applyCoinsInCart}
         onToggleApplyCoinsInCart={(val) => setApplyCoinsInCart(val)}
         onOpenCartWithCoins={() => {
-          setCartModalVisible(true);
+          openCartAsSheet();
         }}
         onRedeemFreeProduct={(prodId) => {
           handleAddToCart(prodId);
@@ -5097,7 +4619,7 @@ export const HomeScreen: React.FC = () => {
         }
         onOpenCart={() => {
           setBrandDnaModalVisible(false);
-          setTimeout(() => setCartModalVisible(true), 180);
+          setTimeout(() => openCartAsSheet(), 180);
         }}
       />
 
@@ -5411,7 +4933,7 @@ export const HomeScreen: React.FC = () => {
               onViewCart={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 closeProductDetail();
-                setTimeout(() => setCartModalVisible(true), 220);
+                setTimeout(() => openCartAsSheet(), 220);
               }}
             />
           </View>
@@ -6087,91 +5609,6 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '900',
   },
-  floatingBubblePopoverCard: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    zIndex: 88,
-    backgroundColor: '#12151C',
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.72,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  miniCartDrawerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 8,
-    marginBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  miniCartDrawerTitle: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '800',
-  },
-  miniCartItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 8,
-  },
-  miniCartItemDivider: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
-  },
-  miniCartItemName: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  miniCartItemMeta: {
-    color: '#9CA3AF',
-    fontSize: 11.5,
-    marginTop: 1,
-  },
-  miniCartFooterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    marginTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  miniCartFooterTotal: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '900',
-  },
-  miniCartFooterShip: {
-    color: colors.primary.light,
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  storeFloatingCartCheckoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
-  },
-  storeFloatingCartCheckoutText: {
-    color: '#050508',
-    fontSize: 12.5,
-    fontWeight: '900',
-  },
 
   /* ==================== 8. UBER FLOATING PILL BOTTOM DOCK ==================== */
   uberFloatingDockWrapper: {
@@ -6242,234 +5679,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    justifyContent: 'flex-end',
-  },
-  cartSheetContainer: {
-    maxHeight: '86%',
-    backgroundColor: '#0A0B0E',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    overflow: 'hidden',
-  },
-  cartSheetContainerExpanded: {
-    maxHeight: '95%',
-    height: '95%',
-  },
-  cartSheetHeader: {
-    paddingTop: 8,
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
-    backgroundColor: '#0A0B0E',
-    zIndex: 30,
-    elevation: 30,
-  },
-  dragHandleHitZone: {
-    width: '100%',
-    paddingVertical: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dragHandle: {
-    width: 40,
-    height: 4.5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  dragHandleActive: {
-    width: 52,
-    backgroundColor: '#FFFFFF',
-  },
-  cartSheetTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  cartSheetTitle: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  cartCountHeaderPill: {
-    backgroundColor: '#181B22',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  cartCountHeaderPillText: {
-    color: '#D1D5DB',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  closeModalBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#181B22',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 35,
-    elevation: 35,
-  },
-  cartSheetScroll: {
-    padding: 20,
-    paddingBottom: 42,
-    gap: 14,
-  },
-  emptyCartBox: {
-    alignItems: 'center',
-    paddingVertical: 36,
-    gap: 8,
-  },
-  emptyCartTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  emptyCartSub: {
-    color: colors.dark.textSecondary,
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  cartZoneBox: {
-    backgroundColor: '#12151C',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  cartZoneLabel: {
-    color: '#9CA3AF',
-    fontSize: 11.5,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  logisticsSwitchRow: {
-    flexDirection: 'row',
-    backgroundColor: '#0A0B0E',
-    borderRadius: 12,
-    padding: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-  },
-  zonePill: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 9,
-  },
-  zonePillBogotaActive: {
-    backgroundColor: colors.primary.DEFAULT,
-  },
-  zonePillNacionalActive: {
-    backgroundColor: '#181B22',
-  },
-  zonePillText: {
-    color: '#9CA3AF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  zonePillTextActive: {
-    color: '#0A0B0E',
-    fontWeight: '800',
-  },
-  cartItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#12151C',
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 10,
-  },
-  cartItemName: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  cartItemSub: {
-    color: '#9CA3AF',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  costBreakdownCard: {
-    backgroundColor: '#12151C',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 10,
-  },
-  costRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  costLabel: {
-    color: '#9CA3AF',
-    fontSize: 13,
-  },
-  costValue: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '700',
-  },
-  costDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    marginVertical: 4,
-  },
-  costTotalLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  costTotalValue: {
-    color: colors.primary.light,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  checkoutGoldBtn: {
-    backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: 15,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  checkoutGoldBtnText: {
-    color: '#050508',
-    fontSize: 14.5,
-    fontWeight: '900',
-  },
-  checkoutHintBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#12151C',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  checkoutHintText: {
-    color: '#D1D5DB',
-    fontSize: 12,
-    lineHeight: 17,
-    flex: 1,
   },
 
   /* ==================== ESTILOS QUIZ BIOLÓGICO (PESTAÑA 2) ==================== */
