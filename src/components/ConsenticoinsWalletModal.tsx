@@ -22,7 +22,11 @@ import {
   COIN_VALUE_COP,
 } from '../context/AuthContext';
 import { useDraggableSheet } from '../utils/useDraggableSheet';
-import { ACANA_LOGO, ORIJEN_LOGO } from './BrandDnaModal';
+import {
+  ACANA_LOGO,
+  ORIJEN_LOGO,
+  TASTE_OF_THE_WILD_LOGO,
+} from './BrandDnaModal';
 
 interface ConsenticoinsWalletModalProps {
   visible: boolean;
@@ -1139,7 +1143,8 @@ export const ConsenticoinsWalletModal: React.FC<
                         cop: 'Hasta $ 5.800 COP de retorno',
                       },
                       {
-                        brand: '🐺 Taste of the Wild',
+                        brand: 'Taste of the Wild',
+                        logoImage: TASTE_OF_THE_WILD_LOGO,
                         bag: 'Bultos Grain-Free 14 LB y 28 LB',
                         earn: '+218 a +355 Coins por bulto',
                         cop: 'Hasta $ 7.100 COP de retorno',

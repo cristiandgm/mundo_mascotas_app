@@ -27,8 +27,10 @@ import {
 
 export const ORIJEN_LOGO = require('../../assets/orijen-logo.jpg');
 export const ACANA_LOGO = require('../../assets/acana-logo.png');
+export const TASTE_OF_THE_WILD_LOGO = require('../../assets/taste-of-the-wild-logo.png');
 
 export const BRAND_LOGO_MAP: Partial<Record<string, ImageSourcePropType>> = {
+  'Taste of the Wild': TASTE_OF_THE_WILD_LOGO,
   Acana: ACANA_LOGO,
   Orijen: ORIJEN_LOGO,
 };
@@ -142,7 +144,7 @@ export const BRAND_DNA_DATABASE: Record<FoodBrandName, BrandDnaProfile> = {
   'Taste of the Wild': {
     id: 'Taste of the Wild',
     shortName: 'Taste of the Wild',
-    emoji: '🐺',
+    logoImage: TASTE_OF_THE_WILD_LOGO,
     origin: '🇺🇸 EE. UU. · Ancestral Wild Nutrition',
     officialTagline: 'BASED ON YOUR PET’S ANCESTRAL DIET™',
     headline: 'La Dieta Ancestral que Dicta el ADN Salvaje de tu Mascota',

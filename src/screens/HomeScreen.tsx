@@ -35,6 +35,7 @@ import {
   BrandDnaModal,
   FoodBrandName,
   ORIJEN_LOGO,
+  TASTE_OF_THE_WILD_LOGO,
 } from '../components/BrandDnaModal';
 import { ConsenticoinsWalletModal } from '../components/ConsenticoinsWalletModal';
 import {
@@ -130,7 +131,12 @@ const FOR_YOU_BULTOS_CIRCLES: {
   sub: string;
 }[] = [
   { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'K9 Strain®' },
-  { id: 'Taste of the Wild', label: 'Taste', emoji: '🐺', sub: 'Ancestral' },
+  {
+    id: 'Taste of the Wild',
+    label: 'Taste',
+    logoImage: TASTE_OF_THE_WILD_LOGO,
+    sub: 'Ancestral',
+  },
   { id: 'Acana', label: 'Acana', logoImage: ACANA_LOGO, sub: '70% Animal' },
   { id: 'Orijen', label: 'Orijen', logoImage: ORIJEN_LOGO, sub: '85-90% Carne' },
 ];
