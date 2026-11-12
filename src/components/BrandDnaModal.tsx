@@ -342,11 +342,11 @@ export const BRAND_DNA_DATABASE: Record<FoodBrandName, BrandDnaProfile> = {
 };
 
 export const ALL_FOOD_BRANDS: FoodBrandName[] = [
-  'Diamond Naturals',
-  'Taste of the Wild',
-  'Taste of the Wild Prey',
-  'Acana',
   'Orijen',
+  'Acana',
+  'Taste of the Wild Prey',
+  'Taste of the Wild',
+  'Diamond Naturals',
 ];
 
 interface BrandDnaModalProps {

@@ -131,21 +131,21 @@ const FOR_YOU_BULTOS_CIRCLES: {
   logoImage?: ImageSourcePropType;
   sub: string;
 }[] = [
-  { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'K9 Strain®' },
-  {
-    id: 'Taste of the Wild',
-    label: 'Taste',
-    logoImage: TASTE_OF_THE_WILD_LOGO,
-    sub: 'Ancestral',
-  },
+  { id: 'Orijen', label: 'Orijen', logoImage: ORIJEN_LOGO, sub: '85-90% Carne' },
+  { id: 'Acana', label: 'Acana', logoImage: ACANA_LOGO, sub: '70% Animal' },
   {
     id: 'Taste of the Wild Prey',
     label: 'Taste PREY',
     logoImage: TASTE_OF_THE_WILD_PREY_LOGO,
     sub: 'Dieta Simple',
   },
-  { id: 'Acana', label: 'Acana', logoImage: ACANA_LOGO, sub: '70% Animal' },
-  { id: 'Orijen', label: 'Orijen', logoImage: ORIJEN_LOGO, sub: '85-90% Carne' },
+  {
+    id: 'Taste of the Wild',
+    label: 'Taste',
+    logoImage: TASTE_OF_THE_WILD_LOGO,
+    sub: 'Ancestral',
+  },
+  { id: 'Diamond Naturals', label: 'Diamond', emoji: '💎', sub: 'K9 Strain®' },
 ];
 
 // Los 4 círculos estilo "For you" de Uber para la pestaña Snacks & Cuidado
