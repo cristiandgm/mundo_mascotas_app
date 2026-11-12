@@ -43,6 +43,7 @@ import { useDraggableSheet } from '../utils/useDraggableSheet';
 import { ProductBag, TopServiceTabType } from '../data/catalog';
 import { useCatalog } from '../hooks/useCatalog';
 import { ProductThumbnail } from '../components/ui/ProductThumbnail';
+import { ImageZoomModal } from '../components/ImageZoomModal';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
 type SearchCategoryType =
@@ -165,7 +166,14 @@ export const HomeScreen: React.FC = () => {
   // Product detail card modal
   const [selectedProduct, setSelectedProduct] = useState<ProductBag | null>(null);
   const [productDetailVisible, setProductDetailVisible] = useState(false);
+  const [zoomProduct, setZoomProduct] = useState<ProductBag | null>(null);
   const productDetailAnim = useRef(new Animated.Value(0)).current;
+
+  const openImageZoom = (product: ProductBag) => {
+    if (!product.imageUrl && !product.zoomImageUrl) return;
+    Haptics.selectionAsync();
+    setZoomProduct(product);
+  };
   const productDetailScale = useRef(new Animated.Value(0.85)).current;
   const productDetailTransY = useRef(new Animated.Value(60)).current;
 
@@ -1331,7 +1339,7 @@ export const HomeScreen: React.FC = () => {
                             padding={2}
                             style={[
                               styles.searchResultIconBox,
-                              item.imageUrl ? { backgroundColor: '#F7F8FA' } : null,
+                              item.imageUrl ? { backgroundColor: '#FFFFFF' } : null,
                             ]}
                           />
 
@@ -2924,13 +2932,18 @@ export const HomeScreen: React.FC = () => {
                       marginBottom: 12,
                     }}
                   >
-                    <ProductThumbnail
-                      product={quizRecommendation.product}
-                      emojiSize={34}
-                      borderRadius={16}
-                      padding={2}
-                      style={{ width: 96, height: 112 }}
-                    />
+                    <Pressable
+                      onPress={() => openImageZoom(quizRecommendation.product)}
+                      disabled={!quizRecommendation.product.imageUrl}
+                    >
+                      <ProductThumbnail
+                        product={quizRecommendation.product}
+                        emojiSize={34}
+                        borderRadius={16}
+                        padding={2}
+                        style={{ width: 96, height: 112 }}
+                      />
+                    </Pressable>
                     <View style={{ flex: 1 }}>
                       <Text
                         style={{
@@ -4779,6 +4792,7 @@ export const HomeScreen: React.FC = () => {
         onAddToCart={handleAddToCart}
         onDecrementCart={handleDecrementCart}
         onInspectProduct={(prod) => openProductDetail(prod as ProductBag)}
+        onZoomProduct={(prod) => openImageZoom(prod as ProductBag)}
         onOpenCart={() => {
           setBrandDnaModalVisible(false);
           setTimeout(() => setCartModalVisible(true), 180);
@@ -4835,9 +4849,15 @@ export const HomeScreen: React.FC = () => {
                   <Ionicons name="close" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
 
-                {/* Brand + foto real grande (clicable para abrir el ADN de la marca) */}
+                {/* Brand + foto real grande (al tocar abre el visor con zoom) */}
                 {selectedProduct.imageUrl && (
-                  <View style={styles.productDetailPhotoBanner}>
+                  <Pressable
+                    onPress={() => openImageZoom(selectedProduct)}
+                    style={({ pressed }) => [
+                      styles.productDetailPhotoBanner,
+                      pressed && { opacity: 0.92 },
+                    ]}
+                  >
                     <ProductThumbnail
                       product={selectedProduct}
                       emojiSize={48}
@@ -4845,7 +4865,13 @@ export const HomeScreen: React.FC = () => {
                       padding={10}
                       style={{ width: '100%', height: '100%' }}
                     />
-                  </View>
+                    <View style={styles.productDetailZoomHintPill}>
+                      <Ionicons name="expand-outline" size={13} color="#FFFFFF" />
+                      <Text style={styles.productDetailZoomHintText}>
+                        Toca para zoom
+                      </Text>
+                    </View>
+                  </Pressable>
                 )}
 
                 <Pressable
@@ -5019,6 +5045,20 @@ export const HomeScreen: React.FC = () => {
           </Pressable>
         </Modal>
       )}
+
+      {/* ==================== VISOR DE IMAGEN EN PANTALLA COMPLETA CON ZOOM ==================== */}
+      <ImageZoomModal
+        visible={Boolean(zoomProduct)}
+        imageUrl={zoomProduct?.zoomImageUrl ?? zoomProduct?.imageUrl}
+        title={zoomProduct?.name}
+        subtitle={zoomProduct?.protein}
+        unitLabel={
+          zoomProduct
+            ? zoomProduct.unitLabel || `${zoomProduct.weightLb} LB`
+            : undefined
+        }
+        onClose={() => setZoomProduct(null)}
+      />
 
     </SafeAreaView>
   );
@@ -5428,7 +5468,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderWidth: 1,
     borderColor: 'rgba(212, 175, 55, 0.35)',
-    backgroundColor: '#F7F8FA',
+    backgroundColor: '#FFFFFF',
     marginBottom: 10,
   },
   uberCardFloatingTop: {
@@ -6657,11 +6697,29 @@ const styles = StyleSheet.create({
   productDetailPhotoBanner: {
     width: '100%',
     height: 224,
-    backgroundColor: '#F7F8FA',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  productDetailZoomHintPill: {
+    position: 'absolute',
+    bottom: 10,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(12, 15, 22, 0.78)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  productDetailZoomHintText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
   productDetailBrandRow: {
     flexDirection: 'row',

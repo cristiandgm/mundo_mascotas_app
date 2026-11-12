@@ -53,6 +53,7 @@ const PRODUCTS_QUERY = /* GraphQL */ `
         tags
         featuredImage {
           url(transform: { maxWidth: 600, maxHeight: 600 })
+          zoomUrl: url(transform: { maxWidth: 1600, maxHeight: 1600 })
         }
         metafields(identifiers: [${METAFIELD_KEYS.map(
           (k) => `{ namespace: "${METAFIELD_NAMESPACE}", key: "${k}" }`
@@ -93,7 +94,7 @@ interface ShopifyProductNode {
   vendor: string;
   productType: string;
   tags: string[];
-  featuredImage: { url: string } | null;
+  featuredImage: { url: string; zoomUrl?: string } | null;
   metafields: ({ key: string; value: string } | null)[];
   variants: { nodes: ShopifyVariantNode[] };
 }
@@ -319,6 +320,7 @@ export function mapShopifyProduct(node: ShopifyProductNode): ProductBag | null {
     variantId: variant.id,
     handle: node.handle,
     imageUrl: node.featuredImage?.url,
+    zoomImageUrl: node.featuredImage?.zoomUrl ?? node.featuredImage?.url,
     available: variant.availableForSale,
   };
 }

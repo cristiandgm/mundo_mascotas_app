@@ -42,6 +42,7 @@ export interface BrandProductItem {
   tag?: string;
   accentColor: string;
   imageUrl?: string;
+  zoomImageUrl?: string;
 }
 
 interface BrandDnaProfile {
@@ -287,6 +288,7 @@ interface BrandDnaModalProps {
   onAddToCart: (productId: string) => void;
   onDecrementCart: (productId: string) => void;
   onInspectProduct: (product: BrandProductItem) => void;
+  onZoomProduct?: (product: BrandProductItem) => void;
   onOpenCart: () => void;
 }
 
@@ -303,6 +305,7 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
   onAddToCart,
   onDecrementCart,
   onInspectProduct,
+  onZoomProduct,
   onOpenCart,
 }) => {
   const insets = useSafeAreaInsets();
@@ -726,6 +729,18 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                         padding={2}
                         style={{ width: '100%', flex: 1 }}
                       />
+                      {product.imageUrl && onZoomProduct ? (
+                        <Pressable
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            onZoomProduct(product);
+                          }}
+                          hitSlop={6}
+                          style={styles.productZoomMiniBtn}
+                        >
+                          <Ionicons name="expand-outline" size={12} color="#FFFFFF" />
+                        </Pressable>
+                      ) : null}
                       <View
                         style={[
                           styles.productWeightMiniPill,
@@ -1188,6 +1203,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 4,
+  },
+  productZoomMiniBtn: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(12, 15, 22, 0.78)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   productWeightMiniText: {
     color: '#050508',

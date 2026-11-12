@@ -31,6 +31,7 @@ export interface ProductBag {
   variantId?: string;
   handle?: string;
   imageUrl?: string;
+  zoomImageUrl?: string;
   available?: boolean;
 }
 

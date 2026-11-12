@@ -51,7 +51,7 @@ export const ProductThumbnail: React.FC<ProductThumbnailProps> = ({
           overflow: 'hidden',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: showImage ? '#F7F8FA' : 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: showImage ? '#FFFFFF' : 'rgba(255, 255, 255, 0.05)',
           padding: showImage ? padding : 0,
         },
         style,
@@ -72,3 +72,4 @@ export const ProductThumbnail: React.FC<ProductThumbnailProps> = ({
     </View>
   );
 };
+
