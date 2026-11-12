@@ -18,6 +18,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { ProductThumbnail } from './ui/ProductThumbnail';
+import {
+  AnimatedCartControl,
+  CartAddedEvent,
+  CartAddedToast,
+} from './ui/CartAddedFeedback';
 
 export const ORIJEN_LOGO = require('../../assets/orijen-logo.jpg');
 
@@ -295,6 +300,8 @@ interface BrandDnaModalProps {
   onInspectProduct: (product: BrandProductItem) => void;
   onZoomProduct?: (product: BrandProductItem) => void;
   onOpenCart: () => void;
+  cartAddedEvent?: CartAddedEvent | null;
+  suppressAddedToast?: boolean;
 }
 
 export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
@@ -312,6 +319,8 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
   onInspectProduct,
   onZoomProduct,
   onOpenCart,
+  cartAddedEvent = null,
+  suppressAddedToast = false,
 }) => {
   const insets = useSafeAreaInsets();
   const [speciesFilter, setSpeciesFilter] = useState<'dog' | 'cat' | 'all'>(
@@ -397,6 +406,44 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
     });
     return { count, subtotal };
   }, [cart, products]);
+
+  const prevCartCountRef = useRef(cartTotals.count);
+  const bottomBarBounce = useRef(new Animated.Value(1)).current;
+  const bottomCountPop = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const prev = prevCartCountRef.current;
+    prevCartCountRef.current = cartTotals.count;
+
+    if (cartTotals.count > prev) {
+      bottomBarBounce.stopAnimation();
+      bottomCountPop.stopAnimation();
+      bottomBarBounce.setValue(prev === 0 ? 0.92 : 0.97);
+      bottomCountPop.setValue(0.75);
+
+      Animated.parallel([
+        Animated.spring(bottomBarBounce, {
+          toValue: 1,
+          tension: 150,
+          friction: 5,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(bottomCountPop, {
+            toValue: 1.32,
+            duration: 110,
+            useNativeDriver: true,
+          }),
+          Animated.spring(bottomCountPop, {
+            toValue: 1,
+            tension: 140,
+            friction: 5,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+    }
+  }, [cartTotals.count, bottomBarBounce, bottomCountPop]);
 
   const formatCOP = (amount: number) => {
     return '$ ' + amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -808,37 +855,49 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                         </View>
 
                         {/* Botón Pedir o Stepper */}
-                        {qty === 0 ? (
-                          <Pressable
-                            onPress={() => onAddToCart(product.id)}
-                            style={styles.addBtn}
-                          >
-                            <Ionicons name="add" size={16} color="#050508" />
-                            <Text style={styles.addBtnText}>Pedir</Text>
-                          </Pressable>
-                        ) : (
-                          <View style={styles.qtyStepper}>
-                            <Pressable
-                              onPress={() => onDecrementCart(product.id)}
-                              style={styles.qtyStepBtn}
-                              hitSlop={6}
-                            >
-                              <Ionicons
-                                name="remove"
-                                size={14}
-                                color="#FFFFFF"
-                              />
-                            </Pressable>
-                            <Text style={styles.qtyCountText}>{qty}</Text>
+                        <AnimatedCartControl quantity={qty}>
+                          {qty === 0 ? (
                             <Pressable
                               onPress={() => onAddToCart(product.id)}
-                              style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                              hitSlop={6}
+                              style={({ pressed }) => [
+                                styles.addBtn,
+                                pressed && {
+                                  opacity: 0.85,
+                                  transform: [{ scale: 0.95 }],
+                                },
+                              ]}
                             >
-                              <Ionicons name="add" size={14} color="#050508" />
+                              <Ionicons name="add" size={16} color="#050508" />
+                              <Text style={styles.addBtnText}>Pedir</Text>
                             </Pressable>
-                          </View>
-                        )}
+                          ) : (
+                            <View style={styles.qtyStepper}>
+                              <Pressable
+                                onPress={() => onDecrementCart(product.id)}
+                                style={styles.qtyStepBtn}
+                                hitSlop={6}
+                              >
+                                <Ionicons
+                                  name="remove"
+                                  size={14}
+                                  color="#FFFFFF"
+                                />
+                              </Pressable>
+                              <Text style={styles.qtyCountText}>{qty}</Text>
+                              <Pressable
+                                onPress={() => onAddToCart(product.id)}
+                                style={({ pressed }) => [
+                                  styles.qtyStepBtn,
+                                  styles.qtyStepBtnPlus,
+                                  pressed && { transform: [{ scale: 0.9 }] },
+                                ]}
+                                hitSlop={6}
+                              >
+                                <Ionicons name="add" size={14} color="#050508" />
+                              </Pressable>
+                            </View>
+                          )}
+                        </AnimatedCartControl>
                       </View>
                     </View>
                   </Pressable>
@@ -849,10 +908,13 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
 
           {/* ==================== 5. BARRA INFERIOR FLOTANTE DE BOLSA (ESTILO UBER EATS) ==================== */}
           {cartTotals.count > 0 && (
-            <View
+            <Animated.View
               style={[
                 styles.bottomCartBarWrapper,
-                { bottom: Math.max(insets.bottom, 14) },
+                {
+                  bottom: Math.max(insets.bottom, 14),
+                  transform: [{ scale: bottomBarBounce }],
+                },
               ]}
             >
               <Pressable
@@ -866,11 +928,16 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                   pressed && { opacity: 0.92 },
                 ]}
               >
-                <View style={styles.bottomCartCountCircle}>
+                <Animated.View
+                  style={[
+                    styles.bottomCartCountCircle,
+                    { transform: [{ scale: bottomCountPop }] },
+                  ]}
+                >
                   <Text style={styles.bottomCartCountText}>
                     {cartTotals.count}
                   </Text>
-                </View>
+                </Animated.View>
                 <Text style={styles.bottomCartBarLabel}>
                   Ver Bolsa · Confirmar pedido
                 </Text>
@@ -878,8 +945,19 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                   {formatCOP(cartTotals.subtotal)}
                 </Text>
               </Pressable>
-            </View>
+            </Animated.View>
           )}
+
+          <CartAddedToast
+            event={cartAddedEvent}
+            visible={visible && !suppressAddedToast}
+            topOffset={Math.max(insets.top, 14) + 58}
+            onViewCart={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleClose();
+              setTimeout(() => onOpenCart(), 220);
+            }}
+          />
         </Animated.View>
       </View>
     </Modal>

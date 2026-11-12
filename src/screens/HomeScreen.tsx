@@ -11,6 +11,7 @@ import {
   TextInput,
   Modal,
   Animated,
+  Easing,
   PanResponder,
   Dimensions,
 } from 'react-native';
@@ -44,6 +45,11 @@ import { useDraggableSheet } from '../utils/useDraggableSheet';
 import { ProductBag, TopServiceTabType } from '../data/catalog';
 import { useCatalog } from '../hooks/useCatalog';
 import { ProductThumbnail } from '../components/ui/ProductThumbnail';
+import {
+  AnimatedCartControl,
+  CartAddedEvent,
+  CartAddedToast,
+} from '../components/ui/CartAddedFeedback';
 import { ImageZoomModal } from '../components/ImageZoomModal';
 
 type DeliveryZoneType = 'bogota' | 'nacional';
@@ -363,10 +369,18 @@ export const HomeScreen: React.FC = () => {
 
   // Carrito: { [productId]: quantity }
   const [cart, setCart] = useState<Record<string, number>>({});
+  const cartRef = useRef<Record<string, number>>(cart);
+  cartRef.current = cart;
+  const cartEventIdRef = useRef(0);
+  const [cartAddedEvent, setCartAddedEvent] = useState<CartAddedEvent | null>(
+    null
+  );
   const [orderSuccessToast, setOrderSuccessToast] = useState(false);
   const [miniCartPreviewOpen, setMiniCartPreviewOpen] = useState(false);
   const [isDraggingCartBubble, setIsDraggingCartBubble] = useState(false);
+  const [showBubblePlusOne, setShowBubblePlusOne] = useState(false);
   const cartPulseAnim = useRef(new Animated.Value(1)).current;
+  const cartBubbleFlyAnim = useRef(new Animated.Value(0)).current;
 
   // Posición 2D arrastrable con efecto imán hacia los bordes laterales (igual al engranaje de Expo Go)
   const { width: screenW, height: screenH } = Dimensions.get('window');
@@ -494,38 +508,82 @@ export const HomeScreen: React.FC = () => {
   };
 
   const triggerCartPulse = () => {
-    cartPulseAnim.setValue(0.95);
-    Animated.spring(cartPulseAnim, {
-      toValue: 1,
-      tension: 120,
-      friction: 6,
-      useNativeDriver: true,
-    }).start();
+    cartPulseAnim.stopAnimation();
+    cartBubbleFlyAnim.stopAnimation();
+    cartPulseAnim.setValue(0.92);
+    cartBubbleFlyAnim.setValue(0);
+    setShowBubblePlusOne(true);
+
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(cartPulseAnim, {
+          toValue: 1.26,
+          duration: 115,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.spring(cartPulseAnim, {
+          toValue: 1,
+          tension: 145,
+          friction: 4.5,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(cartBubbleFlyAnim, {
+        toValue: 1,
+        duration: 740,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setShowBubblePlusOne(false);
+      }
+    });
   };
 
   const handleAddToCart = (productId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setCart((prev) => ({
-      ...prev,
-      [productId]: (prev[productId] || 0) + 1,
-    }));
+    const prevCart = cartRef.current;
+    const nextQty = (prevCart[productId] || 0) + 1;
+    const nextCart = { ...prevCart, [productId]: nextQty };
+    cartRef.current = nextCart;
+    setCart(nextCart);
     triggerCartPulse();
+
+    const addedProduct = catalog.find((p) => p.id === productId);
+    if (addedProduct) {
+      const nextEventId = cartEventIdRef.current + 1;
+      cartEventIdRef.current = nextEventId;
+      const totalCartItems = Object.values(nextCart).reduce(
+        (sum, qty) => sum + (qty > 0 ? qty : 0),
+        0
+      );
+      setCartAddedEvent({
+        eventId: nextEventId,
+        product: addedProduct,
+        qtyInCart: nextQty,
+        totalCartItems,
+      });
+    }
   };
 
   const handleDecrementCart = (productId: string) => {
     Haptics.selectionAsync();
-    setCart((prev) => {
-      const current = prev[productId] || 0;
-      if (current <= 1) {
-        const copy = { ...prev };
-        delete copy[productId];
-        return copy;
-      }
-      return {
-        ...prev,
+    const prevCart = cartRef.current;
+    const current = prevCart[productId] || 0;
+    let nextCart: Record<string, number>;
+    if (current <= 1) {
+      nextCart = { ...prevCart };
+      delete nextCart[productId];
+    } else {
+      nextCart = {
+        ...prevCart,
         [productId]: current - 1,
       };
-    });
+    }
+    cartRef.current = nextCart;
+    setCart(nextCart);
   };
 
   const activeCategoryMeta = useMemo(() => {
@@ -885,34 +943,40 @@ export const HomeScreen: React.FC = () => {
               {formatCOP(product.price)}
             </Text>
 
-            {qty === 0 ? (
-              <Pressable
-                onPress={() => handleAddToCart(product.id)}
-                style={({ pressed }) => [
-                  styles.uberAddBtn,
-                  pressed && { opacity: 0.85 },
-                ]}
-              >
-                <Ionicons name="add" size={16} color="#050508" />
-                <Text style={styles.uberAddBtnText}>Pedir</Text>
-              </Pressable>
-            ) : (
-              <View style={styles.qtyStepper}>
-                <Pressable
-                  onPress={() => handleDecrementCart(product.id)}
-                  style={styles.qtyStepBtn}
-                >
-                  <Ionicons name="remove" size={14} color="#FFFFFF" />
-                </Pressable>
-                <Text style={styles.qtyCountText}>{qty}</Text>
+            <AnimatedCartControl quantity={qty}>
+              {qty === 0 ? (
                 <Pressable
                   onPress={() => handleAddToCart(product.id)}
-                  style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
+                  style={({ pressed }) => [
+                    styles.uberAddBtn,
+                    pressed && { opacity: 0.85, transform: [{ scale: 0.94 }] },
+                  ]}
                 >
-                  <Ionicons name="add" size={14} color="#050508" />
+                  <Ionicons name="add" size={16} color="#050508" />
+                  <Text style={styles.uberAddBtnText}>Pedir</Text>
                 </Pressable>
-              </View>
-            )}
+              ) : (
+                <View style={styles.qtyStepper}>
+                  <Pressable
+                    onPress={() => handleDecrementCart(product.id)}
+                    style={styles.qtyStepBtn}
+                  >
+                    <Ionicons name="remove" size={14} color="#FFFFFF" />
+                  </Pressable>
+                  <Text style={styles.qtyCountText}>{qty}</Text>
+                  <Pressable
+                    onPress={() => handleAddToCart(product.id)}
+                    style={({ pressed }) => [
+                      styles.qtyStepBtn,
+                      styles.qtyStepBtnPlus,
+                      pressed && { transform: [{ scale: 0.9 }] },
+                    ]}
+                  >
+                    <Ionicons name="add" size={14} color="#050508" />
+                  </Pressable>
+                </View>
+              )}
+            </AnimatedCartControl>
           </View>
         </View>
       </View>
@@ -1377,47 +1441,60 @@ export const HomeScreen: React.FC = () => {
                           </View>
 
                           {/* Add button / quantity */}
-                          {inCart > 0 ? (
-                            <View style={styles.searchResultQtyRow}>
-                              <Pressable
-                                onPress={() => handleDecrementCart(item.id)}
-                                hitSlop={8}
-                                style={styles.searchResultQtyBtn}
-                              >
-                                <Ionicons
-                                  name="remove"
-                                  size={16}
-                                  color="#FFFFFF"
-                                />
-                              </Pressable>
-                              <Text style={styles.searchResultQtyText}>
-                                {inCart}
-                              </Text>
+                          <AnimatedCartControl quantity={inCart}>
+                            {inCart > 0 ? (
+                              <View style={styles.searchResultQtyRow}>
+                                <Pressable
+                                  onPress={() => handleDecrementCart(item.id)}
+                                  hitSlop={8}
+                                  style={styles.searchResultQtyBtn}
+                                >
+                                  <Ionicons
+                                    name="remove"
+                                    size={16}
+                                    color="#FFFFFF"
+                                  />
+                                </Pressable>
+                                <Text style={styles.searchResultQtyText}>
+                                  {inCart}
+                                </Text>
+                                <Pressable
+                                  onPress={() => {
+                                    Haptics.selectionAsync();
+                                    handleAddToCart(item.id);
+                                  }}
+                                  hitSlop={8}
+                                  style={({ pressed }) => [
+                                    styles.searchResultQtyBtn,
+                                    { backgroundColor: '#D4AF37' },
+                                    pressed && { transform: [{ scale: 0.9 }] },
+                                  ]}
+                                >
+                                  <Ionicons
+                                    name="add"
+                                    size={16}
+                                    color="#050508"
+                                  />
+                                </Pressable>
+                              </View>
+                            ) : (
                               <Pressable
                                 onPress={() => {
                                   Haptics.selectionAsync();
                                   handleAddToCart(item.id);
                                 }}
-                                hitSlop={8}
-                                style={[
-                                  styles.searchResultQtyBtn,
-                                  { backgroundColor: '#D4AF37' },
+                                style={({ pressed }) => [
+                                  styles.searchResultAddBtn,
+                                  pressed && {
+                                    opacity: 0.85,
+                                    transform: [{ scale: 0.92 }],
+                                  },
                                 ]}
                               >
-                                <Ionicons name="add" size={16} color="#050508" />
+                                <Ionicons name="add" size={18} color="#050508" />
                               </Pressable>
-                            </View>
-                          ) : (
-                            <Pressable
-                              onPress={() => {
-                                Haptics.selectionAsync();
-                                handleAddToCart(item.id);
-                              }}
-                              style={styles.searchResultAddBtn}
-                            >
-                              <Ionicons name="add" size={18} color="#050508" />
-                            </Pressable>
-                          )}
+                            )}
+                          </AnimatedCartControl>
                         </Pressable>
                       </React.Fragment>
                     );
@@ -3992,21 +4069,23 @@ export const HomeScreen: React.FC = () => {
                           </Text>
                         </View>
 
-                        <View style={styles.qtyStepper}>
-                          <Pressable
-                            onPress={() => handleDecrementCart(product.id)}
-                            style={styles.qtyStepBtn}
-                          >
-                            <Ionicons name="remove" size={13} color="#FFFFFF" />
-                          </Pressable>
-                          <Text style={styles.qtyCountText}>{quantity}</Text>
-                          <Pressable
-                            onPress={() => handleAddToCart(product.id)}
-                            style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                          >
-                            <Ionicons name="add" size={13} color="#050508" />
-                          </Pressable>
-                        </View>
+                        <AnimatedCartControl quantity={quantity}>
+                          <View style={styles.qtyStepper}>
+                            <Pressable
+                              onPress={() => handleDecrementCart(product.id)}
+                              style={styles.qtyStepBtn}
+                            >
+                              <Ionicons name="remove" size={13} color="#FFFFFF" />
+                            </Pressable>
+                            <Text style={styles.qtyCountText}>{quantity}</Text>
+                            <Pressable
+                              onPress={() => handleAddToCart(product.id)}
+                              style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
+                            >
+                              <Ionicons name="add" size={13} color="#050508" />
+                            </Pressable>
+                          </View>
+                        </AnimatedCartControl>
                       </View>
                     ))}
                   </ScrollView>
@@ -4063,6 +4142,67 @@ export const HomeScreen: React.FC = () => {
             ]}
           >
             <View style={styles.draggableCartCircleWrap}>
+              {showBubblePlusOne && (
+                <>
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[
+                      styles.draggableCartPulseRing,
+                      {
+                        opacity: cartBubbleFlyAnim.interpolate({
+                          inputRange: [0, 0.25, 1],
+                          outputRange: [0.85, 0.45, 0],
+                        }),
+                        transform: [
+                          {
+                            scale: cartBubbleFlyAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.95, 1.65],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  />
+                  <View
+                    pointerEvents="none"
+                    style={styles.draggableCartPlusOneHost}
+                  >
+                    <Animated.View
+                      style={[
+                        styles.draggableCartPlusOnePill,
+                        {
+                          opacity: cartBubbleFlyAnim.interpolate({
+                            inputRange: [0, 0.15, 0.72, 1],
+                            outputRange: [0, 1, 1, 0],
+                          }),
+                          transform: [
+                            {
+                              translateY: cartBubbleFlyAnim.interpolate({
+                                inputRange: [0, 0.35, 1],
+                                outputRange: [0, -18, -34],
+                              }),
+                            },
+                            {
+                              scale: cartBubbleFlyAnim.interpolate({
+                                inputRange: [0, 0.25, 1],
+                                outputRange: [0.7, 1.18, 0.94],
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={styles.draggableCartPlusOneText}
+                        numberOfLines={1}
+                      >
+                        +1 ✓
+                      </Text>
+                    </Animated.View>
+                  </View>
+                </>
+              )}
               <LinearGradient
                 colors={
                   cartSummary.totalItems > 0
@@ -4163,19 +4303,37 @@ export const HomeScreen: React.FC = () => {
               activeBottomTab === 'catalog' && styles.uberDockTabActivePill,
             ]}
           >
-            <Ionicons
-              name="grid-outline"
-              size={20}
-              color={activeBottomTab === 'catalog' ? '#FFFFFF' : '#9CA3AF'}
-            />
-            <Text
-              style={[
-                styles.uberDockLabel,
-                activeBottomTab === 'catalog' && styles.uberDockLabelActive,
-              ]}
+            <Animated.View
+              style={{
+                alignItems: 'center',
+                gap: 2,
+                transform: [{ scale: cartPulseAnim }],
+              }}
             >
-              Bolsa ({cartSummary.totalItems})
-            </Text>
+              <Ionicons
+                name={cartSummary.totalItems > 0 ? 'bag-handle' : 'grid-outline'}
+                size={20}
+                color={
+                  activeBottomTab === 'catalog'
+                    ? '#FFFFFF'
+                    : cartSummary.totalItems > 0
+                    ? colors.primary.light
+                    : '#9CA3AF'
+                }
+              />
+              <Text
+                style={[
+                  styles.uberDockLabel,
+                  activeBottomTab === 'catalog' && styles.uberDockLabelActive,
+                  cartSummary.totalItems > 0 && {
+                    color: colors.primary.light,
+                    fontWeight: '700',
+                  },
+                ]}
+              >
+                Bolsa ({cartSummary.totalItems})
+              </Text>
+            </Animated.View>
           </Pressable>
 
           {/* Tab 3: Activity / Pedidos */}
@@ -4241,6 +4399,19 @@ export const HomeScreen: React.FC = () => {
           </Pressable>
         </View>
       </View>
+
+      {/* Notificación animada al agregar cualquier producto desde la vista principal */}
+      <CartAddedToast
+        event={cartAddedEvent}
+        visible={
+          !productDetailVisible && !brandDnaModalVisible && !cartModalVisible
+        }
+        topOffset={Math.max(insets.top, 12) + 8}
+        onViewCart={() => {
+          Haptics.selectionAsync();
+          setCartModalVisible(true);
+        }}
+      />
 
       {/* ==================== MODAL RESUMEN DE BOLSA / LIQUIDACIÓN DE ENVÍO ==================== */}
       <Modal
@@ -4424,21 +4595,23 @@ export const HomeScreen: React.FC = () => {
                           {formatCOP(product.price)} c/u
                         </Text>
                       </View>
-                      <View style={styles.qtyStepper}>
-                        <Pressable
-                          onPress={() => handleDecrementCart(product.id)}
-                          style={styles.qtyStepBtn}
-                        >
-                          <Ionicons name="remove" size={15} color="#FFFFFF" />
-                        </Pressable>
-                        <Text style={styles.qtyCountText}>{quantity}</Text>
-                        <Pressable
-                          onPress={() => handleAddToCart(product.id)}
-                          style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
-                        >
-                          <Ionicons name="add" size={15} color="#050508" />
-                        </Pressable>
-                      </View>
+                      <AnimatedCartControl quantity={quantity}>
+                        <View style={styles.qtyStepper}>
+                          <Pressable
+                            onPress={() => handleDecrementCart(product.id)}
+                            style={styles.qtyStepBtn}
+                          >
+                            <Ionicons name="remove" size={15} color="#FFFFFF" />
+                          </Pressable>
+                          <Text style={styles.qtyCountText}>{quantity}</Text>
+                          <Pressable
+                            onPress={() => handleAddToCart(product.id)}
+                            style={[styles.qtyStepBtn, styles.qtyStepBtnPlus]}
+                          >
+                            <Ionicons name="add" size={15} color="#050508" />
+                          </Pressable>
+                        </View>
+                      </AnimatedCartControl>
                     </View>
                   ))}
 
@@ -4660,6 +4833,7 @@ export const HomeScreen: React.FC = () => {
                         setOrderSuccessToast(true);
                         setTimeout(() => {
                           setOrderSuccessToast(false);
+                          cartRef.current = {};
                           setCart({});
                           setCartModalVisible(false);
                         }, 2200);
@@ -4803,6 +4977,8 @@ export const HomeScreen: React.FC = () => {
         onDecrementCart={handleDecrementCart}
         onInspectProduct={(prod) => openProductDetail(prod as ProductBag)}
         onZoomProduct={(prod) => openImageZoom(prod as ProductBag)}
+        cartAddedEvent={cartAddedEvent}
+        suppressAddedToast={productDetailVisible || cartModalVisible}
         onOpenCart={() => {
           setBrandDnaModalVisible(false);
           setTimeout(() => setCartModalVisible(true), 180);
@@ -5022,42 +5198,79 @@ export const HomeScreen: React.FC = () => {
 
                   {(() => {
                     const inCart = cart[selectedProduct.id] ?? 0;
-                    return inCart > 0 ? (
-                      <View style={styles.productDetailQtyRow}>
-                        <Pressable
-                          onPress={() => handleDecrementCart(selectedProduct.id)}
-                          style={styles.productDetailQtyBtn}
-                          hitSlop={8}
-                        >
-                          <Ionicons name="remove" size={18} color="#FFFFFF" />
-                        </Pressable>
-                        <Text style={styles.productDetailQtyText}>{inCart}</Text>
-                        <Pressable
-                          onPress={() => handleAddToCart(selectedProduct.id)}
-                          style={[
-                            styles.productDetailQtyBtn,
-                            { backgroundColor: '#D4AF37' },
-                          ]}
-                          hitSlop={8}
-                        >
-                          <Ionicons name="add" size={18} color="#050508" />
-                        </Pressable>
-                      </View>
-                    ) : (
-                      <Pressable
-                        onPress={() => handleAddToCart(selectedProduct.id)}
-                        style={styles.productDetailAddBtn}
+                    return (
+                      <AnimatedCartControl
+                        quantity={inCart}
+                        style={
+                          inCart === 0 ? styles.productDetailAddWrap : undefined
+                        }
                       >
-                        <Ionicons name="cart-outline" size={18} color="#050508" />
-                        <Text style={styles.productDetailAddText}>
-                          Agregar al carrito
-                        </Text>
-                      </Pressable>
+                        {inCart > 0 ? (
+                          <View style={styles.productDetailQtyRow}>
+                            <Pressable
+                              onPress={() =>
+                                handleDecrementCart(selectedProduct.id)
+                              }
+                              style={styles.productDetailQtyBtn}
+                              hitSlop={8}
+                            >
+                              <Ionicons name="remove" size={18} color="#FFFFFF" />
+                            </Pressable>
+                            <Text style={styles.productDetailQtyText}>
+                              {inCart}
+                            </Text>
+                            <Pressable
+                              onPress={() =>
+                                handleAddToCart(selectedProduct.id)
+                              }
+                              style={({ pressed }) => [
+                                styles.productDetailQtyBtn,
+                                { backgroundColor: '#D4AF37' },
+                                pressed && { transform: [{ scale: 0.92 }] },
+                              ]}
+                              hitSlop={8}
+                            >
+                              <Ionicons name="add" size={18} color="#050508" />
+                            </Pressable>
+                          </View>
+                        ) : (
+                          <Pressable
+                            onPress={() => handleAddToCart(selectedProduct.id)}
+                            style={({ pressed }) => [
+                              styles.productDetailAddBtn,
+                              pressed && {
+                                opacity: 0.88,
+                                transform: [{ scale: 0.97 }],
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name="cart-outline"
+                              size={18}
+                              color="#050508"
+                            />
+                            <Text style={styles.productDetailAddText}>
+                              Agregar al carrito
+                            </Text>
+                          </Pressable>
+                        )}
+                      </AnimatedCartControl>
                     );
                   })()}
                 </View>
               </Pressable>
             </Animated.View>
+
+            <CartAddedToast
+              event={cartAddedEvent}
+              visible={productDetailVisible && !cartModalVisible}
+              topOffset={Math.max(insets.top, 20) + 10}
+              onViewCart={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                closeProductDetail();
+                setTimeout(() => setCartModalVisible(true), 220);
+              }}
+            />
           </Pressable>
         </Modal>
       )}
@@ -5635,6 +5848,38 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     position: 'relative',
+  },
+  draggableCartPulseRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 2,
+    borderColor: '#34D399',
+  },
+  draggableCartPlusOneHost: {
+    position: 'absolute',
+    top: -12,
+    left: -24,
+    right: -24,
+    alignItems: 'center',
+    zIndex: 35,
+  },
+  draggableCartPlusOnePill: {
+    backgroundColor: '#34D399',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    elevation: 25,
+  },
+  draggableCartPlusOneText: {
+    color: '#052E16',
+    fontSize: 11,
+    fontWeight: '900',
   },
   draggableCartCircle: {
     width: 58,
@@ -6872,6 +7117,9 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
   },
+  productDetailAddWrap: {
+    flex: 1,
+  },
   productDetailAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -6880,7 +7128,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 13,
     borderRadius: 16,
-    flex: 1,
+    alignSelf: 'stretch',
     justifyContent: 'center',
   },
   productDetailAddText: {
