@@ -12,6 +12,7 @@ export interface ProductBag {
   brand:
     | 'Diamond Naturals'
     | 'Taste of the Wild'
+    | 'Taste of the Wild Prey'
     | 'Acana'
     | 'Orijen'
     | 'Salud Vet';

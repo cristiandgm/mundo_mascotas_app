@@ -26,6 +26,7 @@ import {
   ACANA_LOGO,
   ORIJEN_LOGO,
   TASTE_OF_THE_WILD_LOGO,
+  TASTE_OF_THE_WILD_PREY_LOGO,
 } from './BrandDnaModal';
 
 interface ConsenticoinsWalletModalProps {
@@ -1150,6 +1151,13 @@ export const ConsenticoinsWalletModal: React.FC<
                         cop: 'Hasta $ 7.100 COP de retorno',
                       },
                       {
+                        brand: 'Taste of the Wild Prey',
+                        logoImage: TASTE_OF_THE_WILD_PREY_LOGO,
+                        bag: 'Dieta Limitada · 4 Ingredientes Clave',
+                        earn: '+218 a +355 Coins por bulto',
+                        cop: 'Hasta $ 7.100 COP de retorno',
+                      },
+                      {
                         brand: 'Acana Canada',
                         logoImage: ACANA_LOGO,
                         bag: 'Recetas WholePrey™ 10 LB y 25 LB',
@@ -2054,9 +2062,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cashbackBrandLogo: {
-    width: 17,
-    height: 17,
+    width: 18,
+    height: 18,
     borderRadius: 5,
+    backgroundColor: '#FFFFFF',
   },
   cashbackBrandName: {
     color: '#FFFFFF',

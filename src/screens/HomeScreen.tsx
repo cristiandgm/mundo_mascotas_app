@@ -36,6 +36,7 @@ import {
   FoodBrandName,
   ORIJEN_LOGO,
   TASTE_OF_THE_WILD_LOGO,
+  TASTE_OF_THE_WILD_PREY_LOGO,
 } from '../components/BrandDnaModal';
 import { ConsenticoinsWalletModal } from '../components/ConsenticoinsWalletModal';
 import {
@@ -122,7 +123,7 @@ const SEARCH_CATEGORY_OPTIONS: {
   },
 ];
 
-// Los 4 círculos de Marcas Insignia (al tocar cualquiera abre la vista especializada con el ADN de la marca y sus productos)
+// Los círculos de Marcas Insignia (al tocar cualquiera abre la vista especializada con el ADN de la marca y sus productos)
 const FOR_YOU_BULTOS_CIRCLES: {
   id: FoodBrandName;
   label: string;
@@ -136,6 +137,12 @@ const FOR_YOU_BULTOS_CIRCLES: {
     label: 'Taste',
     logoImage: TASTE_OF_THE_WILD_LOGO,
     sub: 'Ancestral',
+  },
+  {
+    id: 'Taste of the Wild Prey',
+    label: 'Taste PREY',
+    logoImage: TASTE_OF_THE_WILD_PREY_LOGO,
+    sub: 'Dieta Simple',
   },
   { id: 'Acana', label: 'Acana', logoImage: ACANA_LOGO, sub: '70% Animal' },
   { id: 'Orijen', label: 'Orijen', logoImage: ORIJEN_LOGO, sub: '85-90% Carne' },
@@ -1719,7 +1726,12 @@ export const HomeScreen: React.FC = () => {
               </Pressable>
             </View>
 
-            <View style={styles.uberCirclesRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.uberCirclesScroll}
+              contentContainerStyle={styles.uberCirclesRow}
+            >
               {FOR_YOU_BULTOS_CIRCLES.map((item) => {
                 const isSelected =
                   brandDnaModalVisible && activeBrandDna === item.id;
@@ -1735,6 +1747,7 @@ export const HomeScreen: React.FC = () => {
                     <View
                       style={[
                         styles.uberCircleGraphic,
+                        item.logoImage ? { backgroundColor: '#FFFFFF' } : null,
                         isSelected && styles.uberCircleGraphicActive,
                       ]}
                     >
@@ -1766,7 +1779,7 @@ export const HomeScreen: React.FC = () => {
                   </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
 
             {/* 6. UBER HORIZONTAL CARDS: CATÁLOGO SEGÚN CATEGORÍA DEL MINI MENÚ */}
             <View style={styles.uberSectionHeader}>
@@ -4742,7 +4755,9 @@ export const HomeScreen: React.FC = () => {
                           <Text style={{ fontSize: 34 }}>
                             {selectedProduct.brand === 'Diamond Naturals'
                               ? '💎'
-                              : selectedProduct.brand === 'Taste of the Wild'
+                              : selectedProduct.brand === 'Taste of the Wild' ||
+                                selectedProduct.brand ===
+                                  'Taste of the Wild Prey'
                                 ? '🐺'
                                 : '🛍️'}
                           </Text>
@@ -5303,20 +5318,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  uberCirclesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  uberCirclesScroll: {
     marginBottom: 28,
   },
+  uberCirclesRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingRight: 8,
+  },
   uberCircleItem: {
-    width: '23%',
+    width: 78,
     alignItems: 'center',
     gap: 8,
   },
   uberCircleGraphic: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 74,
+    height: 74,
+    borderRadius: 37,
     backgroundColor: '#181A20',
     alignItems: 'center',
     justifyContent: 'center',

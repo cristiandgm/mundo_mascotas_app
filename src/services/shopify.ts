@@ -141,22 +141,26 @@ async function storefrontFetch<T>(
   }
 }
 
-const KNOWN_BRANDS: ProductBag['brand'][] = [
-  'Diamond Naturals',
-  'Taste of the Wild',
-  'Acana',
-  'Orijen',
-  'Salud Vet',
-];
-
 function resolveBrand(vendor: string, title: string, tags: string[]): ProductBag['brand'] {
   // En algunas tiendas el campo vendor es genérico (ej. "VETERINARIA ESPECIALIZADA"),
   // así que buscamos la marca en vendor, título y tags antes de caer a Salud Vet.
+  // Verificar Taste of the Wild Prey antes de Taste of the Wild general (sin confundir con WholePrey).
   const haystack = `${vendor} ${title} ${tags.join(' ')}`.toLowerCase();
-  const found = KNOWN_BRANDS.find((b) =>
-    haystack.includes(b.toLowerCase().split(' ')[0])
-  );
-  return found ?? 'Salud Vet';
+  const titleLower = title.toLowerCase();
+  if (
+    haystack.includes('taste of the wild prey') ||
+    (haystack.includes('prey') &&
+      (haystack.includes('taste') ||
+        /\bprey\b/.test(titleLower) ||
+        tags.some((t) => t.trim().toLowerCase() === 'prey')))
+  ) {
+    return 'Taste of the Wild Prey';
+  }
+  if (haystack.includes('diamond')) return 'Diamond Naturals';
+  if (haystack.includes('taste')) return 'Taste of the Wild';
+  if (haystack.includes('acana')) return 'Acana';
+  if (haystack.includes('orijen')) return 'Orijen';
+  return 'Salud Vet';
 }
 
 function toPounds(weight: number | null, unit: ShopifyVariantNode['weightUnit']) {

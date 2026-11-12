@@ -28,9 +28,11 @@ import {
 export const ORIJEN_LOGO = require('../../assets/orijen-logo.jpg');
 export const ACANA_LOGO = require('../../assets/acana-logo.png');
 export const TASTE_OF_THE_WILD_LOGO = require('../../assets/taste-of-the-wild-logo.png');
+export const TASTE_OF_THE_WILD_PREY_LOGO = require('../../assets/taste-of-the-wild-prey-logo.png');
 
 export const BRAND_LOGO_MAP: Partial<Record<string, ImageSourcePropType>> = {
   'Taste of the Wild': TASTE_OF_THE_WILD_LOGO,
+  'Taste of the Wild Prey': TASTE_OF_THE_WILD_PREY_LOGO,
   Acana: ACANA_LOGO,
   Orijen: ORIJEN_LOGO,
 };
@@ -40,6 +42,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 export type FoodBrandName =
   | 'Diamond Naturals'
   | 'Taste of the Wild'
+  | 'Taste of the Wild Prey'
   | 'Acana'
   | 'Orijen';
 
@@ -190,6 +193,55 @@ export const BRAND_DNA_DATABASE: Record<FoodBrandName, BrandDnaProfile> = {
     ],
   },
 
+  'Taste of the Wild Prey': {
+    id: 'Taste of the Wild Prey',
+    shortName: 'Taste PREY',
+    logoImage: TASTE_OF_THE_WILD_PREY_LOGO,
+    origin: '🇺🇸 EE. UU. · The Pursuit of Simplicity®',
+    officialTagline: 'THE PURSUIT OF SIMPLICITY® · DIETA LIMITADA',
+    headline: 'Nutrición Simplificada de 4 Ingredientes Clave + Probióticos',
+    manifesto:
+      'Inspirada en los ingredientes puros que tu mascota cazaría en estado salvaje. Taste of the Wild PREY elimina rellenos innecesarios y reduce cada receta a un máximo de 4 ingredientes principales, encabezados por carne fresca de pastoreo o pesca sostenible.',
+    heroGradient: ['#0F1E32', '#0B121F', '#0A0B0E'] as const,
+    signatureAccent: '#60A5FA',
+    badgeLabel: 'Ingredientes Limitados',
+    metrics: {
+      proteinRange: 'Dieta Limitada',
+      keyTech: '4 Ingredientes Clave',
+      grainStatus: '0% Granos · K9 Strain®',
+    },
+    dnaPillars: [
+      {
+        icon: 'sparkles-outline',
+        metric: '4 Ingredientes',
+        title: 'Simplicidad Biológica sin Rellenos',
+        description:
+          'Fórmulas limpias de ingredientes limitados pensadas para estómagos sensibles o mascotas que disfrutan una dieta directa y altamente digestible.',
+      },
+      {
+        icon: 'nutrition-outline',
+        metric: 'Carne N.° 1',
+        title: 'Res Angus, Pavo o Trucha Como Base',
+        description:
+          'Proteína animal específica de pastoreo o captura sostenible como primer ingrediente, libre de subproductos, maíz, trigo o soya.',
+      },
+      {
+        icon: 'shield-checkmark-outline',
+        metric: 'K9 Strain®',
+        title: 'Probióticos Específicos y Aminoácidos',
+        description:
+          'Enriquecido con cepas probióticas vivas K9 Strain® y vitaminas minerales esenciales para defensas sólidas y digestión tranquila.',
+      },
+    ],
+    signatureIngredients: [
+      '🥩 Res Angus / Pavo / Trucha',
+      '🫛 Lentejas Verdes Digestibles',
+      '🌻 Aceite de Girasol',
+      '🍅 Pulpa de Tomate Natural',
+      '🦠 Probióticos K9 Strain®',
+    ],
+  },
+
   Acana: {
     id: 'Acana',
     shortName: 'Acana',
@@ -292,6 +344,7 @@ export const BRAND_DNA_DATABASE: Record<FoodBrandName, BrandDnaProfile> = {
 export const ALL_FOOD_BRANDS: FoodBrandName[] = [
   'Diamond Naturals',
   'Taste of the Wild',
+  'Taste of the Wild Prey',
   'Acana',
   'Orijen',
 ];
@@ -590,6 +643,7 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                 <View
                   style={[
                     styles.brandEmblemBox,
+                    dna.logoImage ? { backgroundColor: '#FFFFFF' } : null,
                     { borderColor: `${dna.signatureAccent}66` },
                   ]}
                 >
@@ -607,7 +661,13 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                   <Text style={styles.officialTaglineText}>
                     {dna.officialTagline}
                   </Text>
-                  <Text style={styles.brandBigTitle}>{dna.id}</Text>
+                  <Text
+                    style={styles.brandBigTitle}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                  >
+                    {dna.id}
+                  </Text>
                 </View>
               </View>
 
@@ -924,6 +984,23 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                   </Pressable>
                 );
               })}
+
+              {brandProducts.length === 0 && (
+                <View style={styles.emptyBrandBox}>
+                  <Ionicons
+                    name="cube-outline"
+                    size={26}
+                    color={colors.primary.light}
+                  />
+                  <Text style={styles.emptyBrandTitle}>
+                    Sin referencias en este filtro
+                  </Text>
+                  <Text style={styles.emptyBrandText}>
+                    Aún no hay productos publicados para {dna.shortName} bajo los
+                    filtros activos. Prueba cambiar a «Todas» o explora otra línea.
+                  </Text>
+                </View>
+              )}
             </View>
           </ScrollView>
 
@@ -1038,6 +1115,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
+    backgroundColor: '#FFFFFF',
   },
   brandSwitchText: {
     color: '#D1D5DB',
@@ -1489,5 +1567,28 @@ const styles = StyleSheet.create({
     color: '#050508',
     fontSize: 14.5,
     fontWeight: '900',
+  },
+  emptyBrandBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    backgroundColor: '#12151C',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
+  },
+  emptyBrandTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  emptyBrandText: {
+    color: '#9CA3AF',
+    fontSize: 12.5,
+    lineHeight: 18,
+    textAlign: 'center',
   },
 });

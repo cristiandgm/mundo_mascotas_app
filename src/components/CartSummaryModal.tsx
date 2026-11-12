@@ -284,7 +284,7 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
           />
           <Text style={styles.emptyCartTitle}>Tu bolsa está vacía</Text>
           <Text style={styles.emptyCartSub}>
-            Agrega bultos de Diamond Naturals, Taste of the Wild, Acana u Orijen
+            Agrega bultos de Diamond Naturals, Taste of the Wild, PREY, Acana u Orijen
             para calcular tu entrega.
           </Text>
         </View>
