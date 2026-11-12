@@ -710,16 +710,28 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                       pressed && { opacity: 0.9 },
                     ]}
                   >
-                    {/* Ícono / Foto real izquierda */}
-                    <View style={styles.productVisualBox}>
+                    {/* Ícono / Foto real izquierda ampliada */}
+                    <View
+                      style={[
+                        styles.productVisualBox,
+                        product.imageUrl
+                          ? { backgroundColor: '#FFFFFF', padding: 0 }
+                          : null,
+                      ]}
+                    >
                       <ProductThumbnail
                         product={product}
-                        emojiSize={28}
-                        borderRadius={12}
-                        padding={4}
-                        style={{ width: 66, height: 56 }}
+                        emojiSize={34}
+                        borderRadius={15}
+                        padding={2}
+                        style={{ width: '100%', flex: 1 }}
                       />
-                      <View style={styles.productWeightMiniPill}>
+                      <View
+                        style={[
+                          styles.productWeightMiniPill,
+                          styles.productWeightFloatingPill,
+                        ]}
+                      >
                         <Text style={styles.productWeightMiniText}>
                           {product.unitLabel || `${product.weightLb} LB`}
                         </Text>
@@ -1141,30 +1153,41 @@ const styles = StyleSheet.create({
   },
   productRowCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: 14,
     backgroundColor: '#12151C',
     borderRadius: 20,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   productVisualBox: {
-    width: 78,
-    height: 86,
+    width: 114,
+    minHeight: 132,
     borderRadius: 16,
     backgroundColor: '#181B22',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(212, 175, 55, 0.28)',
   },
   productWeightMiniPill: {
     backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 7,
+  },
+  productWeightFloatingPill: {
+    position: 'absolute',
+    bottom: 6,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
   productWeightMiniText: {
     color: '#050508',

@@ -744,65 +744,120 @@ export const HomeScreen: React.FC = () => {
 
   const renderFeatureCard = (product: ProductBag, bottomTagLabel: string) => {
     const qty = cart[product.id] || 0;
+    const hasPhoto = Boolean(product.imageUrl);
     return (
       <View key={product.id} style={styles.uberFeatureCard}>
         <Pressable onPress={() => openProductDetail(product)}>
-          <LinearGradient
-            colors={['#161922', '#0F1117']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.uberCardGraphicArea}
-          >
-            <View style={styles.uberCardTopBadges}>
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation();
-                  if (product.brand !== 'Salud Vet') {
-                    openBrandDna(product.brand as FoodBrandName);
-                  } else {
-                    openProductDetail(product);
-                  }
-                }}
-                style={styles.uberBrandBadge}
+          {hasPhoto ? (
+            <View style={styles.uberCardPhotoArea}>
+              <ProductThumbnail
+                product={product}
+                emojiSize={36}
+                borderRadius={18}
+                padding={6}
+                style={{ width: '100%', height: '100%' }}
+              />
+
+              <View
+                style={[styles.uberCardTopBadges, styles.uberCardFloatingTop]}
               >
-                <Text style={styles.uberBrandBadgeText}>
-                  {product.brand}
-                  {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
-                </Text>
-              </Pressable>
-              <View style={styles.uberWeightPill}>
-                <Text style={styles.uberWeightPillText}>
-                  {product.unitLabel || `${product.weightLb} LB`}
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    if (product.brand !== 'Salud Vet') {
+                      openBrandDna(product.brand as FoodBrandName);
+                    } else {
+                      openProductDetail(product);
+                    }
+                  }}
+                  style={[
+                    styles.uberBrandBadge,
+                    { backgroundColor: 'rgba(12, 15, 22, 0.86)' },
+                  ]}
+                >
+                  <Text style={styles.uberBrandBadgeText}>
+                    {product.brand}
+                    {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
+                  </Text>
+                </Pressable>
+                <View style={styles.uberWeightPill}>
+                  <Text style={styles.uberWeightPillText}>
+                    {product.unitLabel || `${product.weightLb} LB`}
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.uberCardBottomTag,
+                  styles.uberCardFloatingBottom,
+                  { backgroundColor: 'rgba(12, 15, 22, 0.88)' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.uberCardBottomTagText,
+                    { color: '#FFFFFF' },
+                  ]}
+                >
+                  {bottomTagLabel}
                 </Text>
               </View>
             </View>
+          ) : (
+            <LinearGradient
+              colors={['#161922', '#0F1117']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.uberCardGraphicArea}
+            >
+              <View style={styles.uberCardTopBadges}>
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    if (product.brand !== 'Salud Vet') {
+                      openBrandDna(product.brand as FoodBrandName);
+                    } else {
+                      openProductDetail(product);
+                    }
+                  }}
+                  style={styles.uberBrandBadge}
+                >
+                  <Text style={styles.uberBrandBadgeText}>
+                    {product.brand}
+                    {product.brand !== 'Salud Vet' ? ' · ADN ›' : ''}
+                  </Text>
+                </Pressable>
+                <View style={styles.uberWeightPill}>
+                  <Text style={styles.uberWeightPillText}>
+                    {product.unitLabel || `${product.weightLb} LB`}
+                  </Text>
+                </View>
+              </View>
 
-            <View style={styles.uberCardVisualCenter}>
-              {product.imageUrl ? (
-                <ProductThumbnail
-                  product={product}
-                  emojiSize={32}
-                  borderRadius={14}
-                  padding={6}
-                  style={styles.bagPhotoShowcase}
-                />
-              ) : (
+              <View style={styles.uberCardVisualCenter}>
                 <View style={styles.bagIllustrationCircle}>
                   <ProductThumbnail
                     product={product}
                     emojiSize={32}
                     borderRadius={29}
                     padding={0}
-                    style={{ width: 58, height: 58, backgroundColor: 'transparent' }}
+                    style={{
+                      width: 58,
+                      height: 58,
+                      backgroundColor: 'transparent',
+                    }}
                   />
                 </View>
-              )}
-            </View>
+              </View>
 
-            <View style={styles.uberCardBottomTag}>
-              <Text style={styles.uberCardBottomTagText}>{bottomTagLabel}</Text>
-            </View>
-          </LinearGradient>
+              <View style={styles.uberCardBottomTag}>
+                <Text style={styles.uberCardBottomTagText}>
+                  {bottomTagLabel}
+                </Text>
+              </View>
+            </LinearGradient>
+          )}
         </Pressable>
 
         <View style={styles.uberCardBody}>
@@ -1271,9 +1326,9 @@ export const HomeScreen: React.FC = () => {
                           {/* Foto real del producto (o emoji de respaldo) */}
                           <ProductThumbnail
                             product={item}
-                            emojiSize={20}
-                            borderRadius={12}
-                            padding={3}
+                            emojiSize={24}
+                            borderRadius={14}
+                            padding={2}
                             style={[
                               styles.searchResultIconBox,
                               item.imageUrl ? { backgroundColor: '#F7F8FA' } : null,
@@ -2871,10 +2926,10 @@ export const HomeScreen: React.FC = () => {
                   >
                     <ProductThumbnail
                       product={quizRecommendation.product}
-                      emojiSize={30}
+                      emojiSize={34}
                       borderRadius={16}
-                      padding={6}
-                      style={{ width: 76, height: 84 }}
+                      padding={2}
+                      style={{ width: 96, height: 112 }}
                     />
                     <View style={{ flex: 1 }}>
                       <Text
@@ -4333,10 +4388,10 @@ export const HomeScreen: React.FC = () => {
                     <View key={product.id} style={styles.cartItemRow}>
                       <ProductThumbnail
                         product={product}
-                        emojiSize={22}
+                        emojiSize={24}
                         borderRadius={12}
-                        padding={3}
-                        style={{ width: 48, height: 48 }}
+                        padding={2}
+                        style={{ width: 62, height: 68 }}
                       />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.cartItemName}>{product.name}</Text>
@@ -4780,15 +4835,15 @@ export const HomeScreen: React.FC = () => {
                   <Ionicons name="close" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
 
-                {/* Brand + foto real (clicable para abrir el ADN de la marca) */}
+                {/* Brand + foto real grande (clicable para abrir el ADN de la marca) */}
                 {selectedProduct.imageUrl && (
                   <View style={styles.productDetailPhotoBanner}>
                     <ProductThumbnail
                       product={selectedProduct}
-                      emojiSize={42}
-                      borderRadius={18}
+                      emojiSize={48}
+                      borderRadius={0}
                       padding={10}
-                      style={{ width: 156, height: 156 }}
+                      style={{ width: '100%', height: '100%' }}
                     />
                   </View>
                 )}
@@ -4804,7 +4859,7 @@ export const HomeScreen: React.FC = () => {
                   }}
                   style={[
                     styles.productDetailBrandRow,
-                    selectedProduct.imageUrl ? { paddingTop: 10 } : null,
+                    selectedProduct.imageUrl ? { paddingTop: 14 } : null,
                   ]}
                 >
                   {!selectedProduct.imageUrl && (
@@ -5358,7 +5413,7 @@ const styles = StyleSheet.create({
     width: 256,
   },
   uberCardGraphicArea: {
-    height: 186,
+    height: 204,
     borderRadius: 18,
     padding: 12,
     justifyContent: 'space-between',
@@ -5366,11 +5421,26 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 10,
   },
-  bagPhotoShowcase: {
-    width: '100%',
-    height: 104,
+  uberCardPhotoArea: {
+    height: 208,
+    borderRadius: 18,
+    overflow: 'hidden',
+    position: 'relative',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.28)',
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+    backgroundColor: '#F7F8FA',
+    marginBottom: 10,
+  },
+  uberCardFloatingTop: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    right: 10,
+  },
+  uberCardFloatingBottom: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
   },
   uberCardTopBadges: {
     flexDirection: 'row',
@@ -6436,8 +6506,8 @@ const styles = StyleSheet.create({
     gap: 13,
   },
   searchResultIconBox: {
-    width: 46,
-    height: 46,
+    width: 58,
+    height: 58,
     borderRadius: 14,
     backgroundColor: '#1C202B',
     alignItems: 'center',
@@ -6571,22 +6641,27 @@ const styles = StyleSheet.create({
   },
   productDetailCloseBtn: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: 14,
+    right: 14,
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#181B22',
+    backgroundColor: 'rgba(15, 17, 23, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 20,
     elevation: 20,
   },
   productDetailPhotoBanner: {
+    width: '100%',
+    height: 224,
+    backgroundColor: '#F7F8FA',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 22,
-    paddingHorizontal: 22,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   productDetailBrandRow: {
     flexDirection: 'row',
