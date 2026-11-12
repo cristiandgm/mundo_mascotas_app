@@ -146,6 +146,9 @@ interface AuthContextType {
     subtitle: string,
     reference?: string
   ) => boolean;
+  recordOrder: (
+    orderInput: Omit<CustomerOrder, 'orderNumber' | 'createdAt' | 'fulfillmentStatus'>
+  ) => CustomerOrder | null;
   claimMission: (
     missionId: string,
     coins: number,
@@ -822,6 +825,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return true;
   };
 
+  const formatColombiaOrderTimestamp = (date: Date): string => {
+    const months = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    const hours24 = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const period = hours24 >= 12 ? 'p. m.' : 'a. m.';
+    const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+    return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()} · ${hours12}:${minutes} ${period}`;
+  };
+
+  const recordOrder = (
+    orderInput: Omit<CustomerOrder, 'orderNumber' | 'createdAt' | 'fulfillmentStatus'>
+  ): CustomerOrder | null => {
+    if (!user) return null;
+
+    const existingNumbers = (user.orders || [])
+      .map((o) => Number.parseInt(o.orderNumber, 10))
+      .filter((n) => Number.isFinite(n));
+    const maxOrderNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 59599;
+
+    const newOrder: CustomerOrder = {
+      ...orderInput,
+      orderNumber: String(maxOrderNum + 1),
+      createdAt: formatColombiaOrderTimestamp(new Date()),
+      fulfillmentStatus: 'unfulfilled',
+    };
+
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        orders: [newOrder, ...(prev.orders || [])],
+        ordersCount: (prev.ordersCount ?? (prev.orders?.length || 0)) + 1,
+        totalSpent: (prev.totalSpent ?? 0) + newOrder.total,
+      };
+    });
+
+    return newOrder;
+  };
+
   const claimMission = (
     missionId: string,
     coins: number,
@@ -913,6 +968,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         claimedMissions,
         addCoins,
         redeemCoins,
+        recordOrder,
         claimMission,
         register,
         logout,

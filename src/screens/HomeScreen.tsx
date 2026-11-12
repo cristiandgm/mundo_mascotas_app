@@ -26,6 +26,7 @@ import { colors } from '../theme/colors';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
+import { CheckoutModal, PlaceOrderPayload } from '../components/CheckoutModal';
 import { InboxModal } from '../components/InboxModal';
 import {
   ACANA_LOGO,
@@ -156,12 +157,15 @@ export const HomeScreen: React.FC = () => {
     deletePet,
     addCoins,
     redeemCoins,
+    recordOrder,
   } = useAuth();
   const insets = useSafeAreaInsets();
   const [profileVisible, setProfileVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
   const [cartModalVisible, setCartModalVisible] = useState(false);
+  const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
   const [addressSheetVisible, setAddressSheetVisible] = useState(false);
+  const reopenCheckoutAfterAddressRef = useRef(false);
   const [inboxVisible, setInboxVisible] = useState(false);
   const [walletVisible, setWalletVisible] = useState(false);
   const [applyCoinsInCart, setApplyCoinsInCart] = useState(false);
@@ -382,7 +386,6 @@ export const HomeScreen: React.FC = () => {
   const [cartAddedEvent, setCartAddedEvent] = useState<CartAddedEvent | null>(
     null
   );
-  const [orderSuccessToast, setOrderSuccessToast] = useState(false);
   const [miniCartPreviewOpen, setMiniCartPreviewOpen] = useState(false);
   const [isDraggingCartBubble, setIsDraggingCartBubble] = useState(false);
   const [showBubblePlusOne, setShowBubblePlusOne] = useState(false);
@@ -816,6 +819,51 @@ export const HomeScreen: React.FC = () => {
       itemsList,
     };
   }, [catalog, cart, deliveryZone, user, applyCoinsInCart]);
+
+  const handlePlaceCheckoutOrder = (payload: PlaceOrderPayload) => {
+    const shippingLabel =
+      deliveryZone === 'bogota'
+        ? 'Domicilio - Bogotá'
+        : `Transportadora Nacional - ${selectedAddress.city}`;
+
+    const createdOrder = recordOrder({
+      financialStatus: payload.totals.method.financialStatus,
+      total: payload.totals.finalTotal,
+      shippingMethod: shippingLabel,
+      paymentMethod: payload.totals.method.orderMethodLabel,
+      items: cartSummary.itemsList.map((entry) => ({
+        name: entry.product.name,
+        quantity: entry.quantity,
+        price: entry.product.price,
+        sku: entry.product.sku,
+      })),
+    });
+
+    const orderRef = createdOrder ? `#${createdOrder.orderNumber}` : undefined;
+
+    if (cartSummary.coinsToRedeem > 0) {
+      redeemCoins(
+        cartSummary.coinsToRedeem,
+        'Redención en Checkout · Descuento en Pedido',
+        `Aplicado en compra de ${cartSummary.totalItems} ítem(s)`,
+        orderRef
+      );
+    }
+    if (cartSummary.totalCoins > 0) {
+      addCoins(
+        cartSummary.totalCoins,
+        `Cashback · Pedido de ${cartSummary.totalItems} ítem(s)`,
+        `Abono automático en Billetera Consenticoins`,
+        'cashback',
+        orderRef
+      );
+    }
+
+    setApplyCoinsInCart(false);
+    cartRef.current = {};
+    setCart({});
+    return createdOrder;
+  };
 
   const renderFeatureCard = (product: ProductBag, bottomTagLabel: string) => {
     const qty = cart[product.id] || 0;
@@ -4411,7 +4459,10 @@ export const HomeScreen: React.FC = () => {
       <CartAddedToast
         event={cartAddedEvent}
         visible={
-          !productDetailVisible && !brandDnaModalVisible && !cartModalVisible
+          !productDetailVisible &&
+          !brandDnaModalVisible &&
+          !cartModalVisible &&
+          !checkoutModalVisible
         }
         topOffset={Math.max(insets.top, 12) + 8}
         onViewCart={() => {
@@ -4794,66 +4845,39 @@ export const HomeScreen: React.FC = () => {
                     </View>
                   </View>
 
-                  {orderSuccessToast ? (
-                    <View style={styles.orderConfirmedBanner}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={22}
-                        color={colors.primary.light}
-                      />
-                      <Text style={styles.orderConfirmedText}>
-                        ¡Pedido listo!{' '}
-                        {deliveryZone === 'bogota'
-                          ? 'Domicilio Gratis en Bogotá confirmado.'
-                          : 'Incluye guía de transportadora nacional.'}{' '}
-                        (+{cartSummary.totalCoins} Coins abonados)
-                      </Text>
-                    </View>
-                  ) : (
-                    <Pressable
-                      onPress={() => {
-                        if (!user) {
-                          Haptics.selectionAsync();
-                          setCartModalVisible(false);
-                          setTimeout(() => openAuthModal('login'), 200);
-                          return;
-                        }
-                        Haptics.notificationAsync(
-                          Haptics.NotificationFeedbackType.Success
-                        );
-                        if (cartSummary.coinsToRedeem > 0) {
-                          redeemCoins(
-                            cartSummary.coinsToRedeem,
-                            'Redención en Bolsa · Descuento en Pedido',
-                            `Aplicado en compra de ${cartSummary.totalItems} ítem(s)`
-                          );
-                        }
-                        if (cartSummary.totalCoins > 0) {
-                          addCoins(
-                            cartSummary.totalCoins,
-                            `Cashback · Pedido de ${cartSummary.totalItems} ítem(s)`,
-                            `Abono automático en Billetera Consenticoins`,
-                            'cashback'
-                          );
-                        }
-                        setApplyCoinsInCart(false);
-                        setOrderSuccessToast(true);
-                        setTimeout(() => {
-                          setOrderSuccessToast(false);
-                          cartRef.current = {};
-                          setCart({});
-                          setCartModalVisible(false);
-                        }, 2200);
-                      }}
-                      style={styles.checkoutGoldBtn}
-                    >
-                      <Text style={styles.checkoutGoldBtnText}>
-                        {user
-                          ? `Confirmar Pedido (${formatCOP(cartSummary.totalWithShipping)})`
-                          : `Iniciar sesión para pedir (${formatCOP(cartSummary.totalWithShipping)})`}
-                      </Text>
-                    </Pressable>
-                  )}
+                  <View style={styles.checkoutHintBanner}>
+                    <Ionicons
+                      name="card-outline"
+                      size={16}
+                      color={colors.primary.light}
+                    />
+                    <Text style={styles.checkoutHintText}>
+                      {deliveryZone === 'bogota'
+                        ? 'En el siguiente paso eliges Contra entrega (Efectivo, Bre-B, Datáfono +5%) o Pago anticipado.'
+                        : 'Envío nacional: en el siguiente paso eliges Pago anticipado (Bre-B, Efectivo o Link de pagos +5%).'}
+                    </Text>
+                  </View>
+
+                  <Pressable
+                    onPress={() => {
+                      if (!user) {
+                        Haptics.selectionAsync();
+                        setCartModalVisible(false);
+                        setTimeout(() => openAuthModal('login'), 200);
+                        return;
+                      }
+                      Haptics.selectionAsync();
+                      setCartModalVisible(false);
+                      setTimeout(() => setCheckoutModalVisible(true), 200);
+                    }}
+                    style={styles.checkoutGoldBtn}
+                  >
+                    <Text style={styles.checkoutGoldBtnText}>
+                      {user
+                        ? `Continuar al Checkout (${formatCOP(cartSummary.totalWithShipping)})`
+                        : `Iniciar sesión para continuar (${formatCOP(cartSummary.totalWithShipping)})`}
+                    </Text>
+                  </Pressable>
                 </>
               )}
             </ScrollView>
@@ -4875,7 +4899,42 @@ export const HomeScreen: React.FC = () => {
       {/* Panel Deslizable de Direcciones de Entrega */}
       <AddressSelectorSheet
         visible={addressSheetVisible}
-        onClose={() => setAddressSheetVisible(false)}
+        onClose={() => {
+          setAddressSheetVisible(false);
+          if (reopenCheckoutAfterAddressRef.current) {
+            reopenCheckoutAfterAddressRef.current = false;
+            setTimeout(() => setCheckoutModalVisible(true), 220);
+          }
+        }}
+      />
+
+      {/* Flujo dedicado de Checkout: Contra entrega / Anticipado + recargo +5% */}
+      <CheckoutModal
+        visible={checkoutModalVisible}
+        deliveryZone={deliveryZone}
+        itemsList={cartSummary.itemsList}
+        totalItems={cartSummary.totalItems}
+        totalWeightLb={cartSummary.totalWeightLb}
+        subtotal={cartSummary.subtotal}
+        estimatedCarrierFee={cartSummary.estimatedCarrierFee}
+        coinsToRedeem={cartSummary.coinsToRedeem}
+        coinsDiscountCop={cartSummary.coinsDiscountCop}
+        totalCoinsToEarn={cartSummary.totalCoins}
+        onClose={() => setCheckoutModalVisible(false)}
+        onBackToCart={() => {
+          setCheckoutModalVisible(false);
+          setTimeout(() => setCartModalVisible(true), 200);
+        }}
+        onChangeAddress={() => {
+          reopenCheckoutAfterAddressRef.current = true;
+          setCheckoutModalVisible(false);
+          setTimeout(() => setAddressSheetVisible(true), 220);
+        }}
+        onPlaceOrder={handlePlaceCheckoutOrder}
+        onOpenOrders={() => {
+          setCheckoutModalVisible(false);
+          setTimeout(() => setOrdersVisible(true), 220);
+        }}
       />
 
       {/* Panel Deslizable exclusivo de Pedidos del Cliente */}
@@ -4985,7 +5044,9 @@ export const HomeScreen: React.FC = () => {
         onInspectProduct={(prod) => openProductDetail(prod as ProductBag)}
         onZoomProduct={(prod) => openImageZoom(prod as ProductBag)}
         cartAddedEvent={cartAddedEvent}
-        suppressAddedToast={productDetailVisible || cartModalVisible}
+        suppressAddedToast={
+          productDetailVisible || cartModalVisible || checkoutModalVisible
+        }
         onOpenCart={() => {
           setBrandDnaModalVisible(false);
           setTimeout(() => setCartModalVisible(true), 180);
@@ -6335,20 +6396,21 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontWeight: '900',
   },
-  orderConfirmedBanner: {
+  checkoutHintBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: '#12151C',
     borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
-    padding: 14,
-    borderRadius: 16,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
-  orderConfirmedText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
+  checkoutHintText: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    lineHeight: 17,
     flex: 1,
   },
 

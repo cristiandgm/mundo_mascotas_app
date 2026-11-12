@@ -252,9 +252,10 @@ export const CustomerOrdersSheet: React.FC<CustomerOrdersSheetProps> = ({
                             />
                             <Text style={styles.uberStatusText}>
                               {isFulfilled ? 'Entregado' : 'En alistamiento'} ·{' '}
-                              {order.financialStatus === 'pending'
-                                ? 'Contraentrega'
-                                : 'Pagado'}
+                              {order.paymentMethod ||
+                                (order.financialStatus === 'pending'
+                                  ? 'Contraentrega'
+                                  : 'Pagado')}
                             </Text>
                           </View>
                         </View>
