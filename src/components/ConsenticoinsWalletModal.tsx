@@ -1191,7 +1191,12 @@ export const ConsenticoinsWalletModal: React.FC<
                           {row.logoImage && (
                             <Image
                               source={row.logoImage}
-                              style={styles.cashbackBrandLogo}
+                              style={[
+                                styles.cashbackBrandLogo,
+                                row.brand.includes('Orijen')
+                                  ? { backgroundColor: '#D7221B' }
+                                  : null,
+                              ]}
                               resizeMode="cover"
                             />
                           )}

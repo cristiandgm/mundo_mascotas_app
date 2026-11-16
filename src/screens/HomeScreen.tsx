@@ -1747,7 +1747,16 @@ export const HomeScreen: React.FC = () => {
                     <View
                       style={[
                         styles.uberCircleGraphic,
-                        item.logoImage ? { backgroundColor: '#FFFFFF' } : null,
+                        item.logoImage
+                          ? {
+                              backgroundColor:
+                                item.id === 'Orijen'
+                                  ? '#D7221B'
+                                  : item.id === 'Acana'
+                                  ? '#FCF1D5'
+                                  : '#FFFFFF',
+                            }
+                          : null,
                         isSelected && styles.uberCircleGraphicActive,
                       ]}
                     >
@@ -5338,17 +5347,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#181A20',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
     overflow: 'hidden',
   },
   uberCircleGraphicActive: {
+    borderWidth: 2,
     borderColor: colors.primary.DEFAULT,
     backgroundColor: 'rgba(212, 175, 55, 0.14)',
   },
   uberCircleLogoImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 37,
   },
   uberCircleEmoji: {
     fontSize: 30,

@@ -25,7 +25,7 @@ import {
   CartAddedToast,
 } from './ui/CartAddedFeedback';
 
-export const ORIJEN_LOGO = require('../../assets/orijen-logo.jpg');
+export const ORIJEN_LOGO = require('../../assets/orijen-logo.png');
 export const ACANA_LOGO = require('../../assets/acana-logo.png');
 export const TASTE_OF_THE_WILD_LOGO = require('../../assets/taste-of-the-wild-logo.png');
 export const TASTE_OF_THE_WILD_PREY_LOGO = require('../../assets/taste-of-the-wild-prey-logo.png');
@@ -578,7 +578,12 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                     {bInfo.logoImage ? (
                       <Image
                         source={bInfo.logoImage}
-                        style={styles.brandSwitchLogo}
+                        style={[
+                          styles.brandSwitchLogo,
+                          bInfo.id === 'Orijen'
+                            ? { backgroundColor: '#D7221B' }
+                            : null,
+                        ]}
                         resizeMode="cover"
                       />
                     ) : (
@@ -643,7 +648,16 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                 <View
                   style={[
                     styles.brandEmblemBox,
-                    dna.logoImage ? { backgroundColor: '#FFFFFF' } : null,
+                    dna.logoImage
+                      ? {
+                          backgroundColor:
+                            dna.id === 'Orijen'
+                              ? '#D7221B'
+                              : dna.id === 'Acana'
+                              ? '#FCF1D5'
+                              : '#FFFFFF',
+                        }
+                      : null,
                     { borderColor: `${dna.signatureAccent}66` },
                   ]}
                 >
