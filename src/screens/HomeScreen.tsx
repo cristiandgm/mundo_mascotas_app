@@ -34,6 +34,7 @@ import {
 import { CheckoutModal, PlaceOrderPayload } from '../components/CheckoutModal';
 import { BubbleLaunchOrigin, CartSummaryModal } from '../components/CartSummaryModal';
 import { InboxModal } from '../components/InboxModal';
+import { matchesProductFuzzy, scoreProductMatch } from '../utils/fuzzySearch';
 import {
   ACANA_LOGO,
   BRAND_LOGO_MAP,
@@ -659,7 +660,14 @@ export const HomeScreen: React.FC = () => {
 
   // Filtrado de productos para la pestaña 1 (Tienda) según mascota activa + categoría del mini-menú flotante
   const filteredProducts = useMemo(() => {
-    return catalog.filter((item) => {
+    const hasSearch = searchQuery.trim().length > 0;
+
+    const list = catalog.filter((item) => {
+      // Si el usuario escribe en el buscador, aplicar búsqueda difusa con tolerancia a errores ortográficos
+      if (hasSearch) {
+        return matchesProductFuzzy(item, searchQuery);
+      }
+
       if (item.petType !== activeSpecies) return false;
 
       if (selectedSearchCategory === 'concentrados') {
@@ -680,18 +688,18 @@ export const HomeScreen: React.FC = () => {
         }
       }
 
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return (
-          item.name.toLowerCase().includes(q) ||
-          item.protein.toLowerCase().includes(q) ||
-          item.brand.toLowerCase().includes(q) ||
-          item.stage.toLowerCase().includes(q) ||
-          `${item.weightLb}`.includes(q)
-        );
-      }
       return true;
     });
+
+    if (hasSearch) {
+      return list.sort(
+        (a, b) =>
+          scoreProductMatch(b, searchQuery, activeSpecies) -
+          scoreProductMatch(a, searchQuery, activeSpecies)
+      );
+    }
+
+    return list;
   }, [catalog, activeSpecies, selectedBrand, selectedSearchCategory, searchQuery]);
 
   // Complementos y snacks para la mascota activa (segundo carrusel en Tienda)
@@ -1169,7 +1177,7 @@ export const HomeScreen: React.FC = () => {
         {/* ===================================================================================== */}
         {mainTopTab === 'store' && (
           <>
-            {/* 3. UBER SEARCH PILL + MINI MENÚ FLOTANTE DE CATEGORÍAS */}
+            {/* 3. BUSCADOR AMPLIO CON TEXTO SUGERIDO */}
             <View style={styles.searchPillWrapper}>
               <Pressable
                 onPress={() => searchInputRef.current?.focus()}
@@ -1178,174 +1186,32 @@ export const HomeScreen: React.FC = () => {
                 <Ionicons
                   name="search"
                   size={20}
-                  color={colors.dark.textSecondary}
+                  color={colors.primary.DEFAULT}
                   style={{ marginRight: 10 }}
                 />
                 <TextInput
                   ref={searchInputRef}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  placeholder={`¿Qué ${activeCategoryMeta.placeholderNoun} busca ${displayPetName}?`}
-                  placeholderTextColor="#9CA3AF"
+                  placeholder="Busca Acana, Royal Canin, NexGard..."
+                  placeholderTextColor="#8E95A5"
                   style={styles.uberSearchInput}
                   underlineColorAndroid="transparent"
+                  returnKeyType="search"
+                  autoCorrect={false}
+                  autoCapitalize="none"
                 />
 
                 {searchQuery.length > 0 ? (
                   <Pressable
                     onPress={() => setSearchQuery('')}
-                    style={{ marginRight: 8 }}
+                    style={{ padding: 4 }}
                     hitSlop={8}
                   >
-                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                    <Ionicons name="close-circle" size={19} color="#9CA3AF" />
                   </Pressable>
                 ) : null}
-
-                {/* Botón selector que despliega el mini menú flotante */}
-                <Pressable
-                  onPress={toggleCategoryMenu}
-                  style={[
-                    styles.uberLaterButton,
-                    (categoryMenuOpen ||
-                      selectedSearchCategory !== 'concentrados') &&
-                      styles.uberLaterButtonActive,
-                  ]}
-                >
-                  <Text style={{ fontSize: 13 }}>
-                    {activeCategoryMeta.emoji}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.uberLaterText,
-                      (categoryMenuOpen ||
-                        selectedSearchCategory !== 'concentrados') && {
-                        color: '#050508',
-                      },
-                    ]}
-                  >
-                    {activeCategoryMeta.shortLabel}
-                  </Text>
-                  <Ionicons
-                    name={categoryMenuOpen ? 'chevron-up' : 'chevron-down'}
-                    size={13}
-                    color={
-                      categoryMenuOpen ||
-                      selectedSearchCategory !== 'concentrados'
-                        ? '#050508'
-                        : '#FFFFFF'
-                    }
-                  />
-                </Pressable>
               </Pressable>
-
-              {/* MINI MENÚ FLOTANTE DESPLEGABLE (POPOVER) */}
-              {categoryMenuOpen && (
-                <Animated.View
-                  style={[
-                    styles.categoryFloatingMenu,
-                    {
-                      opacity: categoryMenuAnim,
-                      transform: [
-                        {
-                          translateY: categoryMenuAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [-10, 0],
-                          }),
-                        },
-                        {
-                          scale: categoryMenuAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0.94, 1],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <View style={styles.categoryMenuHeaderRow}>
-                    <Text style={styles.categoryMenuHeaderText}>
-                      ¿Qué deseas buscar para {displayPetName}{' '}
-                      {activeSpecies === 'cat' ? '🐱' : '🐶'}?
-                    </Text>
-                    <Pressable onPress={toggleCategoryMenu} hitSlop={8}>
-                      <Ionicons name="close" size={16} color="#9CA3AF" />
-                    </Pressable>
-                  </View>
-
-                  {SEARCH_CATEGORY_OPTIONS.map((option, idx) => {
-                    const isSelected = selectedSearchCategory === option.id;
-                    const count = getCategoryItemCount(option.id);
-                    return (
-                      <React.Fragment key={option.id}>
-                        {idx > 0 && (
-                          <View style={styles.categoryMenuDivider} />
-                        )}
-                        <Pressable
-                          onPress={() => handleSelectSearchCategory(option.id)}
-                          style={({ pressed }) => [
-                            styles.categoryMenuItemRow,
-                            isSelected && styles.categoryMenuItemRowActive,
-                            pressed && { opacity: 0.85 },
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.categoryMenuIconBox,
-                              isSelected && styles.categoryMenuIconBoxActive,
-                            ]}
-                          >
-                            <Text style={{ fontSize: 18 }}>{option.emoji}</Text>
-                          </View>
-
-                          <View style={{ flex: 1 }}>
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 6,
-                              }}
-                            >
-                              <Text
-                                style={[
-                                  styles.categoryMenuTitle,
-                                  isSelected && {
-                                    color: colors.primary.light,
-                                  },
-                                ]}
-                              >
-                                {option.label}
-                              </Text>
-                              <View style={styles.categoryCountPill}>
-                                <Text style={styles.categoryCountText}>
-                                  {count}
-                                </Text>
-                              </View>
-                            </View>
-                            <Text style={styles.categoryMenuSubtitle}>
-                              {option.subtitle}
-                            </Text>
-                          </View>
-
-                          <View
-                            style={[
-                              styles.categoryMenuRadio,
-                              isSelected && styles.categoryMenuRadioActive,
-                            ]}
-                          >
-                            {isSelected && (
-                              <Ionicons
-                                name="checkmark"
-                                size={13}
-                                color="#050508"
-                              />
-                            )}
-                          </View>
-                        </Pressable>
-                      </React.Fragment>
-                    );
-                  })}
-                </Animated.View>
-              )}
             </View>
 
             {/* ===== SEARCH RESULTS PANEL: visible only when searchQuery has text ===== */}
@@ -3649,20 +3515,20 @@ const styles = StyleSheet.create({
   uberSearchPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#181A20',
-    borderRadius: 32,
-    paddingLeft: 18,
-    paddingRight: 8,
-    height: 56,
+    backgroundColor: '#161922',
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    height: 52,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.09)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   uberSearchInput: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14.5,
+    fontWeight: '500',
     height: '100%',
+    paddingVertical: 0,
   },
   uberLaterButton: {
     flexDirection: 'row',

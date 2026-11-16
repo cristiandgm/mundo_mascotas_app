@@ -49,7 +49,7 @@ export type FoodBrandName =
 export interface BrandProductItem {
   id: string;
   sku: string;
-  brand: FoodBrandName | 'Salud Vet';
+  brand: FoodBrandName | 'Salud Vet' | 'Royal Canin' | 'Purina Pro Plan' | string;
   name: string;
   protein: string;
   weightLb: number;
