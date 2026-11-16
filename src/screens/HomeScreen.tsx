@@ -1044,7 +1044,7 @@ export const HomeScreen: React.FC = () => {
                 >
                   <Ionicons
                     name="location-sharp"
-                    size={13}
+                    size={17}
                     color={
                       !selectedCity
                         ? colors.primary.DEFAULT
@@ -1054,35 +1054,15 @@ export const HomeScreen: React.FC = () => {
                     }
                   />
                 </View>
-                <View style={styles.guestLocationTextWrap}>
-                  <View style={styles.guestCityNameRow}>
-                    <Text style={styles.guestCityNameText} numberOfLines={1}>
-                      {selectedCity ? selectedCity.name : 'Ciudad / Municipio'}
-                    </Text>
-                    <Ionicons
-                      name="chevron-down"
-                      size={12}
-                      color={colors.primary.light}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.guestDeliveryPerkText,
-                      {
-                        color:
-                          !selectedCity || selectedCity.isBogota
-                            ? colors.primary.light
-                            : '#38BDF8',
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {selectedCity
-                      ? selectedCity.isBogota
-                        ? '🚚 Domicilio Bogotá D.C.'
-                        : '📦 Envíos a toda Colombia'
-                      : '⚡ Elige tu ubicación de entrega'}
+                <View style={styles.guestCityNameRow}>
+                  <Text style={styles.guestCityNameText} numberOfLines={1}>
+                    {selectedCity ? selectedCity.name : 'Ciudad / Municipio'}
                   </Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={14}
+                    color={colors.primary.light}
+                  />
                 </View>
               </View>
             )}
@@ -3551,11 +3531,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
+    flexShrink: 1,
   },
   guestLocationIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#161922',
     alignItems: 'center',
     justifyContent: 'center',
@@ -3570,25 +3551,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212, 175, 55, 0.5)',
     backgroundColor: 'rgba(212, 175, 55, 0.1)',
   },
-  guestLocationTextWrap: {
-    justifyContent: 'center',
-    flexShrink: 1,
-  },
   guestCityNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    flexShrink: 1,
   },
   guestCityNameText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16.5,
     fontWeight: '800',
-    letterSpacing: -0.2,
-  },
-  guestDeliveryPerkText: {
-    fontSize: 11,
-    fontWeight: '800',
-    marginTop: 1,
+    letterSpacing: -0.3,
   },
   inboxBagPill: {
     flexDirection: 'row',
