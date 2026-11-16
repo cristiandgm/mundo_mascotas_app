@@ -1423,25 +1423,7 @@ export const HomeScreen: React.FC = () => {
               </View>
             )}
 
-            {/* 5. UBER "FOR YOU" 4 CIRCULAR ICONS PERSONALIZADOS */}
-            <View style={styles.uberSectionHeader}>
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setMainTopTab('pets');
-                }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-              >
-                <Text style={styles.uberSectionTitle}>
-                  Para {displayPetName}{' '}
-                  {activeSpecies === 'cat' ? '🐱' : '🐶'}
-                </Text>
-                <View style={styles.uberSmallArrowCircle}>
-                  <Ionicons name="chevron-forward" size={13} color="#D1D5DB" />
-                </View>
-              </Pressable>
-            </View>
-
+            {/* 5. CARRUSEL DE MARCAS INSIGNIA */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -3510,7 +3492,7 @@ const styles = StyleSheet.create({
   searchPillWrapper: {
     position: 'relative',
     zIndex: 50,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   uberSearchPill: {
     flexDirection: 'row',
