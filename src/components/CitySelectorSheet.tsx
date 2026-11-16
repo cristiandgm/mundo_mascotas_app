@@ -214,10 +214,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
       onRequestClose={handleClose}
       statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardContainer}
-      >
+      <View style={styles.modalRoot}>
         {/* BACKDROP */}
         <Animated.View
           style={[
@@ -233,20 +230,24 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         </Animated.View>
 
-        {/* SHEET CONTAINER */}
+        {/* SHEET CONTAINER (ANCHORED TO BOTTOM, FULL STABLE HEIGHT) */}
         <Animated.View
           style={[
             styles.sheetContainer,
             {
-              paddingBottom: Math.max(insets.bottom, 16),
               transform: [{ translateY }],
             },
           ]}
         >
-          {/* DRAG HANDLE */}
-          <View style={styles.handleContainer}>
-            <View style={styles.dragHandle} />
-          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.06 : 0}
+            style={styles.keyboardInner}
+          >
+            {/* DRAG HANDLE */}
+            <View style={styles.handleContainer}>
+              <View style={styles.dragHandle} />
+            </View>
 
           {/* HEADER ROW */}
           <View style={styles.headerRow}>
@@ -433,6 +434,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
             contentContainerStyle={styles.locationsListContent}
             showsVerticalScrollIndicator={true}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
             {filteredLocations.map((loc) => {
               const isSelected = tempSelectedCity.id === loc.id;
@@ -566,7 +568,12 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
           </ScrollView>
 
           {/* BOTTOM CONFIRMATION BUTTON */}
-          <View style={styles.bottomBar}>
+          <View
+            style={[
+              styles.bottomBar,
+              { paddingBottom: Math.max(insets.bottom, 12) },
+            ]}
+          >
             <View style={styles.selectedCitySummary}>
               <Text style={styles.selectedCityLabel}>ENTREGAR EN:</Text>
               <Text style={styles.selectedCityName} numberOfLines={1}>
@@ -582,16 +589,20 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
               <Ionicons name="arrow-forward" size={16} color="#050508" />
             </Pressable>
           </View>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </Modal>
+        </KeyboardAvoidingView>
+      </Animated.View>
+    </View>
+  </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardContainer: {
+  modalRoot: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  keyboardInner: {
+    flex: 1,
   },
   backdrop: {
     position: 'absolute',
