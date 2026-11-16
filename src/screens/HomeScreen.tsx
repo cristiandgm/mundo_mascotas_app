@@ -249,9 +249,8 @@ export const HomeScreen: React.FC = () => {
   };
 
   // Selector de Ciudad / Municipio para Colombia (Estándar de Conversión CRO)
-  const [selectedCity, setSelectedCity] = useState<ColombianLocation>(
-    DEFAULT_COLOMBIAN_LOCATION
-  );
+  // Al ingresar por primera vez es null para invitar a seleccionar "Ciudad / Municipio"
+  const [selectedCity, setSelectedCity] = useState<ColombianLocation | null>(null);
   const [citySelectorVisible, setCitySelectorVisible] = useState(false);
 
   // Zona derivada de la dirección del usuario logueado o de la ciudad seleccionada
@@ -259,9 +258,11 @@ export const HomeScreen: React.FC = () => {
     ? selectedAddress.isBogota
       ? 'bogota'
       : 'nacional'
-    : selectedCity.isBogota
-    ? 'bogota'
-    : 'nacional';
+    : selectedCity
+    ? selectedCity.isBogota
+      ? 'bogota'
+      : 'nacional'
+    : 'bogota';
 
   // Especie en modo invitado (permite alternar entre Perro y Gato sin tener cuenta aún)
   const [guestSpecies, setGuestSpecies] = useState<'dog' | 'cat'>('dog');
@@ -1037,19 +1038,26 @@ export const HomeScreen: React.FC = () => {
                 <View
                   style={[
                     styles.guestLocationIconCircle,
-                    selectedCity.isBogota && styles.guestLocationIconCircleBogota,
+                    selectedCity?.isBogota && styles.guestLocationIconCircleBogota,
+                    !selectedCity && styles.guestLocationIconCircleEmpty,
                   ]}
                 >
                   <Ionicons
                     name="location-sharp"
                     size={13}
-                    color={selectedCity.isBogota ? colors.primary.DEFAULT : '#38BDF8'}
+                    color={
+                      !selectedCity
+                        ? colors.primary.DEFAULT
+                        : selectedCity.isBogota
+                        ? colors.primary.DEFAULT
+                        : '#38BDF8'
+                    }
                   />
                 </View>
                 <View style={styles.guestLocationTextWrap}>
                   <View style={styles.guestCityNameRow}>
                     <Text style={styles.guestCityNameText} numberOfLines={1}>
-                      {selectedCity.name}
+                      {selectedCity ? selectedCity.name : 'Ciudad / Municipio'}
                     </Text>
                     <Ionicons
                       name="chevron-down"
@@ -1061,16 +1069,19 @@ export const HomeScreen: React.FC = () => {
                     style={[
                       styles.guestDeliveryPerkText,
                       {
-                        color: selectedCity.isBogota
-                          ? colors.primary.light
-                          : '#38BDF8',
+                        color:
+                          !selectedCity || selectedCity.isBogota
+                            ? colors.primary.light
+                            : '#38BDF8',
                       },
                     ]}
                     numberOfLines={1}
                   >
-                    {selectedCity.isBogota
-                      ? '⚡ Domicilio Gratis Mismo Día'
-                      : '📦 Envíos Gratis a Colombia'}
+                    {selectedCity
+                      ? selectedCity.isBogota
+                        ? '⚡ Domicilio Gratis Mismo Día'
+                        : '📦 Envíos Gratis a Colombia'
+                      : '⚡ Elige tu ubicación de entrega'}
                   </Text>
                 </View>
               </View>
@@ -2917,7 +2928,7 @@ export const HomeScreen: React.FC = () => {
         visible={cartModalVisible}
         launchOrigin={cartLaunchOrigin}
         deliveryZone={deliveryZone}
-        selectedCityName={selectedCity.name}
+        selectedCityName={selectedCity ? selectedCity.name : undefined}
         itemsList={cartSummary.itemsList}
         totalItems={cartSummary.totalItems}
         totalWeightLb={cartSummary.totalWeightLb}
@@ -3557,6 +3568,10 @@ const styles = StyleSheet.create({
   guestLocationIconCircleBogota: {
     borderColor: 'rgba(212, 175, 55, 0.45)',
     backgroundColor: 'rgba(212, 175, 55, 0.12)',
+  },
+  guestLocationIconCircleEmpty: {
+    borderColor: 'rgba(212, 175, 55, 0.5)',
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
   },
   guestLocationTextWrap: {
     justifyContent: 'center',

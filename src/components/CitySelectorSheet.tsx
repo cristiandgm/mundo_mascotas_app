@@ -33,7 +33,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 interface CitySelectorSheetProps {
   visible: boolean;
   onClose: () => void;
-  selectedCity: ColombianLocation;
+  selectedCity: ColombianLocation | null;
   onSelectCity: (city: ColombianLocation) => void;
 }
 
@@ -49,7 +49,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
-  const [tempSelectedCity, setTempSelectedCity] = useState<ColombianLocation>(selectedCity);
+  const [tempSelectedCity, setTempSelectedCity] = useState<ColombianLocation | null>(selectedCity);
 
   // Animations
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -110,7 +110,10 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  const formatCleanLocationDisplay = (city: ColombianLocation): string => {
+  const formatCleanLocationDisplay = (city: ColombianLocation | null): string => {
+    if (!city) {
+      return 'Selecciona tu ciudad';
+    }
     if (city.isBogota || city.name.toLowerCase().includes('bogotá')) {
       return 'Bogotá D.C.';
     }
@@ -177,8 +180,8 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
     }
   };
 
-  const handleConfirm = (cityToConfirm?: ColombianLocation) => {
-    const finalCity = cityToConfirm || tempSelectedCity;
+  const handleConfirm = (cityToConfirm?: ColombianLocation | null) => {
+    const finalCity = cityToConfirm || tempSelectedCity || DEFAULT_COLOMBIAN_LOCATION;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onSelectCity(finalCity);
     handleClose();
@@ -382,7 +385,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
                 contentContainerStyle={styles.quickChipsContent}
               >
                 {POPULAR_LOCATIONS.map((loc) => {
-                  const isSelected = tempSelectedCity.id === loc.id;
+                  const isSelected = tempSelectedCity ? tempSelectedCity.id === loc.id : false;
                   const isBogotaLoc = loc.isBogota;
                   return (
                     <Pressable
@@ -437,7 +440,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
             keyboardDismissMode="on-drag"
           >
             {filteredLocations.map((loc) => {
-              const isSelected = tempSelectedCity.id === loc.id;
+              const isSelected = tempSelectedCity ? tempSelectedCity.id === loc.id : false;
               const isBogotaLoc = loc.isBogota;
 
               return (
@@ -585,7 +588,9 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
               onPress={() => handleConfirm()}
               style={styles.confirmBtn}
             >
-              <Text style={styles.confirmBtnText}>Confirmar Ubicación</Text>
+              <Text style={styles.confirmBtnText}>
+                {tempSelectedCity ? 'Confirmar Ubicación' : 'Elegir Ciudad'}
+              </Text>
               <Ionicons name="arrow-forward" size={16} color="#050508" />
             </Pressable>
           </View>
