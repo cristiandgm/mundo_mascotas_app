@@ -437,28 +437,6 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
                     <Text style={styles.departmentText} numberOfLines={1}>
                       {loc.department} · {loc.region}
                     </Text>
-
-                    {/* BENEFIT / LOGISTICS ROW */}
-                    <View style={styles.perksRow}>
-                      <View
-                        style={[
-                          styles.perkPill,
-                          isBogotaLoc ? styles.perkPillGold : styles.perkPillBlue,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.perkPillText,
-                            isBogotaLoc ? styles.perkPillTextGold : styles.perkPillTextBlue,
-                          ]}
-                        >
-                          {loc.deliveryBadge}
-                        </Text>
-                      </View>
-                      <Text style={styles.deliveryEstimateText}>
-                        · {loc.deliveryEstimate}
-                      </Text>
-                    </View>
                   </View>
 
                   {/* RIGHT RADIO SELECTOR */}
@@ -813,38 +791,6 @@ const styles = StyleSheet.create({
     color: '#8E95A5',
     fontSize: 12,
     marginTop: 2,
-  },
-  perksRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 4,
-  },
-  perkPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  perkPillGold: {
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
-  },
-  perkPillBlue: {
-    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-  },
-  perkPillText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  perkPillTextGold: {
-    color: colors.primary.light,
-  },
-  perkPillTextBlue: {
-    color: '#38BDF8',
-  },
-  deliveryEstimateText: {
-    color: '#6B7280',
-    fontSize: 11,
-    fontWeight: '500',
   },
   radioContainer: {
     paddingLeft: 8,
