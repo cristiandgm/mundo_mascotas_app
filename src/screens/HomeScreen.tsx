@@ -26,6 +26,11 @@ import { colors } from '../theme/colors';
 import { CustomerProfileSheet } from '../components/CustomerProfileSheet';
 import { CustomerOrdersSheet } from '../components/CustomerOrdersSheet';
 import { AddressSelectorSheet } from '../components/AddressSelectorSheet';
+import { CitySelectorSheet } from '../components/CitySelectorSheet';
+import {
+  ColombianLocation,
+  DEFAULT_COLOMBIAN_LOCATION,
+} from '../data/colombiaLocations';
 import { CheckoutModal, PlaceOrderPayload } from '../components/CheckoutModal';
 import { BubbleLaunchOrigin, CartSummaryModal } from '../components/CartSummaryModal';
 import { InboxModal } from '../components/InboxModal';
@@ -243,12 +248,20 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
-  // Zona derivada automáticamente de la dirección seleccionada por el cliente (en modo invitado asume cobertura Bogotá de referencia)
+  // Selector de Ciudad / Municipio para Colombia (Estándar de Conversión CRO)
+  const [selectedCity, setSelectedCity] = useState<ColombianLocation>(
+    DEFAULT_COLOMBIAN_LOCATION
+  );
+  const [citySelectorVisible, setCitySelectorVisible] = useState(false);
+
+  // Zona derivada de la dirección del usuario logueado o de la ciudad seleccionada
   const deliveryZone: DeliveryZoneType = user
     ? selectedAddress.isBogota
       ? 'bogota'
       : 'nacional'
-    : 'bogota';
+    : selectedCity.isBogota
+    ? 'bogota'
+    : 'nacional';
 
   // Especie en modo invitado (permite alternar entre Perro y Gato sin tener cuenta aún)
   const [guestSpecies, setGuestSpecies] = useState<'dog' | 'cat'>('dog');
@@ -464,7 +477,7 @@ export const HomeScreen: React.FC = () => {
     if (user) {
       setAddressSheetVisible(true);
     } else {
-      openAuthModal('login');
+      setCitySelectorVisible(true);
     }
   };
 
@@ -970,13 +983,14 @@ export const HomeScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* ==================== 1. UBER HEADER × LOGO MUNDO MASCOTAS ==================== */}
       <View style={styles.uberTopHeader}>
-        {/* LEFT: Address (logged in) or Guest mode label */}
+        {/* LEFT: Address (logged in) or City/Municipality CRO Selector (guest) */}
         <Pressable
           onPress={() => {
+            Haptics.selectionAsync();
             if (user) {
               handleToggleZone();
             } else {
-              openAuthModal('login');
+              setCitySelectorVisible(true);
             }
           }}
           style={styles.locationSelectorRow}
@@ -1019,12 +1033,47 @@ export const HomeScreen: React.FC = () => {
                 </Text>
               </>
             ) : (
-              <Text
-                style={[styles.locationText, { color: '#FFFFFF' }]}
-                numberOfLines={1}
-              >
-                Modo Invitado
-              </Text>
+              <View style={styles.guestLocationPillRow}>
+                <View
+                  style={[
+                    styles.guestLocationIconCircle,
+                    selectedCity.isBogota && styles.guestLocationIconCircleBogota,
+                  ]}
+                >
+                  <Ionicons
+                    name="location-sharp"
+                    size={13}
+                    color={selectedCity.isBogota ? colors.primary.DEFAULT : '#38BDF8'}
+                  />
+                </View>
+                <View style={styles.guestLocationTextWrap}>
+                  <View style={styles.guestCityNameRow}>
+                    <Text style={styles.guestCityNameText} numberOfLines={1}>
+                      {selectedCity.name}
+                    </Text>
+                    <Ionicons
+                      name="chevron-down"
+                      size={12}
+                      color={colors.primary.light}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.guestDeliveryPerkText,
+                      {
+                        color: selectedCity.isBogota
+                          ? colors.primary.light
+                          : '#38BDF8',
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {selectedCity.isBogota
+                      ? '⚡ Domicilio Gratis Mismo Día'
+                      : '📦 Envíos Asegurados a Colombia'}
+                  </Text>
+                </View>
+              </View>
             )}
           </View>
         </Pressable>
@@ -2868,6 +2917,7 @@ export const HomeScreen: React.FC = () => {
         visible={cartModalVisible}
         launchOrigin={cartLaunchOrigin}
         deliveryZone={deliveryZone}
+        selectedCityName={selectedCity.name}
         itemsList={cartSummary.itemsList}
         totalItems={cartSummary.totalItems}
         totalWeightLb={cartSummary.totalWeightLb}
@@ -2886,8 +2936,12 @@ export const HomeScreen: React.FC = () => {
           if (user) {
             setTimeout(() => setAddressSheetVisible(true), 120);
           } else {
-            setTimeout(() => openAuthModal('login'), 120);
+            setTimeout(() => setCitySelectorVisible(true), 120);
           }
+        }}
+        onRequestChangeCity={() => {
+          setCartModalVisible(false);
+          setTimeout(() => setCitySelectorVisible(true), 120);
         }}
         onRequestOpenWallet={() => {
           setCartModalVisible(false);
@@ -2929,6 +2983,17 @@ export const HomeScreen: React.FC = () => {
             reopenCheckoutAfterAddressRef.current = false;
             setTimeout(() => setCheckoutModalVisible(true), 220);
           }
+        }}
+      />
+
+      {/* Selector de Ciudades & Municipios de Colombia (Estándar de Conversión CRO) */}
+      <CitySelectorSheet
+        visible={citySelectorVisible}
+        onClose={() => setCitySelectorVisible(false)}
+        selectedCity={selectedCity}
+        onSelectCity={(city) => {
+          setSelectedCity(city);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }}
       />
 
@@ -3473,6 +3538,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     flexShrink: 1,
+  },
+  guestLocationPillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  guestLocationIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#161922',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#262C3A',
+  },
+  guestLocationIconCircleBogota: {
+    borderColor: 'rgba(212, 175, 55, 0.45)',
+    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+  },
+  guestLocationTextWrap: {
+    justifyContent: 'center',
+    flexShrink: 1,
+  },
+  guestCityNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  guestCityNameText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  guestDeliveryPerkText: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginTop: 1,
   },
   inboxBagPill: {
     flexDirection: 'row',

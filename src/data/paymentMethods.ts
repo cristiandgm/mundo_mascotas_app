@@ -367,3 +367,4 @@ export const openWhatsAppOrderSummary = async (
   });
   return result.action === Share.sharedAction ? 'shared' : 'cancelled';
 };
+

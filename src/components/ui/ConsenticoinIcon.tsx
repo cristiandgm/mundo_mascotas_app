@@ -15,3 +15,4 @@ export const ConsenticoinIcon: React.FC<ConsenticoinIconProps> = ({
   color = colors.primary.light,
   style,
 }) => <FontAwesome5 name="coins" solid size={size} color={color} style={style} />;
+

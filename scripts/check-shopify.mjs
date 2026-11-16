@@ -62,3 +62,4 @@ products.slice(0, 15).forEach((p) => {
 if (products.length === 0) {
   console.log('\n⚠️  0 productos: en la app/canal de Shopify, publica los productos en el canal correspondiente (Headless / tu app).');
 }
+

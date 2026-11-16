@@ -1,0 +1,950 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  Pressable,
+  ScrollView,
+  TextInput,
+  Animated,
+  Dimensions,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { colors } from '../theme/colors';
+import {
+  ColombianLocation,
+  COLOMBIAN_LOCATIONS,
+  POPULAR_LOCATIONS,
+  DEFAULT_COLOMBIAN_LOCATION,
+  searchColombianLocations,
+} from '../data/colombiaLocations';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+interface CitySelectorSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  selectedCity: ColombianLocation;
+  onSelectCity: (city: ColombianLocation) => void;
+}
+
+type FilterTab = 'all' | 'principal' | 'municipio';
+
+export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
+  visible,
+  onClose,
+  selectedCity,
+  onSelectCity,
+}) => {
+  const insets = useSafeAreaInsets();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [tempSelectedCity, setTempSelectedCity] = useState<ColombianLocation>(selectedCity);
+
+  // Animations
+  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setTempSelectedCity(selectedCity);
+      setSearchQuery('');
+      setActiveTab('all');
+
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: SCREEN_HEIGHT,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible, selectedCity]);
+
+  const handleClose = () => {
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onClose();
+    });
+  };
+
+  const handleConfirm = (cityToConfirm?: ColombianLocation) => {
+    const finalCity = cityToConfirm || tempSelectedCity;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSelectCity(finalCity);
+    handleClose();
+  };
+
+  const filteredLocations = useMemo(() => {
+    return searchColombianLocations(searchQuery, activeTab);
+  }, [searchQuery, activeTab]);
+
+  const handleCreateCustomLocation = (customName: string) => {
+    const customLoc: ColombianLocation = {
+      id: `custom-${Date.now()}`,
+      name: customName.trim(),
+      department: 'Colombia (Municipio / Vereda)',
+      region: 'Nacional',
+      type: 'municipio',
+      isBogota: false,
+      deliveryBadge: '📦 Envío Nacional Asegurado',
+      deliveryEstimate: '2 a 4 días hábiles',
+      shippingCostDescription: 'Flete transportadora nacional',
+      popular: false,
+    };
+    handleConfirm(customLoc);
+  };
+
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}
+      statusBarTranslucent
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardContainer}
+      >
+        {/* BACKDROP */}
+        <Animated.View
+          style={[
+            styles.backdrop,
+            {
+              opacity: backdropOpacity.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 0.75],
+              }),
+            },
+          ]}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        </Animated.View>
+
+        {/* SHEET CONTAINER */}
+        <Animated.View
+          style={[
+            styles.sheetContainer,
+            {
+              paddingBottom: Math.max(insets.bottom, 16),
+              transform: [{ translateY }],
+            },
+          ]}
+        >
+          {/* DRAG HANDLE */}
+          <View style={styles.handleContainer}>
+            <View style={styles.dragHandle} />
+          </View>
+
+          {/* HEADER ROW */}
+          <View style={styles.headerRow}>
+            <View style={styles.headerTitles}>
+              <View style={styles.headerBadgeRow}>
+                <Ionicons name="location-sharp" size={16} color={colors.primary.DEFAULT} />
+                <Text style={styles.headerPreTitle}>COBERTURA & ENTREGAS</Text>
+              </View>
+              <Text style={styles.headerTitle}>¿Dónde quieres recibir tu pedido?</Text>
+            </View>
+
+            <Pressable
+              onPress={handleClose}
+              style={styles.closeBtn}
+              hitSlop={10}
+            >
+              <Ionicons name="close" size={20} color="#9CA3AF" />
+            </Pressable>
+          </View>
+
+          {/* CRO TRUST & VALUE PROPOSITION BANNER */}
+          <LinearGradient
+            colors={['#171922', '#0F1117']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.trustBanner}
+          >
+            <View style={styles.trustBannerLeft}>
+              <View style={styles.trustBadge}>
+                <Ionicons name="flash" size={12} color="#F5D061" />
+                <Text style={styles.trustBadgeText}>BENEFICIO LOGÍSTICO</Text>
+              </View>
+              <Text style={styles.trustBannerText}>
+                <Text style={{ fontWeight: '800', color: colors.primary.light }}>
+                  Bogotá: Domicilio GRATIS
+                </Text>{' '}
+                el mismo día. Resto de ciudades y municipios con envíos asegurados.
+              </Text>
+            </View>
+            <View style={styles.trustTruckCircle}>
+              <Ionicons name="car-outline" size={22} color={colors.primary.DEFAULT} />
+            </View>
+          </LinearGradient>
+
+          {/* SEARCH INPUT */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar ciudad o municipio (ej. Chía, Medellín, Cali...)"
+              placeholderTextColor="#6B7280"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+              </Pressable>
+            )}
+          </View>
+
+          {/* FILTER TABS (CRO DISCOVERY) */}
+          <View style={styles.tabsRow}>
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setActiveTab('all');
+              }}
+              style={[styles.tabPill, activeTab === 'all' && styles.tabPillActive]}
+            >
+              <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>
+                🇨🇴 Todas
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setActiveTab('principal');
+              }}
+              style={[styles.tabPill, activeTab === 'principal' && styles.tabPillActive]}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'principal' && styles.tabTextActive,
+                ]}
+              >
+                🌟 Principales
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setActiveTab('municipio');
+              }}
+              style={[styles.tabPill, activeTab === 'municipio' && styles.tabPillActive]}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'municipio' && styles.tabTextActive,
+                ]}
+              >
+                🏡 Municipios & Sabana
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* QUICK 1-TAP TOP DESTINATIONS (CHIPS) */}
+          {searchQuery.length === 0 && (
+            <View style={styles.quickAccessSection}>
+              <Text style={styles.quickAccessLabel}>ACCESO RÁPIDO</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickChipsContent}
+              >
+                {POPULAR_LOCATIONS.map((loc) => {
+                  const isSelected = tempSelectedCity.id === loc.id;
+                  const isBogotaLoc = loc.isBogota;
+                  return (
+                    <Pressable
+                      key={loc.id}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setTempSelectedCity(loc);
+                        handleConfirm(loc);
+                      }}
+                      style={[
+                        styles.quickChip,
+                        isSelected && styles.quickChipActive,
+                        isBogotaLoc && styles.quickChipBogota,
+                      ]}
+                    >
+                      {isBogotaLoc ? (
+                        <Ionicons name="sparkles" size={13} color="#F5D061" />
+                      ) : (
+                        <Ionicons
+                          name="location-outline"
+                          size={13}
+                          color={isSelected ? '#FFFFFF' : '#9CA3AF'}
+                        />
+                      )}
+                      <Text
+                        style={[
+                          styles.quickChipText,
+                          isSelected && styles.quickChipTextActive,
+                          isBogotaLoc && styles.quickChipTextBogota,
+                        ]}
+                      >
+                        {loc.name}
+                      </Text>
+                      {isBogotaLoc && (
+                        <View style={styles.freeBadgePill}>
+                          <Text style={styles.freeBadgePillText}>GRATIS</Text>
+                        </View>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* LIST OF LOCATIONS */}
+          <ScrollView
+            style={styles.locationsList}
+            contentContainerStyle={styles.locationsListContent}
+            showsVerticalScrollIndicator={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            {filteredLocations.map((loc) => {
+              const isSelected = tempSelectedCity.id === loc.id;
+              const isBogotaLoc = loc.isBogota;
+
+              return (
+                <Pressable
+                  key={loc.id}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setTempSelectedCity(loc);
+                    handleConfirm(loc);
+                  }}
+                  style={[
+                    styles.locationCard,
+                    isSelected && styles.locationCardSelected,
+                  ]}
+                >
+                  {/* LEFT ICON */}
+                  <View
+                    style={[
+                      styles.locationIconWrap,
+                      isBogotaLoc && styles.locationIconWrapBogota,
+                      isSelected && styles.locationIconWrapSelected,
+                    ]}
+                  >
+                    <Ionicons
+                      name={isBogotaLoc ? 'flash' : loc.type === 'principal' ? 'business' : 'home'}
+                      size={18}
+                      color={
+                        isSelected
+                          ? colors.primary.DEFAULT
+                          : isBogotaLoc
+                          ? '#F5D061'
+                          : '#9CA3AF'
+                      }
+                    />
+                  </View>
+
+                  {/* CENTER INFO */}
+                  <View style={styles.locationDetails}>
+                    <View style={styles.cityNameRow}>
+                      <Text
+                        style={[
+                          styles.cityName,
+                          isSelected && styles.cityNameSelected,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {loc.name}
+                      </Text>
+                      {isBogotaLoc && (
+                        <View style={styles.bogotaSuperBadge}>
+                          <Text style={styles.bogotaSuperBadgeText}>BOGOTÁ VIP</Text>
+                        </View>
+                      )}
+                      {loc.type === 'municipio' && (
+                        <View style={styles.municipioTag}>
+                          <Text style={styles.municipioTagText}>Municipio</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <Text style={styles.departmentText} numberOfLines={1}>
+                      {loc.department} · {loc.region}
+                    </Text>
+
+                    {/* BENEFIT / LOGISTICS ROW */}
+                    <View style={styles.perksRow}>
+                      <View
+                        style={[
+                          styles.perkPill,
+                          isBogotaLoc ? styles.perkPillGold : styles.perkPillBlue,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.perkPillText,
+                            isBogotaLoc ? styles.perkPillTextGold : styles.perkPillTextBlue,
+                          ]}
+                        >
+                          {loc.deliveryBadge}
+                        </Text>
+                      </View>
+                      <Text style={styles.deliveryEstimateText}>
+                        · {loc.deliveryEstimate}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* RIGHT RADIO SELECTOR */}
+                  <View style={styles.radioContainer}>
+                    <View
+                      style={[
+                        styles.radioOuter,
+                        isSelected && styles.radioOuterSelected,
+                      ]}
+                    >
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+
+            {/* FALLBACK IF NOT FOUND: CRO NO-DEAD-END CUSTOM ENTRY */}
+            {filteredLocations.length === 0 && searchQuery.trim().length > 0 && (
+              <View style={styles.customLocationFallback}>
+                <View style={styles.fallbackIconWrap}>
+                  <Ionicons name="map-outline" size={28} color={colors.primary.DEFAULT} />
+                </View>
+                <Text style={styles.fallbackTitle}>
+                  ¿No encuentras "{searchQuery}" en la lista?
+                </Text>
+                <Text style={styles.fallbackSubtitle}>
+                  Despachamos bultos y accesorios a cualquier rincón, vereda o municipio de
+                  Colombia mediante transportadora nacional asegurada.
+                </Text>
+
+                <Pressable
+                  onPress={() => handleCreateCustomLocation(searchQuery)}
+                  style={styles.customLocationBtn}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color="#050508" />
+                  <Text style={styles.customLocationBtnText}>
+                    Seleccionar "{searchQuery}" para Envío Nacional
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </ScrollView>
+
+          {/* BOTTOM CONFIRMATION BUTTON */}
+          <View style={styles.bottomBar}>
+            <View style={styles.selectedCitySummary}>
+              <Text style={styles.selectedCityLabel}>ENTREGAR EN:</Text>
+              <Text style={styles.selectedCityName} numberOfLines={1}>
+                {tempSelectedCity.name} ({tempSelectedCity.department})
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={() => handleConfirm()}
+              style={styles.confirmBtn}
+            >
+              <Text style={styles.confirmBtnText}>Confirmar Ubicación</Text>
+              <Ionicons name="arrow-forward" size={16} color="#050508" />
+            </Pressable>
+          </View>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#000000',
+  },
+  sheetContainer: {
+    backgroundColor: '#0B0D13',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: SCREEN_HEIGHT * 0.88,
+    borderTopWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#374151',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  headerTitles: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  headerBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  headerPreTitle: {
+    color: colors.primary.DEFAULT,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1E232E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trustBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.2)',
+  },
+  trustBannerLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  trustBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  trustBadgeText: {
+    color: colors.primary.light,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  trustBannerText: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  trustTruckCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#1C1F2B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#161922',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+    borderWidth: 1,
+    borderColor: '#262C3A',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    padding: 0,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginTop: 10,
+    gap: 8,
+  },
+  tabPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#161922',
+    borderWidth: 1,
+    borderColor: '#262C3A',
+  },
+  tabPillActive: {
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.DEFAULT,
+  },
+  tabText: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  tabTextActive: {
+    color: '#050508',
+    fontWeight: '800',
+  },
+  quickAccessSection: {
+    marginTop: 12,
+  },
+  quickAccessLabel: {
+    color: '#6B7280',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    paddingHorizontal: 16,
+    marginBottom: 6,
+  },
+  quickChipsContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#161922',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#262C3A',
+  },
+  quickChipActive: {
+    borderColor: colors.primary.DEFAULT,
+    backgroundColor: '#1C1F2B',
+  },
+  quickChipBogota: {
+    borderColor: 'rgba(212, 175, 55, 0.4)',
+    backgroundColor: '#1A1813',
+  },
+  quickChipText: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  quickChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  quickChipTextBogota: {
+    color: colors.primary.light,
+    fontWeight: '700',
+  },
+  freeBadgePill: {
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  freeBadgePillText: {
+    color: '#050508',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  locationsList: {
+    flex: 1,
+    marginTop: 10,
+    paddingHorizontal: 16,
+  },
+  locationsListContent: {
+    paddingBottom: 20,
+    gap: 8,
+  },
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#141720',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#222836',
+  },
+  locationCardSelected: {
+    borderColor: colors.primary.DEFAULT,
+    backgroundColor: '#1A1D27',
+  },
+  locationIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#1C212E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  locationIconWrapBogota: {
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
+  },
+  locationIconWrapSelected: {
+    borderColor: colors.primary.DEFAULT,
+  },
+  locationDetails: {
+    flex: 1,
+  },
+  cityNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cityName: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  cityNameSelected: {
+    color: colors.primary.light,
+  },
+  bogotaSuperBadge: {
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+  },
+  bogotaSuperBadgeText: {
+    color: '#050508',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  municipioTag: {
+    backgroundColor: '#262D3D',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 5,
+  },
+  municipioTagText: {
+    color: '#9CA3AF',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  departmentText: {
+    color: '#8E95A5',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  perksRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+  perkPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  perkPillGold: {
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+  },
+  perkPillBlue: {
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+  },
+  perkPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  perkPillTextGold: {
+    color: colors.primary.light,
+  },
+  perkPillTextBlue: {
+    color: '#38BDF8',
+  },
+  deliveryEstimateText: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  radioContainer: {
+    paddingLeft: 8,
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#374151',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterSelected: {
+    borderColor: colors.primary.DEFAULT,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary.DEFAULT,
+  },
+  customLocationFallback: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#161922',
+    borderRadius: 16,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#262C3A',
+  },
+  fallbackIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  fallbackTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  fallbackSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
+    marginBottom: 14,
+  },
+  customLocationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  customLocationBtnText: {
+    color: '#050508',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderColor: '#1F2430',
+    backgroundColor: '#0B0D13',
+  },
+  selectedCitySummary: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  selectedCityLabel: {
+    color: '#6B7280',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  selectedCityName: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  confirmBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  confirmBtnText: {
+    color: '#050508',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+});

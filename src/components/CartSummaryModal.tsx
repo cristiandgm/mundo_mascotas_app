@@ -36,6 +36,7 @@ export interface CartSummaryModalProps {
   visible: boolean;
   launchOrigin: BubbleLaunchOrigin | null;
   deliveryZone: DeliveryZoneType;
+  selectedCityName?: string;
   itemsList: { product: ProductBag; quantity: number }[];
   totalItems: number;
   totalWeightLb: number;
@@ -50,6 +51,7 @@ export interface CartSummaryModalProps {
   onAddToCart: (productId: string) => void;
   onDecrementCart: (productId: string) => void;
   onRequestAddressChange: () => void;
+  onRequestChangeCity?: () => void;
   onRequestOpenWallet: () => void;
   onRequestProceedToCheckout: () => void;
   onRequestLogin: () => void;
@@ -65,6 +67,7 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
   visible,
   launchOrigin,
   deliveryZone,
+  selectedCityName,
   itemsList,
   totalItems,
   totalWeightLb,
@@ -79,6 +82,7 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
   onAddToCart,
   onDecrementCart,
   onRequestAddressChange,
+  onRequestChangeCity,
   onRequestOpenWallet,
   onRequestProceedToCheckout,
   onRequestLogin,
@@ -294,9 +298,13 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
-              handleForwardAction(
-                user ? onRequestAddressChange : onRequestLogin
-              );
+              if (user) {
+                handleForwardAction(onRequestAddressChange);
+              } else if (onRequestChangeCity) {
+                handleForwardAction(onRequestChangeCity);
+              } else {
+                handleForwardAction(onRequestLogin);
+              }
             }}
             style={styles.cartZoneBox}
           >
@@ -320,17 +328,19 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
                 ) : (
                   <>
                     <Text style={styles.cartZoneLabel}>
-                      📍 Dirección de entrega pendiente (Modo invitado)
+                      📍 Entrega en: {selectedCityName || 'Bogotá D.C.'}
                     </Text>
                     <Text style={styles.addressGuestText}>
-                      Inicia sesión para elegir tu dirección y cobertura
+                      {deliveryZone === 'bogota'
+                        ? '⚡ Domicilio GRATIS el mismo día'
+                        : '📦 Envío asegurado por transportadora nacional'}
                     </Text>
                   </>
                 )}
               </View>
               <View style={styles.addressActionPill}>
                 <Text style={styles.addressActionPillText}>
-                  {user ? `Cambiar (${addresses.length})` : 'Ingresar'}
+                  {user ? `Cambiar (${addresses.length})` : 'Cambiar'}
                 </Text>
                 <Ionicons
                   name="chevron-forward"
