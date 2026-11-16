@@ -229,7 +229,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.06 : 0}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.12 : 0}
             style={styles.keyboardInner}
           >
             {/* DRAG HANDLE */}
@@ -566,28 +566,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   sheetContainer: {
-    backgroundColor: '#0B0D13',
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    height: Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.93 : SCREEN_HEIGHT * 0.94,
-    maxHeight: SCREEN_HEIGHT * 0.96,
+    backgroundColor: '#0A0B0E',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    height: '88%',
     borderTopWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.6,
     shadowRadius: 20,
     elevation: 25,
+    overflow: 'hidden',
   },
   handleContainer: {
     alignItems: 'center',
     paddingVertical: 10,
   },
   dragHandle: {
-    width: 40,
+    width: 38,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#374151',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
   },
   headerRow: {
     flexDirection: 'row',
