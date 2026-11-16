@@ -416,19 +416,6 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
 
   // ==================== MUNICIPIOS Y SABANA DE BOGOTÁ ====================
   {
-    id: 'cajica',
-    name: 'Cajicá',
-    department: 'Cundinamarca (Sabana Norte)',
-    region: 'Bogotá & Sabana',
-    type: 'municipio',
-    isBogota: false,
-    deliveryBadge: '🚚 Sabana Express 24h',
-    deliveryEstimate: '24 horas hábiles',
-    shippingCostDescription: 'Flete preferencial Sabana',
-    popular: true,
-    keywords: ['cajica', 'cundinamarca', 'sabana'],
-  },
-  {
     id: 'cota',
     name: 'Cota',
     department: 'Cundinamarca (Sabana Occidente)',
@@ -440,19 +427,6 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
     shippingCostDescription: 'Flete preferencial Sabana',
     popular: true,
     keywords: ['cota', 'cundinamarca', 'sabana', 'siberia'],
-  },
-  {
-    id: 'soacha',
-    name: 'Soacha',
-    department: 'Cundinamarca',
-    region: 'Bogotá & Sabana',
-    type: 'municipio',
-    isBogota: false,
-    deliveryBadge: '📦 Envío Rápido Metropolitana',
-    deliveryEstimate: '24 a 48 horas',
-    shippingCostDescription: 'Flete metropolitano',
-    popular: true,
-    keywords: ['soacha', 'cundinamarca', 'ciudad verde', 'san mateo'],
   },
   {
     id: 'zipaquira',
@@ -612,19 +586,6 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
   },
 
   // ==================== MUNICIPIOS VALLE DE ABURRÁ Y ANTIOQUIA ====================
-  {
-    id: 'envigado',
-    name: 'Envigado',
-    department: 'Antioquia (Valle de Aburrá)',
-    region: 'Antioquia / Paisa',
-    type: 'municipio',
-    isBogota: false,
-    deliveryBadge: '📦 Envío Rápido Aburrá',
-    deliveryEstimate: '1 a 2 días hábiles',
-    shippingCostDescription: 'Flete transportadora nacional',
-    popular: true,
-    keywords: ['envigado', 'antioquia', 'valle de aburra'],
-  },
   {
     id: 'itagui',
     name: 'Itagüí',

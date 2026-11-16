@@ -135,9 +135,13 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
         return;
       }
 
-      const pos = await Location.getCurrentPositionAsync({
+      const posPromise = Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('GPS Timeout')), 6000)
+      );
+      const pos = await Promise.race([posPromise, timeoutPromise]);
 
       const geocoded = await Location.reverseGeocodeAsync({
         latitude: pos.coords.latitude,
@@ -166,9 +170,8 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
       }
     } catch (err) {
       console.warn('[Location] GPS detection fallback:', err);
-      const def = DEFAULT_COLOMBIAN_LOCATION;
-      setTempSelectedCity(def);
-      handleConfirm(def);
+      setLocationError('No se pudo detectar con GPS. Elige tu ciudad en la lista.');
+      setTimeout(() => setLocationError(null), 4000);
     } finally {
       setIsDetectingLocation(false);
     }
@@ -249,10 +252,16 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
           <View style={styles.headerRow}>
             <View style={styles.headerTitles}>
               <View style={styles.headerBadgeRow}>
-                <Ionicons name="location-sharp" size={16} color={colors.primary.DEFAULT} />
+                <Ionicons name="location-sharp" size={14} color={colors.primary.DEFAULT} />
                 <Text style={styles.headerPreTitle}>COBERTURA & ENTREGAS</Text>
               </View>
               <Text style={styles.headerTitle}>¿Dónde quieres recibir tu pedido?</Text>
+              <View style={styles.trustMiniRow}>
+                <Ionicons name="flash" size={12} color="#F5D061" />
+                <Text style={styles.trustMiniText}>
+                  <Text style={{ fontWeight: '800', color: colors.primary.light }}>Bogotá:</Text> Domicilio Gratis hoy · <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>Resto del país:</Text> Envíos gratis
+                </Text>
+              </View>
             </View>
 
             <Pressable
@@ -264,88 +273,51 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
             </Pressable>
           </View>
 
-          {/* CRO TRUST & VALUE PROPOSITION BANNER */}
-          <LinearGradient
-            colors={['#171922', '#0F1117']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.trustBanner}
-          >
-            <View style={styles.trustBannerLeft}>
-              <View style={styles.trustBadge}>
-                <Ionicons name="flash" size={12} color="#F5D061" />
-                <Text style={styles.trustBadgeText}>BENEFICIO LOGÍSTICO EXCLUSIVO</Text>
-              </View>
-              <Text style={styles.trustBannerText}>
-                <Text style={{ fontWeight: '800', color: colors.primary.light }}>
-                  Bogotá: Domicilio GRATIS el mismo día.
-                </Text>{' '}
-                <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>
-                  Resto del país: Envíos gratis.
-                </Text>
-              </Text>
-            </View>
-            <View style={styles.trustTruckCircle}>
-              <Ionicons name="car-outline" size={22} color={colors.primary.DEFAULT} />
-            </View>
-          </LinearGradient>
-
-          {/* SEARCH INPUT */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar ciudad o municipio (ej. Chía, Medellín, Cali...)"
-              placeholderTextColor="#6B7280"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCorrect={false}
-              clearButtonMode="while-editing"
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-              </Pressable>
-            )}
-          </View>
-
-          {/* BOTÓN RÁPIDO: DETECTAR MI UBICACIÓN ACTUAL (GPS) */}
-          <Pressable
-            onPress={handleDetectLocation}
-            disabled={isDetectingLocation}
-            style={({ pressed }) => [
-              styles.gpsButton,
-              pressed && styles.gpsButtonPressed,
-              isDetectingLocation && styles.gpsButtonLoading,
-            ]}
-          >
-            <View style={styles.gpsIconCircle}>
-              {isDetectingLocation ? (
-                <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
-              ) : (
-                <Ionicons name="navigate" size={15} color={colors.primary.DEFAULT} />
+          {/* COMBINED SEARCH & GPS ACTION ROW */}
+          <View style={styles.searchAndGpsRow}>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={17} color="#9CA3AF" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Buscar ciudad o municipio..."
+                placeholderTextColor="#6B7280"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={17} color="#9CA3AF" />
+                </Pressable>
               )}
             </View>
-            <View style={styles.gpsTextCol}>
-              <Text style={styles.gpsTitle}>
-                {isDetectingLocation ? 'Localizando con GPS...' : 'Usar mi ubicación actual'}
-              </Text>
-              <Text style={styles.gpsSubtitle}>
-                {isDetectingLocation
-                  ? 'Identificando tu municipio o ciudad...'
-                  : 'Detectar automáticamente para calcular envíos'}
-              </Text>
-            </View>
-            <View style={styles.gpsBadgePill}>
-              <Ionicons name="flash" size={10} color={colors.primary.light} />
-              <Text style={styles.gpsBadgePillText}>RÁPIDO</Text>
-            </View>
-          </Pressable>
 
-          {/* MENSAJE DE PERMISO O ESTADO GPS SI APLICA */}
+            <Pressable
+              onPress={handleDetectLocation}
+              disabled={isDetectingLocation}
+              style={({ pressed }) => [
+                styles.gpsSideBtn,
+                pressed && styles.gpsSideBtnPressed,
+                isDetectingLocation && styles.gpsSideBtnLoading,
+              ]}
+              hitSlop={4}
+            >
+              {isDetectingLocation ? (
+                <ActivityIndicator size="small" color="#050508" />
+              ) : (
+                <Ionicons name="navigate" size={14} color="#050508" />
+              )}
+              <Text style={styles.gpsSideBtnText}>
+                {isDetectingLocation ? '...' : 'Mi GPS'}
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* MENSAJE DE ESTADO GPS SI APLICA */}
           {locationError && (
             <View style={styles.gpsErrorBanner}>
-              <Ionicons name="information-circle" size={15} color="#FBBF24" />
+              <Ionicons name="information-circle" size={14} color="#FBBF24" />
               <Text style={styles.gpsErrorText}>{locationError}</Text>
             </View>
           )}
@@ -631,16 +603,17 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     backgroundColor: '#0B0D13',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: SCREEN_HEIGHT * 0.88,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    height: Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.93 : SCREEN_HEIGHT * 0.94,
+    maxHeight: SCREEN_HEIGHT * 0.96,
     borderTopWidth: 1,
     borderColor: 'rgba(212, 175, 55, 0.25)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 20,
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 25,
   },
   handleContainer: {
     alignItems: 'center',
@@ -656,30 +629,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingHorizontal: 18,
+    paddingBottom: 6,
   },
   headerTitles: {
     flex: 1,
-    paddingRight: 10,
+    paddingRight: 8,
   },
   headerBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   headerPreTitle: {
     color: colors.primary.DEFAULT,
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     letterSpacing: -0.3,
+  },
+  trustMiniRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
+  },
+  trustMiniText: {
+    color: '#E5E7EB',
+    fontSize: 11,
+    fontWeight: '600',
   },
   closeBtn: {
     width: 32,
@@ -689,57 +680,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trustBanner: {
+  searchAndGpsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginTop: 4,
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.2)',
-  },
-  trustBannerLeft: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  trustBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
-  },
-  trustBadgeText: {
-    color: colors.primary.light,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  trustBannerText: {
-    color: '#D1D5DB',
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  trustTruckCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#1C1F2B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
+    marginTop: 8,
+    gap: 8,
   },
   searchContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#161922',
-    marginHorizontal: 16,
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+    paddingVertical: Platform.OS === 'ios' ? 9 : 6,
     borderWidth: 1,
     borderColor: '#262C3A',
   },
@@ -749,65 +704,30 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '500',
     padding: 0,
   },
-  gpsButton: {
+  gpsSideBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(212, 175, 55, 0.08)',
-    marginHorizontal: 16,
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    gap: 5,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: 13,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
-    gap: 10,
   },
-  gpsButtonPressed: {
-    backgroundColor: 'rgba(212, 175, 55, 0.16)',
-    borderColor: colors.primary.DEFAULT,
+  gpsSideBtnPressed: {
+    backgroundColor: colors.primary.light,
   },
-  gpsButtonLoading: {
-    opacity: 0.85,
+  gpsSideBtnLoading: {
+    opacity: 0.75,
   },
-  gpsIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gpsTextCol: {
-    flex: 1,
-  },
-  gpsTitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  gpsSubtitle: {
-    color: '#9CA3AF',
-    fontSize: 10.5,
-    marginTop: 1,
-  },
-  gpsBadgePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(212, 175, 55, 0.2)',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  gpsBadgePillText: {
-    color: colors.primary.light,
-    fontSize: 9.5,
+  gpsSideBtnText: {
+    color: '#050508',
+    fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   gpsErrorBanner: {
     flexDirection: 'row',
@@ -816,7 +736,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 6,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: 8,
     backgroundColor: 'rgba(251, 191, 36, 0.1)',
     borderWidth: 1,
