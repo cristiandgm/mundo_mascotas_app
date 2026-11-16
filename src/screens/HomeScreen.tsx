@@ -1070,7 +1070,7 @@ export const HomeScreen: React.FC = () => {
                   >
                     {selectedCity.isBogota
                       ? '⚡ Domicilio Gratis Mismo Día'
-                      : '📦 Envíos Asegurados a Colombia'}
+                      : '📦 Envíos Gratis a Colombia'}
                   </Text>
                 </View>
               </View>

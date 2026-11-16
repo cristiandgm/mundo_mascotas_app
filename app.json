@@ -25,7 +25,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a Mundo Mascotas detectar tu ciudad para calcular envíos gratis y tiempos de entrega."
+        }
+      ]
     ]
   }
 }

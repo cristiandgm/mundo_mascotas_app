@@ -9,11 +9,13 @@ export interface ColombianLocation {
   deliveryEstimate: string;
   shippingCostDescription: string;
   popular?: boolean;
+  latitude?: number;
+  longitude?: number;
   keywords?: string[];
 }
 
 export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
-  // ==================== CIUDADES PRINCIPALES ====================
+  // ==================== PLAZAS DE MAYOR FACTURACIÓN & CAPITALES ====================
   {
     id: 'bogota',
     name: 'Bogotá D.C.',
@@ -25,6 +27,8 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
     deliveryEstimate: 'Hoy mismo (3 - 6 hrs)',
     shippingCostDescription: '100% GRATIS en bultos',
     popular: true,
+    latitude: 4.7110,
+    longitude: -74.0721,
     keywords: ['bogota', 'dc', 'distrito', 'capital', 'cedritos', 'suba', 'chapinero', 'kennedy', 'usaquen'],
   },
   {
@@ -38,6 +42,8 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
     deliveryEstimate: '1 a 2 días hábiles',
     shippingCostDescription: 'Flete transportadora nacional',
     popular: true,
+    latitude: 6.2442,
+    longitude: -75.5812,
     keywords: ['medellin', 'paisa', 'antioquia', 'poblado', 'laureles', 'belen'],
   },
   {
@@ -51,7 +57,24 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
     deliveryEstimate: '1 a 2 días hábiles',
     shippingCostDescription: 'Flete transportadora nacional',
     popular: true,
+    latitude: 3.4516,
+    longitude: -76.5320,
     keywords: ['cali', 'santiago de cali', 'valle', 'valle del cauca'],
+  },
+  {
+    id: 'chia',
+    name: 'Chía',
+    department: 'Cundinamarca (Sabana Norte)',
+    region: 'Bogotá & Sabana',
+    type: 'municipio',
+    isBogota: false,
+    deliveryBadge: '🚚 Sabana Express 24h',
+    deliveryEstimate: '24 horas hábiles',
+    shippingCostDescription: 'Flete preferencial Sabana',
+    popular: true,
+    latitude: 4.8633,
+    longitude: -74.0583,
+    keywords: ['chia', 'cundinamarca', 'sabana', 'hacienda fontanar', 'la balsa'],
   },
   {
     id: 'barranquilla',
@@ -64,6 +87,8 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
     deliveryEstimate: '1 a 3 días hábiles',
     shippingCostDescription: 'Flete transportadora nacional',
     popular: true,
+    latitude: 10.9685,
+    longitude: -74.7813,
     keywords: ['barranquilla', 'atlantico', 'la arenosa', 'curramba'],
   },
   {
@@ -77,6 +102,8 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
     deliveryEstimate: '1 a 2 días hábiles',
     shippingCostDescription: 'Flete transportadora nacional',
     popular: true,
+    latitude: 7.1254,
+    longitude: -73.1198,
     keywords: ['bucaramanga', 'santander', 'ciudad bonita', 'cabecera'],
   },
   {
@@ -90,7 +117,54 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
     deliveryEstimate: '1 a 3 días hábiles',
     shippingCostDescription: 'Flete transportadora nacional',
     popular: true,
+    latitude: 10.3910,
+    longitude: -75.4794,
     keywords: ['cartagena', 'cartagena de indias', 'bolivar', 'bocagrande', 'manga'],
+  },
+  {
+    id: 'envigado',
+    name: 'Envigado',
+    department: 'Antioquia (Valle de Aburrá)',
+    region: 'Antioquia / Paisa',
+    type: 'municipio',
+    isBogota: false,
+    deliveryBadge: '📦 Envío Rápido Aburrá',
+    deliveryEstimate: '1 a 2 días hábiles',
+    shippingCostDescription: 'Flete transportadora nacional',
+    popular: true,
+    latitude: 6.1685,
+    longitude: -75.5806,
+    keywords: ['envigado', 'antioquia', 'valle de aburra'],
+  },
+  {
+    id: 'cajica',
+    name: 'Cajicá',
+    department: 'Cundinamarca (Sabana Norte)',
+    region: 'Bogotá & Sabana',
+    type: 'municipio',
+    isBogota: false,
+    deliveryBadge: '🚚 Sabana Express 24h',
+    deliveryEstimate: '24 horas hábiles',
+    shippingCostDescription: 'Flete preferencial Sabana',
+    popular: true,
+    latitude: 4.9208,
+    longitude: -74.0247,
+    keywords: ['cajica', 'cundinamarca', 'sabana'],
+  },
+  {
+    id: 'soacha',
+    name: 'Soacha',
+    department: 'Cundinamarca',
+    region: 'Bogotá & Sabana',
+    type: 'municipio',
+    isBogota: false,
+    deliveryBadge: '📦 Envío Rápido Metropolitana',
+    deliveryEstimate: '24 a 48 horas',
+    shippingCostDescription: 'Flete metropolitano',
+    popular: true,
+    latitude: 4.5802,
+    longitude: -74.2169,
+    keywords: ['soacha', 'cundinamarca', 'ciudad verde', 'san mateo'],
   },
   {
     id: 'pereira',
@@ -341,19 +415,6 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
   },
 
   // ==================== MUNICIPIOS Y SABANA DE BOGOTÁ ====================
-  {
-    id: 'chia',
-    name: 'Chía',
-    department: 'Cundinamarca (Sabana Norte)',
-    region: 'Bogotá & Sabana',
-    type: 'municipio',
-    isBogota: false,
-    deliveryBadge: '🚚 Sabana Express 24h',
-    deliveryEstimate: '24 horas hábiles',
-    shippingCostDescription: 'Flete preferencial Sabana',
-    popular: true,
-    keywords: ['chia', 'cundinamarca', 'sabana', 'hacienda fontanar', 'la balsa'],
-  },
   {
     id: 'cajica',
     name: 'Cajicá',
@@ -890,9 +951,24 @@ export const COLOMBIAN_LOCATIONS: ColombianLocation[] = [
 
 export const DEFAULT_COLOMBIAN_LOCATION: ColombianLocation = COLOMBIAN_LOCATIONS[0];
 
-export const POPULAR_LOCATIONS: ColombianLocation[] = COLOMBIAN_LOCATIONS.filter(
-  (loc) => loc.popular
-);
+// Plazas prioritarias ordenadas por volumen de demanda comercial
+export const TOP_DEMAND_IDS = [
+  'bogota',
+  'medellin',
+  'cali',
+  'chia',
+  'barranquilla',
+  'bucaramanga',
+  'cartagena',
+  'envigado',
+  'cajica',
+  'soacha',
+  'pereira',
+];
+
+export const POPULAR_LOCATIONS: ColombianLocation[] = TOP_DEMAND_IDS.map((id) =>
+  COLOMBIAN_LOCATIONS.find((loc) => loc.id === id)
+).filter((loc): loc is ColombianLocation => Boolean(loc));
 
 function normalizeText(text: string): string {
   return text
@@ -925,4 +1001,60 @@ export function searchColombianLocations(
     );
     return nameMatch || deptMatch || regionMatch || keywordMatch;
   });
+}
+
+function getDistanceFromLatLonInKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // Radio de la Tierra en km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Determina con alta precisión la ciudad o municipio de Colombia más cercano
+ * a partir de coordenadas GPS o texto devuelto por geocodificación inversa.
+ */
+export function findClosestColombianLocation(
+  lat: number,
+  lng: number,
+  placeName?: string
+): ColombianLocation {
+  if (placeName && placeName.trim().length > 1) {
+    const matches = searchColombianLocations(placeName);
+    if (matches.length > 0) {
+      return matches[0];
+    }
+  }
+
+  let closestLoc: ColombianLocation = COLOMBIAN_LOCATIONS[0];
+  let minDistance = Infinity;
+
+  for (const loc of COLOMBIAN_LOCATIONS) {
+    if (loc.latitude !== undefined && loc.longitude !== undefined) {
+      const dist = getDistanceFromLatLonInKm(
+        lat,
+        lng,
+        loc.latitude,
+        loc.longitude
+      );
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestLoc = loc;
+      }
+    }
+  }
+
+  return closestLoc;
 }

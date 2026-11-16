@@ -333,7 +333,7 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
                     <Text style={styles.addressGuestText}>
                       {deliveryZone === 'bogota'
                         ? '⚡ Domicilio GRATIS el mismo día'
-                        : '📦 Envío asegurado por transportadora nacional'}
+                        : '📦 Resto del país: Envíos gratis'}
                     </Text>
                   </>
                 )}

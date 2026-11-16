@@ -11,11 +11,13 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { colors } from '../theme/colors';
 import {
   ColombianLocation,
@@ -23,6 +25,7 @@ import {
   POPULAR_LOCATIONS,
   DEFAULT_COLOMBIAN_LOCATION,
   searchColombianLocations,
+  findClosestColombianLocation,
 } from '../data/colombiaLocations';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -102,6 +105,73 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
     ]).start(() => {
       onClose();
     });
+  };
+
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const formatCleanLocationDisplay = (city: ColombianLocation): string => {
+    if (city.isBogota || city.name.toLowerCase().includes('bogotá')) {
+      return 'Bogotá D.C.';
+    }
+    const cleanDept = city.department.replace(/\s*\([^)]*\)/g, '').trim();
+    if (!cleanDept || cleanDept.toLowerCase() === city.name.toLowerCase()) {
+      return city.name;
+    }
+    return `${city.name}, ${cleanDept}`;
+  };
+
+  const handleDetectLocation = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsDetectingLocation(true);
+    setLocationError(null);
+
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setIsDetectingLocation(false);
+        setLocationError('Permiso GPS no concedido. Elige tu ciudad en la lista.');
+        setTimeout(() => setLocationError(null), 4000);
+        return;
+      }
+
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const geocoded = await Location.reverseGeocodeAsync({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      });
+
+      const geo = geocoded && geocoded.length > 0 ? geocoded[0] : null;
+      const candidateName =
+        geo?.city || geo?.subregion || geo?.district || geo?.region || '';
+
+      const matchedLoc = findClosestColombianLocation(
+        pos.coords.latitude,
+        pos.coords.longitude,
+        candidateName
+      );
+
+      if (matchedLoc) {
+        setTempSelectedCity(matchedLoc);
+        handleConfirm(matchedLoc);
+      } else if (candidateName) {
+        handleCreateCustomLocation(candidateName);
+      } else {
+        const def = DEFAULT_COLOMBIAN_LOCATION;
+        setTempSelectedCity(def);
+        handleConfirm(def);
+      }
+    } catch (err) {
+      console.warn('[Location] GPS detection fallback:', err);
+      const def = DEFAULT_COLOMBIAN_LOCATION;
+      setTempSelectedCity(def);
+      handleConfirm(def);
+    } finally {
+      setIsDetectingLocation(false);
+    }
   };
 
   const handleConfirm = (cityToConfirm?: ColombianLocation) => {
@@ -204,13 +274,15 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
             <View style={styles.trustBannerLeft}>
               <View style={styles.trustBadge}>
                 <Ionicons name="flash" size={12} color="#F5D061" />
-                <Text style={styles.trustBadgeText}>BENEFICIO LOGÍSTICO</Text>
+                <Text style={styles.trustBadgeText}>BENEFICIO LOGÍSTICO EXCLUSIVO</Text>
               </View>
               <Text style={styles.trustBannerText}>
                 <Text style={{ fontWeight: '800', color: colors.primary.light }}>
-                  Bogotá: Domicilio GRATIS
+                  Bogotá: Domicilio GRATIS el mismo día.
                 </Text>{' '}
-                el mismo día. Resto de ciudades y municipios con envíos asegurados.
+                <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>
+                  Resto del país: Envíos gratis.
+                </Text>
               </Text>
             </View>
             <View style={styles.trustTruckCircle}>
@@ -236,6 +308,47 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
               </Pressable>
             )}
           </View>
+
+          {/* BOTÓN RÁPIDO: DETECTAR MI UBICACIÓN ACTUAL (GPS) */}
+          <Pressable
+            onPress={handleDetectLocation}
+            disabled={isDetectingLocation}
+            style={({ pressed }) => [
+              styles.gpsButton,
+              pressed && styles.gpsButtonPressed,
+              isDetectingLocation && styles.gpsButtonLoading,
+            ]}
+          >
+            <View style={styles.gpsIconCircle}>
+              {isDetectingLocation ? (
+                <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
+              ) : (
+                <Ionicons name="navigate" size={15} color={colors.primary.DEFAULT} />
+              )}
+            </View>
+            <View style={styles.gpsTextCol}>
+              <Text style={styles.gpsTitle}>
+                {isDetectingLocation ? 'Localizando con GPS...' : 'Usar mi ubicación actual'}
+              </Text>
+              <Text style={styles.gpsSubtitle}>
+                {isDetectingLocation
+                  ? 'Identificando tu municipio o ciudad...'
+                  : 'Detectar automáticamente para calcular envíos'}
+              </Text>
+            </View>
+            <View style={styles.gpsBadgePill}>
+              <Ionicons name="flash" size={10} color={colors.primary.light} />
+              <Text style={styles.gpsBadgePillText}>RÁPIDO</Text>
+            </View>
+          </Pressable>
+
+          {/* MENSAJE DE PERMISO O ESTADO GPS SI APLICA */}
+          {locationError && (
+            <View style={styles.gpsErrorBanner}>
+              <Ionicons name="information-circle" size={15} color="#FBBF24" />
+              <Text style={styles.gpsErrorText}>{locationError}</Text>
+            </View>
+          )}
 
           {/* FILTER TABS (CRO DISCOVERY) */}
           <View style={styles.tabsRow}>
@@ -328,7 +441,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
                           isBogotaLoc && styles.quickChipTextBogota,
                         ]}
                       >
-                        {loc.name}
+                        {loc.id === 'chia' ? 'Chía (Sabana)' : loc.name}
                       </Text>
                       {isBogotaLoc && (
                         <View style={styles.freeBadgePill}>
@@ -485,7 +598,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
             <View style={styles.selectedCitySummary}>
               <Text style={styles.selectedCityLabel}>ENTREGAR EN:</Text>
               <Text style={styles.selectedCityName} numberOfLines={1}>
-                {tempSelectedCity.name} ({tempSelectedCity.department})
+                {formatCleanLocationDisplay(tempSelectedCity)}
               </Text>
             </View>
 
@@ -639,6 +752,80 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     padding: 0,
+  },
+  gpsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(212, 175, 55, 0.08)',
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
+    gap: 10,
+  },
+  gpsButtonPressed: {
+    backgroundColor: 'rgba(212, 175, 55, 0.16)',
+    borderColor: colors.primary.DEFAULT,
+  },
+  gpsButtonLoading: {
+    opacity: 0.85,
+  },
+  gpsIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gpsTextCol: {
+    flex: 1,
+  },
+  gpsTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  gpsSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 10.5,
+    marginTop: 1,
+  },
+  gpsBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  gpsBadgePillText: {
+    color: colors.primary.light,
+    fontSize: 9.5,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+  },
+  gpsErrorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: 16,
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.25)',
+  },
+  gpsErrorText: {
+    color: '#FBBF24',
+    fontSize: 11,
+    flex: 1,
   },
   tabsRow: {
     flexDirection: 'row',
