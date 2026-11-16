@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Modal,
   Pressable,
+  TouchableOpacity,
   ScrollView,
   TextInput,
   Animated,
@@ -19,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { colors } from '../theme/colors';
+import { useDraggableSheet } from '../utils/useDraggableSheet';
 import {
   ColombianLocation,
   COLOMBIAN_LOCATIONS,
@@ -51,61 +53,25 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [tempSelectedCity, setTempSelectedCity] = useState<ColombianLocation | null>(selectedCity);
 
-  // Animations
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const {
+    translateY,
+    isExpanded,
+    isDragging,
+    headerPanHandlers,
+    grabberPanHandlers,
+    animateClose,
+  } = useDraggableSheet({
+    visible,
+    onClose,
+  });
 
   useEffect(() => {
     if (visible) {
       setTempSelectedCity(selectedCity);
       setSearchQuery('');
       setActiveTab('all');
-
-      Animated.parallel([
-        Animated.timing(backdropOpacity, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.spring(translateY, {
-          toValue: 0,
-          tension: 65,
-          friction: 11,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(backdropOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateY, {
-          toValue: SCREEN_HEIGHT,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-      ]).start();
     }
   }, [visible, selectedCity]);
-
-  const handleClose = () => {
-    Animated.parallel([
-      Animated.timing(backdropOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 220,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onClose();
-    });
-  };
 
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -169,7 +135,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
   const handleConfirm = (cityToConfirm: ColombianLocation) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onSelectCity(cityToConfirm);
-    handleClose();
+    animateClose();
   };
 
   const filteredLocations = useMemo(() => {
@@ -198,59 +164,53 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
     <Modal
       visible={visible}
       transparent
-      animationType="none"
-      onRequestClose={handleClose}
+      animationType="fade"
+      onRequestClose={animateClose}
       statusBarTranslucent
     >
-      <View style={styles.modalRoot}>
-        {/* BACKDROP */}
-        <Animated.View
-          style={[
-            styles.backdrop,
-            {
-              opacity: backdropOpacity.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 0.75],
-              }),
-            },
-          ]}
-        >
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-        </Animated.View>
+      <View style={styles.backdrop}>
+        {/* Tocar el fondo superior permite cerrar la ventana */}
+        <Pressable style={styles.backdropDismissArea} onPress={animateClose} />
 
-        {/* SHEET CONTAINER (ANCHORED TO BOTTOM, FULL STABLE HEIGHT) */}
+        {/* SHEET CONTAINER (DESLIZABLE) */}
         <Animated.View
           style={[
             styles.sheetContainer,
-            {
-              transform: [{ translateY }],
-            },
+            isExpanded && styles.sheetContainerExpanded,
+            { transform: [{ translateY }] },
           ]}
         >
+          {/* ZONA TÁCTIL DE LA BARRA SUPERIOR PARA ARRASTRAR */}
+          <View style={styles.dragHandleHitZone} {...grabberPanHandlers}>
+            <View
+              style={[
+                styles.topDragPill,
+                isDragging && styles.topDragPillActive,
+              ]}
+            />
+          </View>
+
+          {/* HEADER ROW (TAMBIÉN PERMITE ARRASTRAR) */}
+          <View style={styles.headerRow} {...headerPanHandlers}>
+            <View style={styles.headerTitles}>
+              <Text style={styles.headerTitle}>¿Dónde quieres recibir tu pedido?</Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={animateClose}
+              style={styles.closeBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="close" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.12 : 0}
             style={styles.keyboardInner}
           >
-            {/* DRAG HANDLE */}
-            <View style={styles.handleContainer}>
-              <View style={styles.dragHandle} />
-            </View>
-
-          {/* HEADER ROW */}
-          <View style={styles.headerRow}>
-            <View style={styles.headerTitles}>
-              <Text style={styles.headerTitle}>¿Dónde quieres recibir tu pedido?</Text>
-            </View>
-
-            <Pressable
-              onPress={handleClose}
-              style={styles.closeBtn}
-              hitSlop={10}
-            >
-              <Ionicons name="close" size={20} color="#9CA3AF" />
-            </Pressable>
-          </View>
 
           {/* COMBINED SEARCH & GPS ACTION ROW */}
           <View style={styles.searchAndGpsRow}>
@@ -550,20 +510,16 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  modalRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   keyboardInner: {
     flex: 1,
   },
   backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#000000',
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    justifyContent: 'flex-end',
+  },
+  backdropDismissArea: {
+    flex: 1,
   },
   sheetContainer: {
     backgroundColor: '#0A0B0E',
@@ -579,15 +535,24 @@ const styles = StyleSheet.create({
     elevation: 25,
     overflow: 'hidden',
   },
-  handleContainer: {
-    alignItems: 'center',
-    paddingVertical: 10,
+  sheetContainerExpanded: {
+    height: '96%',
   },
-  dragHandle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+  dragHandleHitZone: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  topDragPill: {
+    width: 40,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  topDragPillActive: {
+    width: 52,
+    backgroundColor: '#FFFFFF',
   },
   headerRow: {
     flexDirection: 'row',
