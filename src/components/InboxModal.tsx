@@ -64,7 +64,7 @@ const INITIAL_MESSAGES: InboxMessage[] = [
     subtitle: 'Toca para ver detalles de tu pedido #59547',
     timestamp: 'Hace 12 min',
     detailBody:
-      '¡Hola Alejandra! Tu bulto Diamond Naturals Lamb & Rice 40 LB (#59547) ya fue asignado a nuestra flota propia en Bogotá D.C. Recuerda que tienes Domicilio GRATIS y Pago Contraentrega en Carrera 72 j # 38-36 sur (timbrar en el 4 piso).',
+      '¡Hola Alejandra! Tu bulto Diamond Naturals Lamb & Rice 40 LB (#59547) ya fue asignado a nuestra flota propia en Bogotá D.C. Recuerda que cuentas con Pago Contraentrega en Carrera 72 j # 38-36 sur (timbrar en el 4 piso).',
     actionLabel: 'Ver estado en mi perfil VIP',
     actionType: 'open_profile',
     unreadCount: 1,
@@ -81,7 +81,7 @@ const INITIAL_MESSAGES: InboxMessage[] = [
     subtitle: '+200 Coins extra en Taste of the Wild y Diamond',
     timestamp: 'Hoy · 2:15 p. m.',
     detailBody:
-      'Por ser cliente Champions VIP (23 pedidos completados), activa el código VIPBOGOTA o pide hoy tu bulto de 28 LB o 40 LB para recibir $ 15.000 de descuento directo + envío gratis en Bogotá.',
+      'Por ser cliente Champions VIP (23 pedidos completados), activa el código VIPBOGOTA al pedir tu bulto de 28 LB o 40 LB para recibir $ 15.000 de descuento directo en tu compra.',
     actionLabel: 'Aplicar cupón $ 15.000 OFF',
     actionType: 'apply_promo',
     unreadCount: 1,

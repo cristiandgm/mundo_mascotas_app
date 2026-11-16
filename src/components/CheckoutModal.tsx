@@ -791,7 +791,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         ]}
                       >
                         {deliveryZone === 'bogota'
-                          ? 'Gratis ($ 0)'
+                          ? '$ 0'
                           : `+ ${formatCOP(estimatedCarrierFee)}`}
                       </Text>
                     </View>

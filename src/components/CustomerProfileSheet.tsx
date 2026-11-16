@@ -241,7 +241,7 @@ export const CustomerProfileSheet: React.FC<CustomerProfileSheetProps> = ({
                       <View style={styles.coverageDot} />
                       <Text style={styles.coveragePillText}>
                         {selectedAddress.isBogota
-                          ? 'Domicilio Gratis'
+                          ? 'Flota Bogotá'
                           : 'Transportadora'}
                       </Text>
                     </View>

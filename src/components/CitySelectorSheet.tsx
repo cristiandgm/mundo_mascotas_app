@@ -261,9 +261,9 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
               </View>
               <Text style={styles.headerTitle}>¿Dónde quieres recibir tu pedido?</Text>
               <View style={styles.trustMiniRow}>
-                <Ionicons name="flash" size={12} color="#F5D061" />
+                <Ionicons name="location-outline" size={12} color="#F5D061" />
                 <Text style={styles.trustMiniText}>
-                  <Text style={{ fontWeight: '800', color: colors.primary.light }}>Bogotá:</Text> Domicilio Gratis hoy · <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>Resto del país:</Text> Envíos gratis
+                  <Text style={{ fontWeight: '800', color: colors.primary.light }}>Bogotá D.C.:</Text> Flota local · <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>Resto del país:</Text> Envíos asegurados
                 </Text>
               </View>
             </View>
@@ -419,11 +419,6 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
                       >
                         {loc.id === 'chia' ? 'Chía (Sabana)' : loc.name}
                       </Text>
-                      {isBogotaLoc && (
-                        <View style={styles.freeBadgePill}>
-                          <Text style={styles.freeBadgePillText}>GRATIS</Text>
-                        </View>
-                      )}
                     </Pressable>
                   );
                 })}
@@ -465,7 +460,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
                     ]}
                   >
                     <Ionicons
-                      name={isBogotaLoc ? 'flash' : loc.type === 'principal' ? 'business' : 'home'}
+                      name={isBogotaLoc ? 'car' : loc.type === 'principal' ? 'business' : 'home'}
                       size={18}
                       color={
                         isSelected
@@ -491,7 +486,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
                       </Text>
                       {isBogotaLoc && (
                         <View style={styles.bogotaSuperBadge}>
-                          <Text style={styles.bogotaSuperBadgeText}>BOGOTÁ VIP</Text>
+                          <Text style={styles.bogotaSuperBadgeText}>CAPITAL</Text>
                         </View>
                       )}
                       {loc.type === 'municipio' && (

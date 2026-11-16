@@ -483,7 +483,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                                         color={colors.primary.light}
                                       />
                                       <Text style={styles.freeBogotaTagText}>
-                                        Domicilio Gratis · Contraentrega
+                                        Domicilio Bogotá · Contraentrega
                                       </Text>
                                     </View>
                                   ) : (
@@ -686,7 +686,7 @@ export const AddressSelectorSheet: React.FC<AddressSelectorSheetProps> = ({
                         📍 Bogotá D.C.
                       </Text>
                       <Text style={styles.zoneChoiceSubFree}>
-                        Domicilio GRATIS ($ 0)
+                        Flota Local Bogotá ($ 0)
                       </Text>
                     </Pressable>
 

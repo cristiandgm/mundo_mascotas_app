@@ -1017,7 +1017,7 @@ export const HomeScreen: React.FC = () => {
                   >
                     ·{' '}
                     {deliveryZone === 'bogota'
-                      ? 'Domicilio Gratis'
+                      ? 'Domicilio Bogotá D.C.'
                       : '+ Flete transportadora'}
                   </Text>
                   <Ionicons
@@ -1079,8 +1079,8 @@ export const HomeScreen: React.FC = () => {
                   >
                     {selectedCity
                       ? selectedCity.isBogota
-                        ? '⚡ Domicilio Gratis Mismo Día'
-                        : '📦 Envíos Gratis a Colombia'
+                        ? '🚚 Domicilio Bogotá D.C.'
+                        : '📦 Envíos a toda Colombia'
                       : '⚡ Elige tu ubicación de entrega'}
                   </Text>
                 </View>
@@ -1554,10 +1554,7 @@ export const HomeScreen: React.FC = () => {
                           {item.name} ({item.unitLabel || `${item.weightLb} LB`})
                         </Text>
                         <Text style={styles.uberRecentSubtitle} numberOfLines={1}>
-                          {formatCOP(item.price)} ·{' '}
-                          {deliveryZone === 'bogota'
-                            ? 'Domicilio Gratis en Bogotá'
-                            : `+${item.coins} Consenticoins`}
+                          {formatCOP(item.price)} · +{item.coins} Consenticoins
                         </Text>
                       </View>
                       <Ionicons
@@ -1694,7 +1691,7 @@ export const HomeScreen: React.FC = () => {
                 renderFeatureCard(
                   product,
                   deliveryZone === 'bogota'
-                    ? 'Domicilio Gratis Bogotá'
+                    ? 'Domicilio Bogotá'
                     : '+ Flete transportadora'
                 )
               )}
@@ -1816,13 +1813,13 @@ export const HomeScreen: React.FC = () => {
                   </View>
                   <Text style={[styles.uberPromoBigCoins, { fontSize: 18 }]}>
                     {deliveryZone === 'bogota'
-                      ? '🚚 Gratis en Bogotá'
+                      ? '🚚 Domicilio Bogotá'
                       : '📦 Envíos Nacionales'}
                   </Text>
                 </LinearGradient>
                 <Text style={styles.uberCardTitle}>
                   {deliveryZone === 'bogota'
-                    ? 'Domicilio sin costo en Bogotá'
+                    ? 'Cobertura en Bogotá D.C.'
                     : 'Despachos a toda Colombia'}
                 </Text>
                 <Text style={styles.uberCardSubtitle}>
@@ -3372,7 +3369,7 @@ export const HomeScreen: React.FC = () => {
                     ]}
                   >
                     {deliveryZone === 'bogota'
-                      ? 'Domicilio Gratis en Bogotá'
+                      ? 'Domicilio Bogotá D.C.'
                       : '+ Flete transportadora'}
                   </Text>
                   {selectedProduct.tag ? (

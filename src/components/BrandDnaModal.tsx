@@ -764,7 +764,7 @@ export const BrandDnaModal: React.FC<BrandDnaModalProps> = ({
                 </Text>
                 <Text style={styles.catalogSubtext}>
                   {deliveryZone === 'bogota'
-                    ? 'Domicilio Gratis en Bogotá D.C. · Pago Contraentrega'
+                    ? 'Domicilio en Bogotá D.C. · Pago Contraentrega'
                     : 'Despacho nacional + recargo transportadora según LB'}
                 </Text>
               </View>

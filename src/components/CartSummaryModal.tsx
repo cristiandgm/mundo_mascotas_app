@@ -332,8 +332,8 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
                     </Text>
                     <Text style={styles.addressGuestText}>
                       {deliveryZone === 'bogota'
-                        ? '⚡ Domicilio GRATIS el mismo día'
-                        : '📦 Resto del país: Envíos gratis'}
+                        ? '🚚 Domicilio en Bogotá D.C.'
+                        : '📦 Resto del país: Envíos asegurados'}
                     </Text>
                   </>
                 )}
@@ -476,7 +476,7 @@ export const CartSummaryModal: React.FC<CartSummaryModalProps> = ({
                 ]}
               >
                 {deliveryZone === 'bogota'
-                  ? 'Gratis ($ 0)'
+                  ? '$ 0'
                   : `+ ${formatCOP(estimatedCarrierFee)}`}
               </Text>
             </View>

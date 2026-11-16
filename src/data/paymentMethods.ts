@@ -296,7 +296,7 @@ export const buildWhatsAppOrderMessage = ({
     `Entrega: ${address.address1}${address.address2 ? `, ${address.address2}` : ''} · ${address.city}, ${address.province}`,
     `Zona: ${
       deliveryZone === 'bogota'
-        ? 'Domicilio Gratis Bogotá D.C.'
+        ? 'Domicilio Bogotá D.C.'
         : 'Transportadora Nacional'
     }`,
     '',
@@ -306,7 +306,7 @@ export const buildWhatsAppOrderMessage = ({
     `*Pago:* ${totals.method.orderMethodLabel}`,
     `Subtotal: ${formatCOP(totals.subtotal)}`,
     deliveryZone === 'bogota'
-      ? 'Domicilio: Gratis ($ 0)'
+      ? 'Domicilio: Bogotá D.C. ($ 0)'
       : `Envío Transportadora: ${formatCOP(totals.estimatedCarrierFee)}`,
   ];
 
