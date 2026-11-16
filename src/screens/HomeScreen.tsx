@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -277,6 +277,13 @@ export const HomeScreen: React.FC = () => {
 
   // Las pestañas superiores principales: 1. Tienda | 2. Mascota(s)
   const [mainTopTab, setMainTopTab] = useState<MainTopTabType>('store');
+
+  // Si está en modo invitado, mantener siempre activa la vista de Tienda
+  useEffect(() => {
+    if (!user && mainTopTab !== 'store') {
+      setMainTopTab('store');
+    }
+  }, [user, mainTopTab]);
   const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>('home');
   const [selectedBrand, setSelectedBrand] = useState<string>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1092,56 +1099,58 @@ export const HomeScreen: React.FC = () => {
         </Pressable>
       </View>
 
-      {/* ==================== 2. PESTAÑAS SUPERIORES: 1. TIENDA | 2. MASCOTA(S) ==================== */}
-      <View style={styles.uberTabsContainer}>
-        {/* Opción 1: Tienda */}
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            setMainTopTab('store');
-          }}
-          style={[styles.uberTabItem, { flex: 1 }]}
-        >
-          <Text style={styles.uberTabEmoji}>🛍️</Text>
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.uberTabText,
-              mainTopTab === 'store' && styles.uberTabTextActive,
-            ]}
+      {/* ==================== 2. PESTAÑAS SUPERIORES: 1. TIENDA | 2. MASCOTA(S) (SÓLO USUARIOS REGISTRADOS) ==================== */}
+      {user && (
+        <View style={styles.uberTabsContainer}>
+          {/* Opción 1: Tienda */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMainTopTab('store');
+            }}
+            style={[styles.uberTabItem, { flex: 1 }]}
           >
-            Tienda
-          </Text>
-          {mainTopTab === 'store' && (
-            <View style={styles.uberTabActiveIndicator} />
-          )}
-        </Pressable>
+            <Text style={styles.uberTabEmoji}>🛍️</Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.uberTabText,
+                mainTopTab === 'store' && styles.uberTabTextActive,
+              ]}
+            >
+              Tienda
+            </Text>
+            {mainTopTab === 'store' && (
+              <View style={styles.uberTabActiveIndicator} />
+            )}
+          </Pressable>
 
-        {/* Opción 2: Mascota(s) */}
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            setMainTopTab('pets');
-          }}
-          style={[styles.uberTabItem, { flex: 1 }]}
-        >
-          <Text style={styles.uberTabEmoji}>
-            {activeSpecies === 'cat' ? '🐱' : '🐶'}
-          </Text>
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.uberTabText,
-              mainTopTab === 'pets' && styles.uberTabTextActive,
-            ]}
+          {/* Opción 2: Mascota(s) */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMainTopTab('pets');
+            }}
+            style={[styles.uberTabItem, { flex: 1 }]}
           >
-            {user && pets.length > 1 ? `Mascotas (${pets.length})` : 'Mascota(s)'}
-          </Text>
-          {mainTopTab === 'pets' && (
-            <View style={styles.uberTabActiveIndicator} />
-          )}
-        </Pressable>
-      </View>
+            <Text style={styles.uberTabEmoji}>
+              {activeSpecies === 'cat' ? '🐱' : '🐶'}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.uberTabText,
+                mainTopTab === 'pets' && styles.uberTabTextActive,
+              ]}
+            >
+              {pets.length > 1 ? `Mascotas (${pets.length})` : 'Mascota(s)'}
+            </Text>
+            {mainTopTab === 'pets' && (
+              <View style={styles.uberTabActiveIndicator} />
+            )}
+          </Pressable>
+        </View>
+      )}
 
       <ScrollView
         contentContainerStyle={[
