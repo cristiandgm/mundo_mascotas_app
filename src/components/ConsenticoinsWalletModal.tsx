@@ -36,7 +36,6 @@ interface ConsenticoinsWalletModalProps {
   onToggleApplyCoinsInCart: (apply: boolean) => void;
   onOpenCartWithCoins: () => void;
   onRedeemFreeProduct: (productId: string) => void;
-  onOpenQuiz?: () => void;
 }
 
 type WalletTabType = 'statement' | 'vault' | 'earn';

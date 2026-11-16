@@ -447,7 +447,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     INITIAL_SAVED_ADDRESSES[0].id
   );
 
-  // Lista de mascotas del cliente (personaliza Tienda y Quiz Biológico)
+  // Lista de mascotas del cliente (personaliza Tienda y perfiles)
   const [pets, setPets] = useState<PetProfile[]>(INITIAL_PETS);
   const [activePetId, setActivePetId] = useState<string>(INITIAL_PETS[0].id);
 

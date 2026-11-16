@@ -32,7 +32,7 @@ const METAFIELD_KEYS = [
   'badge', // etiqueta destacada: "Más pedido", "70% Proteína"...
   'accent_color', // color hex de acento (#D4AF37)
   'unit_label', // "Pack x6 Latas", "Bolsa 92g"
-  'kcal_per_kg', // energía metabolizable (para el quiz)
+  'kcal_per_kg', // energía metabolizable
 ] as const;
 
 type MetafieldKey = (typeof METAFIELD_KEYS)[number];
@@ -253,7 +253,7 @@ function inferProteinSubtitle(
  *   2. Producto equivalente del catálogo local (mismo SKU) -> conserva colores, textos y badges
  *   3. Inferencia por tags / título / tipo de producto / peso de la variante
  *
- * El `id` se mantiene como `prod_<SKU>` para que el quiz, el carrito y los
+ * El `id` se mantiene como `prod_<SKU>` para que el carrito y los
  * pedidos existentes sigan funcionando sin cambios.
  */
 export function mapShopifyProduct(node: ShopifyProductNode): ProductBag | null {
