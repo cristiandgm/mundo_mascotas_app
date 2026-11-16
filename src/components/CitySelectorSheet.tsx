@@ -110,20 +110,6 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  const formatCleanLocationDisplay = (city: ColombianLocation | null): string => {
-    if (!city) {
-      return 'Selecciona tu ciudad';
-    }
-    if (city.isBogota || city.name.toLowerCase().includes('bogotá')) {
-      return 'Bogotá D.C.';
-    }
-    const cleanDept = city.department.replace(/\s*\([^)]*\)/g, '').trim();
-    if (!cleanDept || cleanDept.toLowerCase() === city.name.toLowerCase()) {
-      return city.name;
-    }
-    return `${city.name}, ${cleanDept}`;
-  };
-
   const handleDetectLocation = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsDetectingLocation(true);
@@ -180,10 +166,9 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
     }
   };
 
-  const handleConfirm = (cityToConfirm?: ColombianLocation | null) => {
-    const finalCity = cityToConfirm || tempSelectedCity || DEFAULT_COLOMBIAN_LOCATION;
+  const handleConfirm = (cityToConfirm: ColombianLocation) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onSelectCity(finalCity);
+    onSelectCity(cityToConfirm);
     handleClose();
   };
 
@@ -255,17 +240,7 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
           {/* HEADER ROW */}
           <View style={styles.headerRow}>
             <View style={styles.headerTitles}>
-              <View style={styles.headerBadgeRow}>
-                <Ionicons name="location-sharp" size={14} color={colors.primary.DEFAULT} />
-                <Text style={styles.headerPreTitle}>COBERTURA & ENTREGAS</Text>
-              </View>
               <Text style={styles.headerTitle}>¿Dónde quieres recibir tu pedido?</Text>
-              <View style={styles.trustMiniRow}>
-                <Ionicons name="location-outline" size={12} color="#F5D061" />
-                <Text style={styles.trustMiniText}>
-                  <Text style={{ fontWeight: '800', color: colors.primary.light }}>Bogotá D.C.:</Text> Flota local · <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>Resto del país:</Text> Envíos asegurados
-                </Text>
-              </View>
             </View>
 
             <Pressable
@@ -429,7 +404,10 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
           {/* LIST OF LOCATIONS */}
           <ScrollView
             style={styles.locationsList}
-            contentContainerStyle={styles.locationsListContent}
+            contentContainerStyle={[
+              styles.locationsListContent,
+              { paddingBottom: Math.max(insets.bottom, 24) },
+            ]}
             showsVerticalScrollIndicator={true}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -564,31 +542,6 @@ export const CitySelectorSheet: React.FC<CitySelectorSheetProps> = ({
               </View>
             )}
           </ScrollView>
-
-          {/* BOTTOM CONFIRMATION BUTTON */}
-          <View
-            style={[
-              styles.bottomBar,
-              { paddingBottom: Math.max(insets.bottom, 12) },
-            ]}
-          >
-            <View style={styles.selectedCitySummary}>
-              <Text style={styles.selectedCityLabel}>ENTREGAR EN:</Text>
-              <Text style={styles.selectedCityName} numberOfLines={1}>
-                {formatCleanLocationDisplay(tempSelectedCity)}
-              </Text>
-            </View>
-
-            <Pressable
-              onPress={() => handleConfirm()}
-              style={styles.confirmBtn}
-            >
-              <Text style={styles.confirmBtnText}>
-                {tempSelectedCity ? 'Confirmar Ubicación' : 'Elegir Ciudad'}
-              </Text>
-              <Ionicons name="arrow-forward" size={16} color="#050508" />
-            </Pressable>
-          </View>
         </KeyboardAvoidingView>
       </Animated.View>
     </View>
@@ -638,7 +591,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 18,
     paddingBottom: 6,
@@ -647,41 +600,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 8,
   },
-  headerBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 2,
-  },
-  headerPreTitle: {
-    color: colors.primary.DEFAULT,
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
   headerTitle: {
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '800',
     letterSpacing: -0.3,
-  },
-  trustMiniRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 4,
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
-  },
-  trustMiniText: {
-    color: '#E5E7EB',
-    fontSize: 11,
-    fontWeight: '600',
   },
   closeBtn: {
     width: 32,
@@ -1021,46 +944,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   customLocationBtnText: {
-    color: '#050508',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderColor: '#1F2430',
-    backgroundColor: '#0B0D13',
-  },
-  selectedCitySummary: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  selectedCityLabel: {
-    color: '#6B7280',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  selectedCityName: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  confirmBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  confirmBtnText: {
     color: '#050508',
     fontSize: 13,
     fontWeight: '800',
